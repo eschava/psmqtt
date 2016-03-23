@@ -15,7 +15,7 @@ from dateutil.rrule import *  # pip install python-dateutil
 
 from handlers import handlers
 
-qos=2
+qos = 2
 CONFIG = os.getenv('PSMQTTCONFIG', 'psmqtt.conf')
 
 
@@ -111,6 +111,7 @@ def on_disconnect(mosq, userdata, rc):
 def split(s):
     parts = s.split("/", 1)
     return parts if len(parts) == 2 else [parts[0], '']
+
 
 class TimerThread(Thread):
     def __init__(self, s):

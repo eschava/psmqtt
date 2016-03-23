@@ -35,17 +35,17 @@ class IndexTupleCommandHandler(CommandHandler):
         CommandHandler.__init__(self, name)
 
     def handle(self, params):
-        param, indexStr = split(params)
+        param, index_str = split(params)
         all_params = param == '' or param == '*'
         index = -1
 
         if param.isdigit():
             all_params = True
             index = int(param)
-        elif indexStr.isdigit():
-            index = int(indexStr)
-        elif indexStr != '' and indexStr != '*':
-            raise Exception("Element '" + indexStr + "' in '" + params + "' is not supported")
+        elif index_str.isdigit():
+            index = int(index_str)
+        elif index_str != '' and index_str != '*':
+            raise Exception("Element '" + index_str + "' in '" + params + "' is not supported")
 
         if index < 0 and all_params:
             raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
@@ -101,17 +101,17 @@ class IndexOrTotalTupleCommandHandler(CommandHandler):
         CommandHandler.__init__(self, name)
 
     def handle(self, params):
-        param, indexStr = split(params)
+        param, index_str = split(params)
         all_params = param == '' or param == '*'
         total = True
         index = -1
-        if indexStr == '*':
+        if index_str == '*':
             total = False
-        elif indexStr.isdigit():
+        elif index_str.isdigit():
             total = False
-            index = int(indexStr)
-        elif indexStr != '':
-            raise Exception("Element '" + indexStr + "' in '" + params + "' is not supported")
+            index = int(index_str)
+        elif index_str != '':
+            raise Exception("Element '" + index_str + "' in '" + params + "' is not supported")
 
         if not total and index < 0 and all_params:
             raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
@@ -298,6 +298,6 @@ def list_from_array_of_namedtupes(array_of_namedtupes, key, func):
     return result
 
 
-def split(str):
-    parts = str.split("/", 1)
+def split(s):
+    parts = s.split("/", 1)
     return parts if len(parts) == 2 else [parts[0], '']
