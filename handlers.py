@@ -19,6 +19,8 @@ class TupleCommandHandler(CommandHandler):
         tup = self.get_value()
         if params == '*':
             return tup._asdict()
+        if params == '*;':
+            return string_from_dict(tup._asdict())
         elif params in tup._fields:
             return getattr(tup, params)
         elif params == '':
@@ -76,9 +78,13 @@ class IndexOrTotalCommandHandler(CommandHandler):
 
     def handle(self, params):
         total = True
+        join = False
         index = -1
         if params == '*':
             total = False
+        elif params == '*;':
+            total = False
+            join = True
         elif params.isdigit():
             total = False
             index = int(params)
@@ -87,7 +93,7 @@ class IndexOrTotalCommandHandler(CommandHandler):
 
         try:
             result = self.get_value(total)
-            return result if index < 0 else result[index]
+            return string_from_list_optionally(result, join) if index < 0 else result[index]
         except IndexError:
             raise Exception("Element #" + str(index) + " is not present")
 
@@ -296,6 +302,17 @@ def list_from_array_of_namedtupes(array_of_namedtupes, key, func):
         else:
             raise Exception("Element '" + key + "' in '" + func + "' is not supported")
     return result
+
+
+def string_from_dict(d):
+    pairs = list()
+    for key in d:
+        pairs.append(key + "=" + str(d[key]))
+    return ";".join(pairs)
+
+
+def string_from_list_optionally(l, join):
+    return ";".join(map(str, l)) if join else l
 
 
 def split(s):

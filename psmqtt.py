@@ -46,7 +46,7 @@ def run_task(task):
         payload = get_value(task)
         is_seq = isinstance(payload, list) or isinstance(payload, dict)
         multitask = '*' in task
-        if is_seq != multitask:
+        if is_seq and not multitask:
             raise Exception("Result of task '" + task + "' has several values but task doesn't contain '*' char")
         if isinstance(payload, list):
             for i, v in enumerate(payload):
