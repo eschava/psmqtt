@@ -101,6 +101,7 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual(10, handler.handle('a//'))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*//'))
         self.assertEqual("a=10;b=20", handler.handle('*;//'))
+        self.assertEqual("a=10;b=20", handler.handle('*;/\\'))  # backslash
         disk = 'c:'
         self.assertEqual(10, handler.handle('a/c:'))
         disk = 'c:/'

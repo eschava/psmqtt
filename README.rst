@@ -111,12 +111,13 @@ Memory
    
 Disks
 ::
+
    disk_partitions/{device/mountpoint/fstype/opts}/* - Disk partitions separate parameters. Topic per disk number
    disk_partitions/{device/mountpoint/fstype/opts}/*; - Disk partitions separate parameters per disk number in one topic (combined)
    disk_partitions/{device/mountpoint/fstype/opts}/{0/1/2/etc} - Disk partitions separate parameter for single disk number
    disk_partitions/*/{0/1/2/etc} - Disk partitions parameters for single disk number. Topic per parameter
    disk_partitions/*;/{0/1/2/etc} - Disk partitions parameters for single disk number in one topic (combined)
-   disk_usage/{total/used/free/percent}/{drive} - Disk usage single parameter
+   disk_usage/{total/used/free/percent}/{drive} - Disk usage single parameter (slashes in drive should be replaced with backslash)
    disk_usage/*/{drive} - Disk usage separate parameters. Topic per parameter
    disk_usage/*;/{drive} - Disk usage separate parameters in one topic (combined)
    disk_io_counters - to be continued...
@@ -127,13 +128,13 @@ Processes
 
    
 =======
-Examples of topics
+Useful  topics
 =======
 **psmqtt/cpu_percent** - CPU usage in percent
 
 **psmqtt/virtual_memory/percent** - RAM usage in percent
 
-**psmqtt/disk_usage/percent//** - root drive usage in percent (Linux)
+**psmqtt/disk_usage/percent/\** - root drive (slash replaced with backslash) usage in percent (Linux)
 
 **psmqtt/disk_usage/percent/C:** - C:/ drive usage in percent (Windows)
 
