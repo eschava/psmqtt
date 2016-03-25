@@ -134,7 +134,7 @@ Useful  topics
 
 **psmqtt/virtual_memory/percent** - RAM usage in percent
 
-**psmqtt/disk_usage/percent/\** - root drive (slash replaced with backslash) usage in percent (Linux)
+**psmqtt/disk_usage/percent/\\** - root drive (slash replaced with backslash) usage in percent (Linux)
 
 **psmqtt/disk_usage/percent/C:** - C:/ drive usage in percent (Windows)
 
