@@ -38,7 +38,7 @@ class IndexTupleCommandHandler(CommandHandler):
 
     def handle(self, params):
         param, index_str = split(params)
-        all_params = param == '' or param == '*'
+        all_params = param == '*' or param == '*;'
         index = -1
 
         if param.isdigit():
@@ -46,7 +46,7 @@ class IndexTupleCommandHandler(CommandHandler):
             index = int(param)
         elif index_str.isdigit():
             index = int(index_str)
-        elif index_str != '' and index_str != '*':
+        elif index_str != '*' and index_str != '*;':
             raise Exception("Element '" + index_str + "' in '" + params + "' is not supported")
 
         if index < 0 and all_params:
@@ -54,12 +54,12 @@ class IndexTupleCommandHandler(CommandHandler):
 
         result = self.get_value()
         if index < 0:
-            return list_from_array_of_namedtupes(result, param, params)
+            return list_from_array_of_namedtupes(result, param, params, index_str.endswith(';'))
         else:  # index selected
             try:
                 result = result[index]
                 if all_params:
-                    return result._asdict()
+                    return string_from_dict_optionally(result._asdict(), param.endswith(';'))
                 elif param in result._fields:
                     return getattr(result, param)
                 else:
@@ -108,11 +108,17 @@ class IndexOrTotalTupleCommandHandler(CommandHandler):
 
     def handle(self, params):
         param, index_str = split(params)
-        all_params = param == '' or param == '*'
+        all_params = param == '*' or param == '*;'
+        params_join = param.endswith(';')
+
         total = True
+        index_join = False
         index = -1
         if index_str == '*':
             total = False
+        elif index_str == '*;':
+            total = False
+            index_join = True
         elif index_str.isdigit():
             total = False
             index = int(index_str)
@@ -125,10 +131,10 @@ class IndexOrTotalTupleCommandHandler(CommandHandler):
         result = self.get_value(total)
         if index < 0:
             if all_params:  # not total
-                return result._asdict()
+                return string_from_dict_optionally(result._asdict(), params_join)
             else:
                 if not total:
-                    return list_from_array_of_namedtupes(result, param, params)
+                    return list_from_array_of_namedtupes(result, param, params, index_join)
                 elif param in result._fields:
                     return getattr(result, param)
                 else:
@@ -137,7 +143,7 @@ class IndexOrTotalTupleCommandHandler(CommandHandler):
             try:
                 result = result[index]
                 if all_params:
-                    return result._asdict()
+                    return string_from_dict_optionally(result._asdict(), params_join)
                 elif param in result._fields:
                     return getattr(result, param)
                 else:
@@ -163,8 +169,8 @@ class DiskUsageCommandHandler(CommandHandler):
             disk = '/'
 
         tup = psutil.disk_usage(disk)
-        if param == '*' or param == '':
-            return tup._asdict()
+        if param == '*' or param == '*;':
+            return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)
         else:
@@ -294,14 +300,14 @@ process_handlers = {
 }
 
 
-def list_from_array_of_namedtupes(array_of_namedtupes, key, func):
+def list_from_array_of_namedtupes(array_of_namedtupes, key, func, join=False):
     result = list()
     for tup in array_of_namedtupes:
         if key in tup._fields:
             result.append(getattr(tup, key))
         else:
             raise Exception("Element '" + key + "' in '" + func + "' is not supported")
-    return result
+    return string_from_list_optionally(result, join)
 
 
 def string_from_dict(d):
@@ -309,6 +315,10 @@ def string_from_dict(d):
     for key in d:
         pairs.append(key + "=" + str(d[key]))
     return ";".join(pairs)
+
+
+def string_from_dict_optionally(d, join):
+    return string_from_dict(d) if join else d
 
 
 def string_from_list_optionally(l, join):
