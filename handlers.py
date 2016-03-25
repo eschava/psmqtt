@@ -163,18 +163,18 @@ class DiskUsageCommandHandler(CommandHandler):
     def handle(self, params):
         param, disk = split(params)
         if disk == '':
-            disk = param
-            param = ''
-        if disk == '':
-            disk = '/'
+            raise Exception("Disk ' in '" + self.name + "' should be specified")
 
-        tup = psutil.disk_usage(disk)
+        tup = self.get_value(disk)
         if param == '*' or param == '*;':
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)
         else:
             raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+
+    def get_value(self, disk):
+        return psutil.disk_usage(disk)
 
 
 class ProcessesCommandHandler(CommandHandler):

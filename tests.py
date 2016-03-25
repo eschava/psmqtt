@@ -93,6 +93,35 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/bla')
         self.assertRaises(Exception, handler.handle, '*/5')
 
+    def test_disk_usage_command_handler(self):
+        disk = '/'
+        handler = type("TestHandler", (DiskUsageCommandHandler, object),
+                       {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})('test')
+        # normal execution
+        self.assertEqual(10, handler.handle('a//'))
+        self.assertEqual({'a': 10, 'b': 20}, handler.handle('*//'))
+        self.assertEqual("a=10;b=20", handler.handle('*;//'))
+        disk = 'c:'
+        self.assertEqual(10, handler.handle('a/c:'))
+        disk = 'c:/'
+        self.assertEqual(10, handler.handle('a/c:/'))
+        # exceptions
+        disk = None     # do not validate disk, only parameters
+        self.assertRaises(Exception, handler.handle, 'a')
+        self.assertRaises(Exception, handler.handle, 'a/')
+        self.assertRaises(Exception, handler.handle, 'a/')
+        self.assertRaises(Exception, handler.handle, '/')
+        self.assertRaises(Exception, handler.handle, '*/')
+        self.assertRaises(Exception, handler.handle, '/*')
+        self.assertRaises(Exception, handler.handle, 'blabla')
+        self.assertRaises(Exception, handler.handle, 'bla/bla')
+        self.assertRaises(Exception, handler.handle, 'bla/')
+        self.assertRaises(Exception, handler.handle, '/bla')
+
+    def _disk_usage_get_value(self, disk, d):
+        if disk is not None:
+            self.assertEqual(disk, d)
+        return namedtuple('test', 'a b')(10, 20)
 
 if __name__ == '__main__':
     unittest.main()
