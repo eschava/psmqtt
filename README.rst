@@ -22,7 +22,7 @@ After you can run main file using::
 General information about tasks and MQTT topics
 =======
 
-Every utilization parameter has its own special name. It always started with task name that could be followed with unique parameter name or/and device number/name.
+Every utilization parameter has its own special name. It always starts with task name that could be followed with unique parameter name or/and device number/name.
 
 E.g. task to get percent of CPU used by user apps use name **cpu_times_percent/user**. All possible parameter names are described below.
 
@@ -30,7 +30,9 @@ Results for parameter PARAMETER_NAME are pushed to the MQTT topic **psmqtt/PARAM
 
 
 Very often it could be useful to provide several parameters from the same task using one request. In such case next formats are used:
+
 - psmqtt/TASK_NAME/* - to get all possible parameters (MQTT topic per parameter)
+
 - or psmqtt/TASK_NAME/*; - to get all possible parameters in one topic (combined)
 
 Examples::
