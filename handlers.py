@@ -164,6 +164,7 @@ class DiskUsageCommandHandler(CommandHandler):
         param, disk = split(params)
         if disk == '':
             raise Exception("Disk ' in '" + self.name + "' should be specified")
+        disk = disk.replace('|', '/')  # replace slashes with vertical slashes to do not conflict with MQTT topic name
 
         tup = self.get_value(disk)
         if param == '*' or param == '*;':
