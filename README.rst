@@ -12,7 +12,7 @@ Installation
 Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
    pip install recurrent paho-mqtt python-dateutil psutil jinja2
-   (Jinja2 is needed for formatting output and could be ignored if formatting is not used)
+   (Jinja2 is needed for formatting output and could be skipped if formatting is not used)
    
 After you can run main file using::
 
@@ -52,7 +52,7 @@ Examples::
 Formatting output
 =======
 
-Output of task could be formatted using `Jinja2<http://jinja.pocoo.org/>`_ templates. Append template to the task after one more "/" separator.
+Output of task could be formatted using `Jinja2 <http://jinja.pocoo.org/>`_ templates. Append template to the task after one more "/" separator.
 
 E.g.
     psmqtt/cpu_times_percent/user/{{x}}%
@@ -62,7 +62,7 @@ For task providing many parameters (having *) all parameters are available by na
 
 NOTE: After formatting tasks providing many parametes are combined to single one.
 
-Unnamed parameters are avaiable as x
+Unnamed parameters are avaiable as x.
 
 All additional filters are defined at the filters.py file. You also can add custom filters there.
 
@@ -76,6 +76,7 @@ Examples::
     virtual_memory/*/{{(100*free/total)|int}}% - free virtual memory in %
     boot_time/{{x|uptime}} - uptime
     cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processor total
+    virtual_memory/free/{{x|MB}} - Free RAM in MB
 
 =======
 Configuration
