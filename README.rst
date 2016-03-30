@@ -75,7 +75,7 @@ Examples::
 
     virtual_memory/*/{{(100*free/total)|int}}% - free virtual memory in %
     boot_time/{{x|uptime}} - uptime
-    cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processor total
+    cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processors total
     virtual_memory/free/{{x|MB}} - Free RAM in MB
 
 =======
