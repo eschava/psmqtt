@@ -11,7 +11,8 @@ Installation
 =======
 Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
-   pip install recurrent paho-mqtt python-dateutil psutil
+   pip install recurrent paho-mqtt python-dateutil psutil jinja2
+   (Jinja2 is needed for formatting output and could be ignored if formatting is not used)
    
 After you can run main file using::
 
@@ -46,6 +47,35 @@ Examples::
    Task psmqtt/cpu_times_percent/*; provides
    psmqtt/cpu_times_percent/*; user=12.0;nice=1.0;system=5.0;etc
 
+
+=======
+Formatting output
+=======
+
+Output of task could be formatted using `Jinja2<http://jinja.pocoo.org/>`_ templates. Append template to the task after one more "/" separator.
+
+E.g.
+    psmqtt/cpu_times_percent/user/{{x}}%
+To append % symbol after CPU usage.
+
+For task providing many parameters (having *) all parameters are available by name if they are named or by index as x[1] if they are numbered.
+
+NOTE: After formatting tasks providing many parametes are combined to single one.
+
+Unnamed parameters are avaiable as x
+
+All additional filters are defined at the filters.py file. You also can add custom filters there.
+
+Next filters are implemented now::
+
+    KB,MB,GB - to format value in bytes as KBytes, MBytes or GBytes.
+    uptime - to format boot_time as uptime string representation.
+
+Examples::
+
+    virtual_memory/*/{{(100*free/total)|int}}% - free virtual memory in %
+    boot_time/{{x|uptime}} - uptime
+    cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processor total
 
 =======
 Configuration
@@ -130,11 +160,17 @@ Processes
 =======
 Useful topics
 =======
+**psmqtt/boot_time/{{x|uptime}}** - Up time
+
 **psmqtt/cpu_percent** - CPU usage in percent
 
 **psmqtt/virtual_memory/percent** - RAM usage in percent
 
+**psmqtt/virtual_memory/free/{{x|MB}}** - Free RAM in MB
+
 **psmqtt/disk_usage/percent/|** - root drive (slash replaced with vertical slash) usage in percent (Linux)
+
+**psmqtt/disk_usage/free/|/{{x|GB}}** - space left in GB for root drive (Linux)
 
 **psmqtt/disk_usage/percent/C:** - C:/ drive usage in percent (Windows)
 
