@@ -10,6 +10,21 @@ class CommandHandler:
         raise Exception("Not implemented")
 
 
+class ValueCommandHandler(CommandHandler):
+    def __init__(self, method_name):
+        CommandHandler.__init__(self, method_name)
+        self.method = getattr(psutil, method_name)
+
+    def handle(self, params):
+        if params != '':
+            raise Exception("Parameter '" + params + "' in '" + self.name + "' is not supported")
+
+        return self.get_value()
+
+    def get_value(self):
+        return self.method()
+
+
 class TupleCommandHandler(CommandHandler):
     def __init__(self, method_name):
         CommandHandler.__init__(self, method_name)
@@ -281,6 +296,8 @@ handlers = {
 
     'users': type("UsersCommandHandler", (IndexTupleCommandHandler, object),
                   {"get_value": lambda self: psutil.users()})('users'),
+
+    'boot_time': type("BootTimeCommandHandler", (ValueCommandHandler, object), {})('boot_time'),
 }
 
 process_handlers = {

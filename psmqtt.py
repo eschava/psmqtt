@@ -14,6 +14,7 @@ from recurrent import RecurringEvent  # pip install recurrent
 from dateutil.rrule import *  # pip install python-dateutil
 
 from handlers import handlers
+from format import Formatter
 
 qos = 2
 CONFIG = os.getenv('PSMQTTCONFIG', 'psmqtt.conf')
@@ -65,10 +66,14 @@ def run_task(task):
 
 
 def get_value(path):
+    path, _format = Formatter.get_format(path)
     head, tail = split(path)
 
     if head in handlers:
-        return handlers[head].handle(tail)
+        value = handlers[head].handle(tail)
+        if _format is not None:
+            value = Formatter.format(_format, value)
+        return value
     else:
         raise Exception("Element '" + head + "' in '" + path + "' is not supported")
 
