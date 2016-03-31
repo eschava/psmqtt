@@ -237,16 +237,13 @@ class NameOrTotalTupleCommandHandler(CommandHandler):
                 else:
                     raise Exception("Element '" + param + "' in '" + params + "' is not supported")
         else:  # name selected
-            try:
-                result = result[name]
-                if all_params:
-                    return string_from_dict_optionally(result._asdict(), params_join)
-                elif param in result._fields:
-                    return getattr(result, param)
-                else:
-                    raise Exception("Parameter '" + param + "' in '" + params + "' is not supported")
-            except IndexError:
-                raise Exception("Element #" + name + " is not present")
+            result = result[name]
+            if all_params:
+                return string_from_dict_optionally(result._asdict(), params_join)
+            elif param in result._fields:
+                return getattr(result, param)
+            else:
+                raise Exception("Parameter '" + param + "' in '" + params + "' is not supported")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, total):

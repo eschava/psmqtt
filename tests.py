@@ -146,6 +146,8 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/*')
         self.assertRaises(Exception, handler.handle, '3')
         self.assertRaises(Exception, handler.handle, '/3')
+        self.assertRaises(Exception, handler.handle, 'a/0')
+        self.assertRaises(Exception, handler.handle, 'c/x')
         self.assertRaises(Exception, handler.handle, 'blabla')
         self.assertRaises(Exception, handler.handle, 'bla/bla')
         self.assertRaises(Exception, handler.handle, 'bla/')
