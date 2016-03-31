@@ -201,6 +201,58 @@ class IndexOrTotalTupleCommandHandler(CommandHandler):
         raise Exception("Not implemented")
 
 
+class NameOrTotalTupleCommandHandler(CommandHandler):
+    def __init__(self, name):
+        CommandHandler.__init__(self, name)
+
+    def handle(self, params):
+        param, name = split(params)
+        all_params = param == '*' or param == '*;'
+        params_join = param.endswith(';')
+
+        total = True
+        index_join = False
+        if name == '*':
+            total = False
+            name = None
+        elif name == '*;':
+            total = False
+            index_join = True
+            name = None
+        elif name != '':
+            total = False
+
+        if not total and name is None and all_params:
+            raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
+
+        result = self.get_value(total)
+        if name is None or name == '':
+            if all_params:  # not total
+                return string_from_dict_optionally(result._asdict(), params_join)
+            else:
+                if not total:
+                    return dict_from_dict_of_namedtupes(result, param, params, index_join)
+                elif param in result._fields:
+                    return getattr(result, param)
+                else:
+                    raise Exception("Element '" + param + "' in '" + params + "' is not supported")
+        else:  # name selected
+            try:
+                result = result[name]
+                if all_params:
+                    return string_from_dict_optionally(result._asdict(), params_join)
+                elif param in result._fields:
+                    return getattr(result, param)
+                else:
+                    raise Exception("Parameter '" + param + "' in '" + params + "' is not supported")
+            except IndexError:
+                raise Exception("Element #" + name + " is not present")
+
+    # noinspection PyMethodMayBeStatic
+    def get_value(self, total):
+        raise Exception("Not implemented")
+
+
 class DiskUsageCommandHandler(CommandHandler):
     def __init__(self, name):
         CommandHandler.__init__(self, name)
@@ -341,6 +393,9 @@ handlers = {
     'disk_io_counters': type("DiskIOCountersCommandHandler", (IndexOrTotalTupleCommandHandler, object),
                              {"get_value": lambda self, total: psutil.disk_io_counters(perdisk=not total)})('disk_io_counters'),
 
+    'net_io_counters': type("NetIOCountersCommandHandler", (NameOrTotalTupleCommandHandler, object),
+                             {"get_value": lambda self, total: psutil.net_io_counters(pernic=not total)})('net_io_counters'),
+
     'processes': ProcessesCommandHandler('processes'),
 
     'users': type("UsersCommandHandler", (IndexTupleCommandHandler, object),
@@ -385,6 +440,17 @@ def list_from_array_of_namedtupes(array_of_namedtupes, key, func, join=False):
         else:
             raise Exception("Element '" + key + "' in '" + func + "' is not supported")
     return string_from_list_optionally(result, join)
+
+
+def dict_from_dict_of_namedtupes(dict_of_namedtupes, key, func, join=False):
+    result = dict()
+    for name in dict_of_namedtupes:
+        tup = dict_of_namedtupes[name]
+        if key in tup._fields:
+            result[name] = getattr(tup, key)
+        else:
+            raise Exception("Element '" + key + "' in '" + func + "' is not supported")
+    return string_from_dict_optionally(result, join)
 
 
 def string_from_dict(d):

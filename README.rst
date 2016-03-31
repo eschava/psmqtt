@@ -151,14 +151,26 @@ Disks
    disk_usage/{total/used/free/percent}/{drive} - Disk usage single parameter (slashes in drive should be replaced with vertical slash)
    disk_usage/*/{drive} - Disk usage separate parameters. Topic per parameter
    disk_usage/*;/{drive} - Disk usage separate parameters in one topic (combined)
-   disk_io_counters/* - Disk IO counters. Topic per parameter
-   disk_io_counters/*;  - Disk IO counters in one topic (combined)
-   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time} - Disk IO counters separate parameters
-   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/* - Disk IO counters separate parameters. Topic per disk number
-   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/*; - Disk IO counters separate parameters per disk number in one topic (combined)
+   disk_io_counters/* - Disk I/O counters. Topic per parameter
+   disk_io_counters/*;  - Disk I/O counters in one topic (combined)
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time} - Disk I/O counters separate parameters
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/* - Disk I/O counters separate parameters. Topic per disk number
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/*; - Disk I/O counters separate parameters per disk number in one topic (combined)
    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/{0/1/2/etc} - Disk IO counters separate parameters for single disk
-   disk_io_counters/*/{0/1/2/etc} - Disk IO counters for single disk. Topic per parameter
-   disk_io_counters/*;/{0/1/2/etc} - Disk IO counters for single disk in one topic (combined)
+   disk_io_counters/*/{0/1/2/etc} - Disk I/O counters for single disk. Topic per parameter
+   disk_io_counters/*;/{0/1/2/etc} - Disk I/O counters for single disk in one topic (combined)
+
+Network
+::
+
+   net_io_counters/* - Network I/O counters. Topic per parameter
+   net_io_counters/*;  - Network I/O counters in one topic (combined)
+   net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout} - Network I/O counters separate parameters
+   net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/* - Network I/O counters separate parameters. Topic per device name
+   net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/*; - Network I/O counters separate parameters per device in one topic (combined)
+   net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/{eth0/wlan0/etc} - Network I/O counters separate parameters for single device
+   net_io_counters/*/{eth0/wlan0/etc} - Network I/O counters for single device. Topic per parameter
+   net_io_counters/*;/{eth0/wlan0/etc} - Network I/O counters for single device in one topic (combined)
 
 Other system info
 ::

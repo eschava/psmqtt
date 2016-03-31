@@ -113,7 +113,35 @@ class TestHandlers(unittest.TestCase):
         # exceptions
         self.assertRaisesRegexp(Exception, "Element '' in '' is not supported", handler.handle, '')
         self.assertRaises(Exception, handler.handle, '/')
-        self.assertRaises(Exception, handler.handle, '*/*')
+        self.assertRaisesRegexp(Exception, "Cannot list all elements and parameters at the same.*", handler.handle, '*/*')
+        self.assertRaises(Exception, handler.handle, '*-')
+        self.assertRaises(Exception, handler.handle, '/*')
+        self.assertRaises(Exception, handler.handle, '3')
+        self.assertRaises(Exception, handler.handle, '/3')
+        self.assertRaises(Exception, handler.handle, 'blabla')
+        self.assertRaises(Exception, handler.handle, 'bla/bla')
+        self.assertRaises(Exception, handler.handle, 'bla/')
+        self.assertRaises(Exception, handler.handle, '/bla')
+        self.assertRaises(Exception, handler.handle, '*/5')
+
+    def test_name_or_total_tuple_command_handler(self):
+        total = namedtuple('test', 'a b')(10, 20)
+        single = {"x":  namedtuple('test', 'a b')(1, 2), "y": namedtuple('test', 'a b')(3, 4)}
+        handler = type("TestHandler", (NameOrTotalTupleCommandHandler, object),
+                       {"get_value": lambda s, t: total if t else single})('test')
+        # normal execution
+        self.assertEqual({'a': 10, 'b': 20}, handler.handle('*'))
+        self.assertEqual("a=10;b=20", handler.handle('*;'))
+        self.assertEqual(10, handler.handle('a'))
+        self.assertEqual({"x": 1, "y": 3}, handler.handle('a/*'))
+        self.assertEqual("y=3;x=1", handler.handle('a/*;'))
+        self.assertEqual(3, handler.handle('a/y'))
+        self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/y'))
+        self.assertEqual("a=3;b=4", handler.handle('*;/y'))
+        # exceptions
+        self.assertRaisesRegexp(Exception, "Element '' in '' is not supported", handler.handle, '')
+        self.assertRaises(Exception, handler.handle, '/')
+        self.assertRaisesRegexp(Exception, "Cannot list all elements and parameters at the same.*", handler.handle, '*/*')
         self.assertRaises(Exception, handler.handle, '*-')
         self.assertRaises(Exception, handler.handle, '/*')
         self.assertRaises(Exception, handler.handle, '3')
