@@ -15,6 +15,25 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/')
         self.assertRaises(Exception, handler.handle, '*')
 
+    def test_index_command_handler(self):
+        handler = type("TestHandler", (IndexCommandHandler, object),
+                       {"get_value": lambda s: [5, 6, 7]})('test')
+        # normal execution
+        self.assertEqual(5, handler.handle('0'))
+        self.assertEqual([5, 6, 7], handler.handle('*'))
+        self.assertEqual("5;6;7", handler.handle('*;'))
+        self.assertEqual(3, handler.handle('count'))
+        # exceptions
+        self.assertRaises(Exception, handler.handle, '')
+        self.assertRaises(Exception, handler.handle, '3')
+        self.assertRaises(Exception, handler.handle, '/')
+        self.assertRaises(Exception, handler.handle, '*/')
+        self.assertRaises(Exception, handler.handle, '/*')
+        self.assertRaises(Exception, handler.handle, 'blabla')
+        self.assertRaises(Exception, handler.handle, 'bla/bla')
+        self.assertRaises(Exception, handler.handle, 'bla/')
+        self.assertRaises(Exception, handler.handle, '/bla')
+
     def test_tuple_command_handler(self):
         handler = type("TestHandler", (TupleCommandHandler, object),
                        {"get_value": lambda s: namedtuple('test', 'a b')(10, 20)})('test')
@@ -65,6 +84,7 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual(3, handler.handle('2'))
         self.assertEqual([1, 2, 3], handler.handle('*'))
         self.assertEqual("1;2;3", handler.handle('*;'))
+        self.assertEqual(3, handler.handle('count'))
         # exceptions
         self.assertRaises(Exception, handler.handle, '/')
         self.assertRaises(Exception, handler.handle, '*-')

@@ -151,11 +151,70 @@ Disks
    disk_usage/{total/used/free/percent}/{drive} - Disk usage single parameter (slashes in drive should be replaced with vertical slash)
    disk_usage/*/{drive} - Disk usage separate parameters. Topic per parameter
    disk_usage/*;/{drive} - Disk usage separate parameters in one topic (combined)
-   disk_io_counters - to be continued...
-   
+   disk_io_counters/* - Disk IO counters. Topic per parameter
+   disk_io_counters/*;  - Disk IO counters in one topic (combined)
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time} - Disk IO counters separate parameters
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/* - Disk IO counters separate parameters. Topic per disk number
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/*; - Disk IO counters separate parameters per disk number in one topic (combined)
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/{0/1/2/etc} - Disk IO counters separate parameters for single disk
+   disk_io_counters/*/{0/1/2/etc} - Disk IO counters for single disk. Topic per parameter
+   disk_io_counters/*;/{0/1/2/etc} - Disk IO counters for single disk in one topic (combined)
+
+Other system info
+::
+
+   users/{device/mountpoint/fstype/opts}/* - Active users separate parameters. Topic per user
+   users/{device/mountpoint/fstype/opts}/*; - Active users separate parameters per user in one topic (combined)
+   users/{device/mountpoint/fstype/opts}/{0/1/2/etc} - Active users separate parameter for single user
+   users/*/{0/1/2/etc} - Active users parameters for single user. Topic per parameter
+   users/*;/{0/1/2/etc} - Active users parameters for single user in one topic (combined)
+   boot_time - System boot time as a Unix timestamp
+   boot_time/{{x|uptime}} - String representation of up time
+
+
 Processes
 ::
-   To be continued...
+
+    pids/* - all system processes IDs. Topic per process
+    pids/*; - all system processes IDs in one topic (combined)
+    pids/{0/1/2/etc} - single process ID
+    pids/count - total number of processes
+    processes/{PROCESS_ID}/{PARAMETER_NAME} - single process parameter(s)
+        where PROCESS_ID could be one of
+            - numeric ID of the process
+            - top_cpu - top CPU consuming process
+            - top_cpu[N] - CPU consuming process number N
+            - top_memory - top memory consuming process
+            - top_memory[N] - memory consuming process number N
+        and PARAMETER_NAME could be one of
+            - name - process name
+            - exe - process executable file
+            - cwd - process working directory
+            - cmdline/* - command line. Topic per line
+            - cmdline/*; - command line in one topic (combined)
+            - cmdline/count - number of command line lines
+            - cmdline/{0/1/etc} - command line single line
+            - status - process status (running/sleeping/idle/dead/etc)
+            - username - user started process
+            - create_time - time when process was started (Unix timestamp)
+            - terminal - terminal of the process
+            - uids/* - process user IDs. Topic per parameter
+            - uids/{real/effective/saved} - process user IDs single prameter
+            - uids/* - process user IDs. Topic per parameter
+            - uids/{real/effective/saved} - process user IDs single prameter
+            - cpu_times/* - process CPU times. Topic per parameter
+            - cpu_times/{user/system/children_user/children_system} - process CPU times single prameter
+            - cpu_percent - CPU percent used by process
+            - memory_percent - memory percent used by process
+            - memory_info/* - memory used by process. Topic per parameter
+            - memory_info/{rss/vms/shared/text/lib/data/dirty/uss/pss/swap} - memory used by process single prameter
+            - io_counters/* - process I/O counters. Topic per parameter
+            - io_counters/{read_count/write_count/read_bytes/write_bytes} - process I/O single counter
+            - num_threads - number of threads
+            - num_fds - number of file descriptors
+            - num_ctx_switches/* - number of context switches. Topic per parameter
+            - num_ctx_switches/{voluntary/involuntary} - context switches single counter
+            - nice - nice value
 
    
 =======

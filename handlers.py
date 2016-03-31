@@ -25,6 +25,27 @@ class ValueCommandHandler(CommandHandler):
         return self.method()
 
 
+class IndexCommandHandler(CommandHandler):
+    def __init__(self, method_name):
+        CommandHandler.__init__(self, method_name)
+        self.method = getattr(psutil, method_name)
+
+    def handle(self, param):
+        arr = self.get_value()
+
+        if param == '*' or param == '*;':
+            return string_from_list_optionally(arr, param.endswith(';'))
+        elif param == 'count':
+            return len(arr)
+        elif param.isdigit():
+            return arr[int(param)]
+        else:
+            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+
+    def get_value(self):
+        return self.method()
+
+
 class TupleCommandHandler(CommandHandler):
     def __init__(self, method_name):
         CommandHandler.__init__(self, method_name)
@@ -94,12 +115,16 @@ class IndexOrTotalCommandHandler(CommandHandler):
     def handle(self, params):
         total = True
         join = False
+        count = False
         index = -1
         if params == '*':
             total = False
         elif params == '*;':
             total = False
             join = True
+        elif params == 'count':
+            total = False
+            count = True
         elif params.isdigit():
             total = False
             index = int(params)
@@ -108,7 +133,12 @@ class IndexOrTotalCommandHandler(CommandHandler):
 
         try:
             result = self.get_value(total)
-            return string_from_list_optionally(result, join) if index < 0 else result[index]
+            if count:
+                return len(result)
+            elif index >= 0:
+                return result[index]
+            else:
+                return string_from_list_optionally(result, join)
         except IndexError:
             raise Exception("Element #" + str(index) + " is not present")
 
@@ -189,6 +219,7 @@ class DiskUsageCommandHandler(CommandHandler):
         else:
             raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
 
+    # noinspection PyMethodMayBeStatic
     def get_value(self, disk):
         return psutil.disk_usage(disk)
 
@@ -256,6 +287,24 @@ class ProcessMethodCommandHandler(CommandHandler):
         return method(process)
 
 
+class ProcessMethodIndexCommandHandler(CommandHandler):
+    def __init__(self, name):
+        CommandHandler.__init__(self, name)
+
+    def get_value(self, param, process):
+        method = getattr(psutil.Process, self.name)
+        arr = method(process)
+
+        if param == '*' or param == '*;':
+            return string_from_list_optionally(arr, param.endswith(';'))
+        elif param == 'count':
+            return len(arr)
+        elif param.isdigit():
+            return arr[int(param)]
+        else:
+            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+
+
 class ProcessMethodTupleCommandHandler(CommandHandler):
     def __init__(self, name):
         CommandHandler.__init__(self, name)
@@ -298,23 +347,33 @@ handlers = {
                   {"get_value": lambda self: psutil.users()})('users'),
 
     'boot_time': type("BootTimeCommandHandler", (ValueCommandHandler, object), {})('boot_time'),
+
+
+    'pids': type("PidsCommandHandler", (IndexCommandHandler, object), {})('pids'),
 }
 
 process_handlers = {
     'name': ProcessMethodCommandHandler('name'),
     'exe': ProcessMethodCommandHandler('exe'),
     'cwd': ProcessMethodCommandHandler('cwd'),
+    'cmdline': ProcessMethodIndexCommandHandler('cmdline'),
+    'status': ProcessMethodCommandHandler('status'),
+    'username': ProcessMethodCommandHandler('username'),
+    'create_time': ProcessMethodCommandHandler('create_time'),
+    'terminal': ProcessMethodCommandHandler('terminal'),
     'uids': ProcessMethodTupleCommandHandler('uids'),
     'gids': ProcessMethodTupleCommandHandler('gids'),
     'cpu_times': ProcessMethodTupleCommandHandler('cpu_times'),
     'cpu_percent': ProcessMethodCommandHandler('cpu_percent'),
+    'cpu_affinity': ProcessMethodIndexCommandHandler('cpu_affinity'),
     'memory_percent': ProcessMethodCommandHandler('memory_percent'),
     'memory_info': ProcessMethodTupleCommandHandler('memory_info'),
     'memory_full_info': ProcessMethodTupleCommandHandler('memory_full_info'),
     'io_counters': ProcessMethodTupleCommandHandler('io_counters'),
     'num_threads': ProcessMethodCommandHandler('num_threads'),
-    'nice': ProcessMethodCommandHandler('nice'),
+    'num_fds': ProcessMethodCommandHandler('num_fds'),
     'num_ctx_switches': ProcessMethodTupleCommandHandler('num_ctx_switches'),
+    'nice': ProcessMethodCommandHandler('nice'),
 }
 
 
