@@ -1,4 +1,5 @@
 import re
+import json
 import psutil  # pip install psutil
 
 
@@ -451,10 +452,7 @@ def dict_from_dict_of_namedtupes(dict_of_namedtupes, key, func, join=False):
 
 
 def string_from_dict(d):
-    pairs = list()
-    for key in d:
-        pairs.append(key + "=" + str(d[key]))
-    return ";".join(pairs)
+    return json.dumps(d)
 
 
 def string_from_dict_optionally(d, join):
@@ -462,7 +460,7 @@ def string_from_dict_optionally(d, join):
 
 
 def string_from_list_optionally(l, join):
-    return ";".join(map(str, l)) if join else l
+    return json.dumps(l) if join else l
 
 
 def split(s):

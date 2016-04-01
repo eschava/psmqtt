@@ -21,7 +21,7 @@ class TestHandlers(unittest.TestCase):
         # normal execution
         self.assertEqual(5, handler.handle('0'))
         self.assertEqual([5, 6, 7], handler.handle('*'))
-        self.assertEqual("5;6;7", handler.handle('*;'))
+        self.assertEqual("[5, 6, 7]", handler.handle('*;'))
         self.assertEqual(3, handler.handle('count'))
         # exceptions
         self.assertRaises(Exception, handler.handle, '')
@@ -40,7 +40,7 @@ class TestHandlers(unittest.TestCase):
         # normal execution
         self.assertEqual(10, handler.handle('a'))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*'))
-        self.assertEqual("a=10;b=20", handler.handle('*;'))
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;'))
         # exceptions
         self.assertRaises(Exception, handler.handle, '')
         self.assertRaises(Exception, handler.handle, '/')
@@ -57,10 +57,10 @@ class TestHandlers(unittest.TestCase):
                        {"get_value": lambda s: r})('test')
         # normal execution
         self.assertEqual([1, 3], handler.handle('a/*'))
-        self.assertEqual("1;3", handler.handle('a/*;'))
+        self.assertEqual("[1, 3]", handler.handle('a/*;'))
         self.assertEqual(3, handler.handle('a/1'))
         self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/1'))
-        self.assertEqual("a=3;b=4", handler.handle('*;/1'))
+        self.assertEqual('{"a": 3, "b": 4}', handler.handle('*;/1'))
         # exceptions
         self.assertRaises(Exception, handler.handle, '')
         self.assertRaises(Exception, handler.handle, '*')
@@ -83,7 +83,7 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual(1, handler.handle('0'))
         self.assertEqual(3, handler.handle('2'))
         self.assertEqual([1, 2, 3], handler.handle('*'))
-        self.assertEqual("1;2;3", handler.handle('*;'))
+        self.assertEqual("[1, 2, 3]", handler.handle('*;'))
         self.assertEqual(3, handler.handle('count'))
         # exceptions
         self.assertRaises(Exception, handler.handle, '/')
@@ -103,13 +103,13 @@ class TestHandlers(unittest.TestCase):
                        {"get_value": lambda s, t: total if t else single})('test')
         # normal execution
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*'))
-        self.assertEqual("a=10;b=20", handler.handle('*;'))
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;'))
         self.assertEqual(10, handler.handle('a'))
         self.assertEqual([1, 3], handler.handle('a/*'))
-        self.assertEqual("1;3", handler.handle('a/*;'))
+        self.assertEqual("[1, 3]", handler.handle('a/*;'))
         self.assertEqual(3, handler.handle('a/1'))
         self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/1'))
-        self.assertEqual("a=3;b=4", handler.handle('*;/1'))
+        self.assertEqual('{"a": 3, "b": 4}', handler.handle('*;/1'))
         # exceptions
         self.assertRaisesRegexp(Exception, "Element '' in '' is not supported", handler.handle, '')
         self.assertRaises(Exception, handler.handle, '/')
@@ -131,13 +131,13 @@ class TestHandlers(unittest.TestCase):
                        {"get_value": lambda s, t: total if t else single})('test')
         # normal execution
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*'))
-        self.assertEqual("a=10;b=20", handler.handle('*;'))
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;'))
         self.assertEqual(10, handler.handle('a'))
         self.assertEqual({"x": 1, "y": 3}, handler.handle('a/*'))
-        self.assertEqual("y=3;x=1", handler.handle('a/*;'))
+        self.assertEqual('{"y": 3, "x": 1}', handler.handle('a/*;'))
         self.assertEqual(3, handler.handle('a/y'))
         self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/y'))
-        self.assertEqual("a=3;b=4", handler.handle('*;/y'))
+        self.assertEqual('{"a": 3, "b": 4}', handler.handle('*;/y'))
         # exceptions
         self.assertRaisesRegexp(Exception, "Element '' in '' is not supported", handler.handle, '')
         self.assertRaises(Exception, handler.handle, '/')
@@ -161,8 +161,8 @@ class TestHandlers(unittest.TestCase):
         # normal execution
         self.assertEqual(10, handler.handle('a//'))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*//'))
-        self.assertEqual("a=10;b=20", handler.handle('*;//'))
-        self.assertEqual("a=10;b=20", handler.handle('*;/|'))  # vertical slash
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;//'))
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;/|'))  # vertical slash
         disk = 'c:'
         self.assertEqual(10, handler.handle('a/c:'))
         disk = 'c:/'

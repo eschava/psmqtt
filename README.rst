@@ -36,7 +36,7 @@ Very often it could be useful to provide several parameters from the same task u
 
 - psmqtt/TASK_NAME/* - to get all possible parameters (MQTT topic per parameter)
 
-- or psmqtt/TASK_NAME/*; - to get all possible parameters in one topic (combined)
+- or psmqtt/TASK_NAME/*; - to get all possible parameters in one topic (combined to JSON string)
 
 Examples::
 
@@ -47,7 +47,7 @@ Examples::
    etc
 
    Task psmqtt/cpu_times_percent/*; provides
-   psmqtt/cpu_times_percent/*; user=12.0;nice=1.0;system=5.0;etc
+   psmqtt/cpu_times_percent/*; {"user": 12.0, "nice": 1.0, "system": 5.0, ...}
 
 
 =======
@@ -114,74 +114,74 @@ CPU
 ::
 
    cpu_times/* - CPU times information. Topic per parameter
-   cpu_times/*;  - CPU times information in one topic (combined)
+   cpu_times/*;  - CPU times information in one topic (JSON string)
    cpu_times/{user/nice/system/idle/iowait/irq/softirq/steal/guest} - CPU times separate parameters
    cpu_percent - CPU total usage in percent
    cpu_percent/* - CPU usage in percent. Topic per CPU number
-   cpu_percent/*; - CPU usage in percent per CPU in one topic (combined)
+   cpu_percent/*; - CPU usage in percent per CPU in one topic (JSON string)
    cpu_percent/{0/1/2/etc} - CPU usage for single CPU
    cpu_times_percent/* - CPU times in percent. Topic per parameter
-   cpu_times_percent/*;  - CPU times in percent in one topic (combined)   
+   cpu_times_percent/*;  - CPU times in percent in one topic (JSON string)   
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest} - CPU times in percent separate parameters
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/* - CPU times in percent separate parameters. Topic per CPU number
-   cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/*; - CPU times in percent separate parameters per CPU number in one topic (combined)
+   cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/*; - CPU times in percent separate parameters per CPU number in one topic (JSON string)
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/{0/1/2/etc} - CPU times in percent separate parameters for single CPU
    cpu_times_percent/*/{0/1/2/etc} - CPU times in percent for single CPU. Topic per parameter
-   cpu_times_percent/*;/{0/1/2/etc} - CPU times in percent for single CPU in one topic (combined)
+   cpu_times_percent/*;/{0/1/2/etc} - CPU times in percent for single CPU in one topic (JSON string)
    cpu_stats/* - CPU statistics. Topic per parameter
-   cpu_stats/*;  - CPU statistics in one topic (combined)
+   cpu_stats/*;  - CPU statistics in one topic (JSON string)
    cpu_stats/{ctx_switches/interrupts/soft_interrupts/syscalls} - CPU statistics separate parameters
    
 Memory
 ::
 
    virtual_memory/* - Virtual memory. Topic per parameter
-   virtual_memory/*;  - Virtual memory in one topic (combined)
+   virtual_memory/*;  - Virtual memory in one topic (JSON string)
    virtual_memory/{total/available/percent/used/free/active/inactive/buffers/cached} - Virtual memory separate parameters
    swap_memory/* - Swap memory. Topic per parameter
-   swap_memory/*;  - Swap memory in one topic (combined)
+   swap_memory/*;  - Swap memory in one topic (JSON string)
    swap_memory/{total/used/free/percent/sin/sout} - Swap memory separate parameters
    
 Disks
 ::
 
    disk_partitions/{device/mountpoint/fstype/opts}/* - Disk partitions separate parameters. Topic per disk number
-   disk_partitions/{device/mountpoint/fstype/opts}/*; - Disk partitions separate parameters per disk number in one topic (combined)
+   disk_partitions/{device/mountpoint/fstype/opts}/*; - Disk partitions separate parameters per disk number in one topic (JSON string)
    disk_partitions/{device/mountpoint/fstype/opts}/{0/1/2/etc} - Disk partitions separate parameter for single disk number
    disk_partitions/*/{0/1/2/etc} - Disk partitions parameters for single disk number. Topic per parameter
-   disk_partitions/*;/{0/1/2/etc} - Disk partitions parameters for single disk number in one topic (combined)
+   disk_partitions/*;/{0/1/2/etc} - Disk partitions parameters for single disk number in one topic (JSON string)
    disk_usage/{total/used/free/percent}/{drive} - Disk usage single parameter (slashes in drive should be replaced with vertical slash)
    disk_usage/*/{drive} - Disk usage separate parameters. Topic per parameter
-   disk_usage/*;/{drive} - Disk usage separate parameters in one topic (combined)
+   disk_usage/*;/{drive} - Disk usage separate parameters in one topic (JSON string)
    disk_io_counters/* - Disk I/O counters. Topic per parameter
-   disk_io_counters/*;  - Disk I/O counters in one topic (combined)
+   disk_io_counters/*;  - Disk I/O counters in one topic (JSON string)
    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time} - Disk I/O counters separate parameters
    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/* - Disk I/O counters separate parameters. Topic per disk number
-   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/*; - Disk I/O counters separate parameters per disk number in one topic (combined)
+   disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/*; - Disk I/O counters separate parameters per disk number in one topic (JSON string)
    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/{0/1/2/etc} - Disk IO counters separate parameters for single disk
    disk_io_counters/*/{0/1/2/etc} - Disk I/O counters for single disk. Topic per parameter
-   disk_io_counters/*;/{0/1/2/etc} - Disk I/O counters for single disk in one topic (combined)
+   disk_io_counters/*;/{0/1/2/etc} - Disk I/O counters for single disk in one topic (JSON string)
 
 Network
 ::
 
    net_io_counters/* - Network I/O counters. Topic per parameter
-   net_io_counters/*;  - Network I/O counters in one topic (combined)
+   net_io_counters/*;  - Network I/O counters in one topic (JSON string)
    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout} - Network I/O counters separate parameters
    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/* - Network I/O counters separate parameters. Topic per device name
-   net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/*; - Network I/O counters separate parameters per device in one topic (combined)
+   net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/*; - Network I/O counters separate parameters per device in one topic (JSON string)
    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/{eth0/wlan0/etc} - Network I/O counters separate parameters for single device
    net_io_counters/*/{eth0/wlan0/etc} - Network I/O counters for single device. Topic per parameter
-   net_io_counters/*;/{eth0/wlan0/etc} - Network I/O counters for single device in one topic (combined)
+   net_io_counters/*;/{eth0/wlan0/etc} - Network I/O counters for single device in one topic (JSON string)
 
 Other system info
 ::
 
    users/{device/mountpoint/fstype/opts}/* - Active users separate parameters. Topic per user
-   users/{device/mountpoint/fstype/opts}/*; - Active users separate parameters per user in one topic (combined)
+   users/{device/mountpoint/fstype/opts}/*; - Active users separate parameters per user in one topic (JSON string)
    users/{device/mountpoint/fstype/opts}/{0/1/2/etc} - Active users separate parameter for single user
    users/*/{0/1/2/etc} - Active users parameters for single user. Topic per parameter
-   users/*;/{0/1/2/etc} - Active users parameters for single user in one topic (combined)
+   users/*;/{0/1/2/etc} - Active users parameters for single user in one topic (JSON string)
    boot_time - System boot time as a Unix timestamp
    boot_time/{{x|uptime}} - String representation of up time
 
@@ -190,7 +190,7 @@ Processes
 ::
 
     pids/* - all system processes IDs. Topic per process
-    pids/*; - all system processes IDs in one topic (combined)
+    pids/*; - all system processes IDs in one topic (JSON string)
     pids/{0/1/2/etc} - single process ID
     pids/count - total number of processes
     processes/{PROCESS_ID}/{PARAMETER_NAME} - single process parameter(s)
@@ -205,7 +205,7 @@ Processes
             - exe - process executable file
             - cwd - process working directory
             - cmdline/* - command line. Topic per line
-            - cmdline/*; - command line in one topic (combined)
+            - cmdline/*; - command line in one topic (JSON string)
             - cmdline/count - number of command line lines
             - cmdline/{0/1/etc} - command line single line
             - status - process status (running/sleeping/idle/dead/etc)
