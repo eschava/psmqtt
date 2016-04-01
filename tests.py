@@ -1,7 +1,18 @@
 import unittest
 from collections import namedtuple
 from handlers import *
-from format import Formatter
+from psmqtt import *
+
+
+class TestMain(unittest.TestCase):
+    def test_get_subtopic(self):
+        self.assertEqual("/a", get_subtopic('/*', 'a'))
+        self.assertEqual("/a;", get_subtopic('/*;', 'a'))
+        self.assertEqual("/a", get_subtopic('/**', 'a'))
+        self.assertEqual("/a;", get_subtopic('/**;', 'a'))
+        self.assertEqual("/a/*", get_subtopic('/*/*', 'a'))
+        self.assertEqual("/a/**", get_subtopic('/*/**', 'a'))
+        self.assertEqual("/a/**", get_subtopic('/**/**', 'a'))
 
 
 class TestHandlers(unittest.TestCase):

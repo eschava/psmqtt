@@ -54,11 +54,11 @@ def run_task(task):
             raise Exception("Result of task '" + task + "' has several values but task doesn't contain '*' char")
         if isinstance(payload, list):
             for i, v in enumerate(payload):
-                topic = topic_base.replace('*', str(i))
+                topic = get_subtopic(topic_base, str(i))
                 mqttc.publish(topic, str(v), qos=qos, retain=False)
         elif isinstance(payload, dict):
             for key in payload:
-                topic = topic_base.replace('*', key)
+                topic = get_subtopic(topic_base, str(key))
                 v = payload[key]
                 mqttc.publish(topic, str(v), qos=qos, retain=False)
         else:
@@ -79,6 +79,16 @@ def get_value(path):
         return value
     else:
         raise Exception("Element '" + head + "' in '" + path + "' is not supported")
+
+
+def get_subtopic(topic_base, param):
+    wildcard = '*'
+    wilcard_index = topic_base.find(wildcard)
+
+    if wilcard_index + 1 < len(topic_base) and topic_base[wilcard_index + 1] == wildcard:  # ** sequence
+        wildcard += wildcard  # replace **
+
+    return topic_base.replace(wildcard, param, 1)
 
 
 def on_message(mosq, userdata, msg):

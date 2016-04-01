@@ -353,13 +353,30 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
             if hasattr(handler, "method") and handler.method is not None:  # property is defined for current OS
                 try:
                     if isinstance(handler, ProcessMethodCommandHandler):
-                        result[k] = handler.handle('', process)
+                        v = handler.handle('', process)
+                        self.add_to_dict(result, k, v, self.join)
                     elif self.subproperties:
                         if isinstance(handler, ProcessMethodIndexCommandHandler) or isinstance(handler, ProcessMethodTupleCommandHandler):
-                            result[k] = handler.handle('*', process)
+                            v = handler.handle('*', process)
+                            self.add_to_dict(result, k, v, self.join)
                 except psutil.AccessDenied:  # just skip with property
                     pass
         return string_from_dict_optionally(result, self.join)
+
+    @staticmethod
+    def add_to_dict(d, key, val, join):
+        if join:
+            d[key] = val
+            return
+
+        if isinstance(val, dict):
+            for k in val:
+                d[key + "/" + k] = val[k]
+        elif isinstance(val, list):
+            for i, v in enumerate(val):
+                d[key + "/" + str(i)] = v
+        else:
+            d[key] = val
 
 
 class ProcessMethodCommandHandler(ProcessCommandHandler):
