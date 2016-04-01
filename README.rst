@@ -200,7 +200,11 @@ Processes
             - top_cpu[N] - CPU consuming process number N
             - top_memory - top memory consuming process
             - top_memory[N] - memory consuming process number N
+            - * - to get value of some property for all processes. Topic per process ID
+            - *; - to get value of some property for all processes in one topic (JSON string)
         and PARAMETER_NAME could be one of
+            - pid - process ID
+            - ppid - parent process ID
             - name - process name
             - exe - process executable file
             - cwd - process working directory
@@ -229,6 +233,10 @@ Processes
             - num_ctx_switches/* - number of context switches. Topic per parameter
             - num_ctx_switches/{voluntary/involuntary} - context switches single counter
             - nice - nice value
+            - * - all process properties. Topic per property
+            - *; - all process properties in one topic (JSON string)
+            - ** - all process properties and sub-properties. Topic per property
+            - **; -  all process properties and sub-properties in one topic (JSON string)
 
    
 =======

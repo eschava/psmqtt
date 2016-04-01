@@ -286,35 +286,34 @@ class ProcessesCommandHandler(CommandHandler):
         process, param = split(params)
 
         pid = -1
-        all_params = param == '' or param == '*'
-        if process == '*':
-            if all_params:
+        if process == '*' or process == '*;':
+            if param == '*':
                 raise Exception("Parameter name in '" + self.name + "' should be specified")
+            result = dict()
+            for p in psutil.process_iter():
+                value = self.get_process_value(p, param, params)
+                result[p.pid] = value
+            return string_from_dict_optionally(result, process.endswith(';'))
         elif process.isdigit():
             pid = int(process)
         elif self.top_cpu_regexp.match(process):
-            pid = self.find_process(process, lambda p: p._cpu_percent, True)
+            pid = self.find_process(process, lambda p: p.cpu_percent(), True)
         elif self.top_memory_regexp.match(process):
-            pid = self.find_process(process, lambda p: p._mempercent, True)
+            pid = self.find_process(process, lambda p: p.memory_percent(), True)
         else:
             raise Exception("Process in '" + params + "' should be selected")
 
         if pid < 0:
-            raise Exception("All processes is not supported yet")
-        else:
-            process = psutil.Process(pid)
-            props = param.split(" ")
-            # TODO: support * parameter
-            values = map(lambda p: self.get_process_value(process, p, params), props)
-            return " ".join(values)
+            raise Exception("Process " + process + " not found")
+        process = psutil.Process(pid)
+        return self.get_process_value(process, param, params)
 
     def find_process(self, request, cmp_func, reverse):
         procs = []
         for p in psutil.process_iter():
-            p._mempercent = p.memory_percent()
-            p._cpu_percent = p.cpu_percent()
+            p._sort_value = cmp_func(p)
             procs.append(p)
-        procs = sorted(procs, key=cmp_func, reverse=reverse)
+        procs = sorted(procs, key=lambda p: p._sort_value, reverse=reverse)
         m = self.top_number_regexp.match(request)
         index = 0 if m is None else int(m.group(1))
         return procs[index].pid
@@ -323,27 +322,75 @@ class ProcessesCommandHandler(CommandHandler):
     def get_process_value(process, params, all_params):
         prop, param = split(params)
         if prop in process_handlers:
-            return str(process_handlers[prop].get_value(param, process))
+            return process_handlers[prop].handle(param, process)
         else:
             raise Exception("Parameter '" + prop + "' in '" + all_params + "' is not supported")
 
 
-class ProcessMethodCommandHandler(CommandHandler):
+class ProcessCommandHandler:
     def __init__(self, name):
-        CommandHandler.__init__(self, name)
+        self.name = name
 
-    def get_value(self, param, process):
-        method = getattr(psutil.Process, self.name)
-        return method(process)
+    def handle(self, param, process):
+        raise Exception("Not implemented")
 
 
-class ProcessMethodIndexCommandHandler(CommandHandler):
+class ProcessPropertiesCommandHandler(ProcessCommandHandler):
+    def __init__(self, name, join, subproperties):
+        ProcessCommandHandler.__init__(self, name)
+        self.join = join
+        self.subproperties = subproperties
+
+    def handle(self, param, process):
+        if param != '':
+            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+
+        return self.get_value(process)
+
+    def get_value(self, process):
+        result = dict()
+        for k in process_handlers:
+            handler = process_handlers[k]
+            if hasattr(handler, "method") and handler.method is not None:  # property is defined for current OS
+                try:
+                    if isinstance(handler, ProcessMethodCommandHandler):
+                        result[k] = handler.handle('', process)
+                    elif self.subproperties:
+                        if isinstance(handler, ProcessMethodIndexCommandHandler) or isinstance(handler, ProcessMethodTupleCommandHandler):
+                            result[k] = handler.handle('*', process)
+                except psutil.AccessDenied:  # just skip with property
+                    pass
+        return string_from_dict_optionally(result, self.join)
+
+
+class ProcessMethodCommandHandler(ProcessCommandHandler):
     def __init__(self, name):
-        CommandHandler.__init__(self, name)
+        ProcessCommandHandler.__init__(self, name)
+        try:
+            self.method = getattr(psutil.Process, self.name)
+        except AttributeError:
+            self.method = None  # method not defined
 
-    def get_value(self, param, process):
-        method = getattr(psutil.Process, self.name)
-        arr = method(process)
+    def handle(self, param, process):
+        if param != '':
+            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+
+        return self.get_value(process)
+
+    def get_value(self, process):
+        return self.method(process)
+
+
+class ProcessMethodIndexCommandHandler(ProcessCommandHandler):
+    def __init__(self, name):
+        ProcessCommandHandler.__init__(self, name)
+        try:
+            self.method = getattr(psutil.Process, self.name)
+        except AttributeError:
+            self.method = None  # method not defined
+
+    def handle(self, param, process):
+        arr = self.method(process)
 
         if param == '*' or param == '*;':
             return string_from_list_optionally(arr, param.endswith(';'))
@@ -355,14 +402,19 @@ class ProcessMethodIndexCommandHandler(CommandHandler):
             raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
 
 
-class ProcessMethodTupleCommandHandler(CommandHandler):
+class ProcessMethodTupleCommandHandler(ProcessCommandHandler):
     def __init__(self, name):
-        CommandHandler.__init__(self, name)
+        ProcessCommandHandler.__init__(self, name)
+        try:
+            self.method = getattr(psutil.Process, self.name)
+        except AttributeError:
+            self.method = None  # method not defined
 
-    def get_value(self, param, process):
-        method = getattr(psutil.Process, self.name)
-        tup = method(process)
-        if param in tup._fields:
+    def handle(self, param, process):
+        tup = self.method(process)
+        if param == '*' or param == '*;':
+            return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
+        elif param in tup._fields:
             return getattr(tup, param)
         else:
             raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
@@ -406,6 +458,13 @@ handlers = {
 }
 
 process_handlers = {
+    '*': ProcessPropertiesCommandHandler('*', False, False),
+    '**': ProcessPropertiesCommandHandler('**', False, True),
+    '*;': ProcessPropertiesCommandHandler('*;', True, False),
+    '**;': ProcessPropertiesCommandHandler('**;', True, True),
+    'pid': type("ProcessPidCommandHandler", (ProcessMethodCommandHandler, object),
+                {"get_value": lambda self, process: process.pid})('pid'),
+    'ppid': ProcessMethodCommandHandler('ppid'),
     'name': ProcessMethodCommandHandler('name'),
     'exe': ProcessMethodCommandHandler('exe'),
     'cwd': ProcessMethodCommandHandler('cwd'),
@@ -466,3 +525,7 @@ def string_from_list_optionally(l, join):
 def split(s):
     parts = s.split("/", 1)
     return parts if len(parts) == 2 else [parts[0], '']
+
+
+if __name__ == '__main__':
+    pass
