@@ -42,6 +42,9 @@ if request_topic != '':
 
 
 def run_task(task):
+    if task.startswith(topic_prefix):
+        task = task[len(topic_prefix):]
+
     topic_base = topic_prefix + task
     try:
         payload = get_value(task)

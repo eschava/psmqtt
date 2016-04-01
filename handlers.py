@@ -285,7 +285,6 @@ class ProcessesCommandHandler(CommandHandler):
     def handle(self, params):
         process, param = split(params)
 
-        pid = -1
         if process == '*' or process == '*;':
             if param == '*':
                 raise Exception("Parameter name in '" + self.name + "' should be specified")
