@@ -1,5 +1,6 @@
 import re
 import json
+import fnmatch
 import psutil  # pip install psutil
 
 
@@ -278,6 +279,8 @@ class ProcessesCommandHandler(CommandHandler):
     top_cpu_regexp = re.compile("^top_cpu(\[\d+\])*$")
     top_memory_regexp = re.compile("^top_memory(\[\d+\])*$")
     top_number_regexp = re.compile("^top_[a-z_]+\[(\d+)\]$")
+    pid_file_regexp = re.compile("^pid\[(.*)\]$")
+    name_pattern_regexp = re.compile("^name\[(.*)\]$")
 
     def __init__(self, name):
         CommandHandler.__init__(self, name)
@@ -299,6 +302,10 @@ class ProcessesCommandHandler(CommandHandler):
             pid = self.find_process(process, lambda p: p.cpu_percent(), True)
         elif self.top_memory_regexp.match(process):
             pid = self.find_process(process, lambda p: p.memory_percent(), True)
+        elif self.pid_file_regexp.match(process):
+            pid = self.get_pid_from_file(self.pid_file_regexp.match(process).group(1).replace('|', '/'))
+        elif self.name_pattern_regexp.match(process):
+            pid = self.get_find_process(self.name_pattern_regexp.match(process).group(1))
         else:
             raise Exception("Process in '" + params + "' should be selected")
 
@@ -316,6 +323,18 @@ class ProcessesCommandHandler(CommandHandler):
         m = self.top_number_regexp.match(request)
         index = 0 if m is None else int(m.group(1))
         return procs[index].pid
+
+    @staticmethod
+    def get_pid_from_file(filename):
+        with open(filename) as f:
+            return int(f.read())
+
+    @staticmethod
+    def get_find_process(pattern):
+        for p in psutil.process_iter():
+            if fnmatch.fnmatch(p.name(), pattern):
+                return p.pid
+        raise Exception("Process matching '" + pattern + "' not found")
 
     @staticmethod
     def get_process_value(process, params, all_params):

@@ -208,6 +208,8 @@ Processes
             - top_cpu[N] - CPU consuming process number N
             - top_memory - top memory consuming process
             - top_memory[N] - memory consuming process number N
+            - pid[PATH] - process with ID specified in the file having **PATH** path (.pid file). Slashes in path should be replaced with vertical slash
+            - name[PATTERN] - process with name mathing **PATTERN** pattern (use * to match zero or more characters, ? for single character)
             - * - to get value of some property for all processes. Topic per process ID
             - *; - to get value of some property for all processes in one topic (JSON string)
         and PARAMETER_NAME could be one of
