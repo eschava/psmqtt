@@ -92,7 +92,15 @@ There are two ways how to force sending some system state parameter over MQTT to
 Schedule
 =======
 **schedule** parameter in **psmqtt.conf** is a Python map having human-readable period as a key and task name (or list of task names) as a value.
+
 You can check examples of recurring period definitions `here <https://github.com/kvh/recurrent>`_.
+
+Also value for scheduled task could be specified as Python dict ({"key": "value"} notation) to send result to the topic different to the task name.
+
+E.g. {"boot_time/{{x|uptime}}": "uptime"} to have boot time posted to the psmqtt/uptime topic.
+
+NOTE: Please note that keys in Python dict (schedule) should be unique and if there are several schedules with the same period - only last one will be used.
+To avoid such issue please use period mapped to the list (or dict) of tasks.
 
 =======
 MQTT request

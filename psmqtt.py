@@ -41,17 +41,17 @@ if request_topic != '':
     request_topic = topic_prefix + request_topic + '/'
 
 
-def run_task(task):
+def run_task(task, topic):
     if task.startswith(topic_prefix):
         task = task[len(topic_prefix):]
 
-    topic_base = topic_prefix + task
+    topic_base = topic if topic.startswith(topic_prefix) else topic_prefix + topic
     try:
         payload = get_value(task)
         is_seq = isinstance(payload, list) or isinstance(payload, dict)
-        multitask = '*' in task
+        multitask = '*' in topic_base
         if is_seq and not multitask:
-            raise Exception("Result of task '" + task + "' has several values but task doesn't contain '*' char")
+            raise Exception("Result of task '" + task + "' has several values but topic doesn't contain '*' char")
         if isinstance(payload, list):
             for i, v in enumerate(payload):
                 topic = get_subtopic(topic_base, str(i))
@@ -96,17 +96,20 @@ def on_message(mosq, userdata, msg):
 
     if msg.topic.startswith(request_topic):
         task = msg.topic[len(request_topic):]
-        run_task(task)
+        run_task(task, task)
     else:
         logging.warn('Unknown topic: ' + msg.topic)
 
 
 def on_timer(s, rrule, tasks):
-    if isinstance(tasks, list):
+    if isinstance(tasks, dict):
+        for k in tasks:
+            run_task(k, tasks[k])
+    elif isinstance(tasks, list):
         for task in tasks:
-            run_task(task)
+            run_task(task, task)
     else:
-        run_task(tasks)
+        run_task(tasks, tasks)
 
     # add next timer task
     now = datetime.now()
