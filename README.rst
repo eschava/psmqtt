@@ -99,7 +99,7 @@ Also value for scheduled task could be specified as Python dict ({"key": "value"
 
 E.g. {"boot_time/{{x|uptime}}": "uptime"} to have boot time posted to the psmqtt/uptime topic.
 
-NOTE: Please note that keys in Python dict (schedule) should be unique and if there are several schedules with the same period - only last one will be used.
+**NOTE**: Please note that keys in Python dict (**schedule**) should be unique and if there are several schedules with the same period - only last one will be used.
 To avoid such issue please use period mapped to the list (or dict) of tasks.
 
 =======
