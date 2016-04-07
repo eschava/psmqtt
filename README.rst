@@ -225,20 +225,26 @@ Processes
             - create_time - time when process was started (Unix timestamp)
             - terminal - terminal of the process
             - uids/* - process user IDs. Topic per parameter
-            - uids/{real/effective/saved} - process user IDs single prameter
-            - uids/* - process user IDs. Topic per parameter
-            - uids/{real/effective/saved} - process user IDs single prameter
+            - uids/*; - process user IDs in one topic (JSON string)
+            - uids/{real/effective/saved} - process user IDs single parameter
+            - gids/* - process group IDs. Topic per parameter
+            - gids/*; - process group IDs in one topic (JSON string)
+            - gids/{real/effective/saved} - process group IDs single parameter
             - cpu_times/* - process CPU times. Topic per parameter
-            - cpu_times/{user/system/children_user/children_system} - process CPU times single prameter
+            - cpu_times/*; - process CPU times in one topic (JSON string)
+            - cpu_times/{user/system/children_user/children_system} - process CPU times single parameter
             - cpu_percent - CPU percent used by process
             - memory_percent - memory percent used by process
             - memory_info/* - memory used by process. Topic per parameter
-            - memory_info/{rss/vms/shared/text/lib/data/dirty/uss/pss/swap} - memory used by process single prameter
+            - memory_info/*; - memory used by process in one topic (JSON string)
+            - memory_info/{rss/vms/shared/text/lib/data/dirty/uss/pss/swap} - memory used by process single parameter
             - io_counters/* - process I/O counters. Topic per parameter
+            - io_counters/*; - process I/O counters in one topic (JSON string)
             - io_counters/{read_count/write_count/read_bytes/write_bytes} - process I/O single counter
             - num_threads - number of threads
             - num_fds - number of file descriptors
             - num_ctx_switches/* - number of context switches. Topic per parameter
+            - num_ctx_switches/*; - number of context switches in one topic (JSON string)
             - num_ctx_switches/{voluntary/involuntary} - context switches single counter
             - nice - nice value
             - * - all process properties. Topic per property
