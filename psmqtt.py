@@ -45,27 +45,26 @@ def run_task(task, topic):
     if task.startswith(topic_prefix):
         task = task[len(topic_prefix):]
 
-    topic_base = topic if topic.startswith(topic_prefix) else topic_prefix + topic
+    topic = Topic(topic if topic.startswith(topic_prefix) else topic_prefix + topic)
     try:
         payload = get_value(task)
         is_seq = isinstance(payload, list) or isinstance(payload, dict)
-        multitask = '*' in topic_base
-        if is_seq and not multitask:
+        if is_seq and not topic.is_multitopic():
             raise Exception("Result of task '" + task + "' has several values but topic doesn't contain '*' char")
         if isinstance(payload, list):
             for i, v in enumerate(payload):
-                topic = get_subtopic(topic_base, str(i))
+                topic = topic.get_subtopic(str(i))
                 mqttc.publish(topic, str(v), qos=qos, retain=False)
         elif isinstance(payload, dict):
             for key in payload:
-                topic = get_subtopic(topic_base, str(key))
+                topic = topic.get_subtopic(str(key))
                 v = payload[key]
                 mqttc.publish(topic, str(v), qos=qos, retain=False)
         else:
-            mqttc.publish(topic_base, str(payload), qos=qos, retain=False)
-    except Exception, e:
-        mqttc.publish(topic_base + "/error", str(e), qos=qos, retain=False)
-        logging.exception(task + ": " + str(e))
+            mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=False)
+    except Exception, ex:
+        mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=False)
+        logging.exception(task + ": " + str(ex))
 
 
 def get_value(path):
@@ -81,16 +80,48 @@ def get_value(path):
         raise Exception("Element '" + head + "' in '" + path + "' is not supported")
 
 
-def get_subtopic(topic_base, param):
-    wildcard = '*'
-    wilcard_index = topic_base.find(wildcard)
+class Topic:
+    def __init__(self, topic):
+        self.topic = topic
+        self.wildcard_index, self.wildcard_len = self._find_wildcard(topic)
 
-    if wilcard_index + 1 < len(topic_base) and topic_base[wilcard_index + 1] == wildcard:  # ** sequence
-        wildcard += wildcard  # replace **
+    @staticmethod
+    def _find_wildcard(topic):
+        start = 0
+        # search for * or ** (but not *; or **;) outside of []
+        while start < len(topic):
+            wildcard_index = topic.find('*', start)
+            if wildcard_index < 0:
+                break
+            bracket_index = topic.find('[', start)
+            if 0 <= bracket_index < wildcard_index:
+                start = topic.find(']', bracket_index)
+                continue
+            wildcard_len = 1
+            if wildcard_index + 1 < len(topic) and topic[wildcard_index + 1] == '*':  # ** sequence
+                wildcard_len += 1
+            if wildcard_index + wildcard_len < len(topic) and topic[wildcard_index + wildcard_len] == ';':
+                start = wildcard_index + wildcard_len
+                continue
+            return wildcard_index, wildcard_len
+        return -1, -1
 
-    return topic_base.replace(wildcard, param, 1)
+    def is_multitopic(self):
+        return self.wildcard_index > 0
+
+    def get_subtopic(self, param):
+        if self.wildcard_index < 0:
+            raise Exception("Topic " + self.topic + " have no wildcard")
+        return self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
+
+    def get_topic(self):
+        return self.topic
+
+    def get_error_topic(self):
+        return self.topic + "/error"
 
 
+# noinspection PyUnusedLocal
 def on_message(mosq, userdata, msg):
     logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
@@ -117,6 +148,7 @@ def on_timer(s, rrule, tasks):
     s.enter(delay, 1, on_timer, [s, rrule, tasks])
 
 
+# noinspection PyUnusedLocal
 def on_connect(mosq, userdata, result_code):
     if request_topic != '':
         topic = request_topic + '#'
@@ -124,6 +156,7 @@ def on_connect(mosq, userdata, result_code):
         mqttc.subscribe(topic, qos)
 
 
+# noinspection PyUnusedLocal
 def on_disconnect(mosq, userdata, rc):
     logging.debug("OOOOPS! psmqtt disconnects")
     time.sleep(10)
