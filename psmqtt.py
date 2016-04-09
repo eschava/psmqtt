@@ -40,6 +40,11 @@ request_topic = cf.get('mqtt_request_topic', 'request')
 if request_topic != '':
     request_topic = topic_prefix + request_topic + '/'
 
+# fix for error 'No handlers could be found for logger "recurrent"'
+reccurrent_logger = logging.getLogger('recurrent')
+if len(reccurrent_logger.handlers) == 0:
+    reccurrent_logger.addHandler(logging.NullHandler())
+
 
 def run_task(task, topic):
     if task.startswith(topic_prefix):
