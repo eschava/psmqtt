@@ -83,6 +83,10 @@ Examples::
 =======
 Configuration
 =======
+All configuration is present in **psmqtt.conf** file at the app's directory or any other file referenced by **PSMQTTCONFIG** environment variable.
+
+It's parsed using Python interpreter and contains constants for MQTT broker connection and tasks that have to be executed periodically (schedule).
+
 There are two ways how to force sending some system state parameter over MQTT topic
 
 1. Schedule
@@ -185,9 +189,9 @@ Network
 Other system info
 ::
 
-   users/{device/mountpoint/fstype/opts}/* - Active users separate parameters. Topic per user
-   users/{device/mountpoint/fstype/opts}/*; - Active users separate parameters per user in one topic (JSON string)
-   users/{device/mountpoint/fstype/opts}/{0/1/2/etc} - Active users separate parameter for single user
+   users/{name/terminal/host/started}/* - Active users separate parameters. Topic per user
+   users/{name/terminal/host/started}/*; - Active users separate parameters per user in one topic (JSON string)
+   users/{name/terminal/host/started}/{0/1/2/etc} - Active users separate parameter for single user
    users/*/{0/1/2/etc} - Active users parameters for single user. Topic per parameter
    users/*;/{0/1/2/etc} - Active users parameters for single user in one topic (JSON string)
    boot_time - System boot time as a Unix timestamp
