@@ -8,9 +8,9 @@ Summary
 
 Is written in Python and based on briliant `psutil <https://github.com/giampaolo/psutil>`_ library.
 
-=======
+============
 Installation
-=======
+============
 Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
    pip install recurrent paho-mqtt python-dateutil psutil jinja2
@@ -21,22 +21,24 @@ After you can run main file using::
   python psmqtt.py
 
   
-=======
+===============================================
 General information about tasks and MQTT topics
-=======
+===============================================
 
-Every utilization parameter has its own special name. It always starts with task name that could be followed with unique parameter name or/and device number/name.
+Every utilization task has its own special name. It always starts with task name that could be followed with unique parameter name or/and device number/name.
 
-E.g. task to get percent of CPU used by user apps use name **cpu_times_percent/user**. All possible parameter names are described below.
+E.g. task to get percent of CPU used by user apps use name **cpu_times_percent/user**. All possible tasks are described below.
 
-Results for parameter PARAMETER_NAME are pushed to the MQTT topic **psmqtt/PARAMETER_NAME** (prefix "psmqtt/" is configurable)
+Results for task TASK are pushed to the MQTT topic **psmqtt/TASK** (prefix "psmqtt/" is configurable)
+
+In case of task execution error message is sent to the topic **psmqtt/error/TASK**
 
 
 Very often it could be useful to provide several parameters from the same task using one request. In such case next formats are used:
 
-- psmqtt/TASK_NAME/* - to get all possible parameters (MQTT topic per parameter)
+- psmqtt/TASK/* - to get all possible parameters (MQTT topic per parameter)
 
-- or psmqtt/TASK_NAME/*; - to get all possible parameters in one topic (combined to JSON string)
+- or psmqtt/TASK/*; - to get all possible parameters in one topic (combined to JSON string)
 
 Examples::
 
@@ -50,9 +52,9 @@ Examples::
    psmqtt/cpu_times_percent/*; {"user": 12.0, "nice": 1.0, "system": 5.0, ...}
 
 
-=======
+=================
 Formatting output
-=======
+=================
 
 Output of task could be formatted using `Jinja2 <http://jinja.pocoo.org/>`_ templates. Append template to the task after one more "/" separator.
 
@@ -80,9 +82,9 @@ Examples::
     cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processors total
     virtual_memory/free/{{x|MB}} - Free RAM in MB
 
-=======
+=============
 Configuration
-=======
+=============
 All configuration is present in **psmqtt.conf** file at the app's directory or any other file referenced by **PSMQTTCONFIG** environment variable.
 
 It's parsed using Python interpreter and contains constants for MQTT broker connection and tasks that have to be executed periodically (schedule).
@@ -92,9 +94,9 @@ There are two ways how to force sending some system state parameter over MQTT to
 1. Schedule
 2. MQTT request
 
-=======
+========
 Schedule
-=======
+========
 **schedule** parameter in **psmqtt.conf** is a Python map having human-readable period as a key and task name (or list of task names) as a value.
 
 You can check examples of recurring period definitions `here <https://github.com/kvh/recurrent>`_.
@@ -106,9 +108,9 @@ E.g. {"boot_time/{{x|uptime}}": "uptime"} to have boot time posted to the psmqtt
 **NOTE**: Please note that keys in Python dict (**schedule**) should be unique and if there are several schedules with the same period - only last one will be used.
 To avoid such issue please use period mapped to the list (or dict) of tasks.
 
-=======
+============
 MQTT request
-=======
+============
 It's better to describe how to use it using example.
 To get information for task "cpu_percent" with MQTT prefix "psmqtt/" you need to send any string on topic::
 
@@ -119,9 +121,9 @@ and result will be pushed on the topic::
   psmqtt/cpu_percent
 
 
-=======
+=====
 Tasks
-=======
+=====
 CPU
 ::
 
@@ -259,9 +261,9 @@ Processes
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
    
-=======
+=============
 Useful topics
-=======
+=============
 **psmqtt/boot_time/{{x|uptime}}** - Up time
 
 **psmqtt/cpu_percent** - CPU usage in percent
