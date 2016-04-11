@@ -38,7 +38,7 @@ Very often it could be useful to provide several parameters from the same task u
 
 - psmqtt/TASK/* - to get all possible parameters (MQTT topic per parameter)
 
-- or psmqtt/TASK/*; - to get all possible parameters in one topic (combined to JSON string)
+- or psmqtt/TASK/\*; - to get all possible parameters in one topic (combined to JSON string)
 
 Examples::
 
@@ -62,7 +62,7 @@ E.g.
     psmqtt/cpu_times_percent/user/{{x}}%
 To append % symbol after CPU usage.
 
-For task providing many parameters (having *) all parameters are available by name if they are named or by index as x[1] if they are numbered.
+For task providing many parameters (having \*) all parameters are available by name if they are named or by index as x[1] if they are numbered.
 
 NOTE: After formatting tasks providing many parametes are combined to single one.
 
