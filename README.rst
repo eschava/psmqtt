@@ -29,27 +29,27 @@ Every utilization task has its own special name. It always starts with task name
 
 E.g. task to get percent of CPU used by user apps use name **cpu_times_percent/user**. All possible tasks are described below.
 
-Results for task TASK are pushed to the MQTT topic **psmqtt/TASK** (prefix "psmqtt/" is configurable)
+Results for task TASK are pushed to the MQTT topic **psmqtt/COMPUTER_NAME/TASK** (prefix "psmqtt/COMPUTER_NAME/" is configurable)
 
-In case of task execution error message is sent to the topic **psmqtt/error/TASK**
+In case of task execution error message is sent to the topic **psmqtt/COMPUTER_NAME/error/TASK**
 
 
 Very often it could be useful to provide several parameters from the same task using one request. In such case next formats are used:
 
-- psmqtt/TASK/* - to get all possible parameters (MQTT topic per parameter)
+- TASK/* - to get all possible parameters (MQTT topic per parameter)
 
-- or psmqtt/TASK/\*; - to get all possible parameters in one topic (combined to JSON string)
+- or TASK/\*; - to get all possible parameters in one topic (combined to JSON string)
 
 Examples::
 
-   Task psmqtt/cpu_times_percent/* provides
-   psmqtt/cpu_times_percent/user 12.0
-   psmqtt/cpu_times_percent/nice  1.0
-   psmqtt/cpu_times_percent/system 5.0
+   Task cpu_times_percent/* provides
+   psmqtt/COMPUTER_NAME/cpu_times_percent/user 12.0
+   psmqtt/COMPUTER_NAME/cpu_times_percent/nice  1.0
+   psmqtt/COMPUTER_NAME/cpu_times_percent/system 5.0
    etc
 
-   Task psmqtt/cpu_times_percent/*; provides
-   psmqtt/cpu_times_percent/*; {"user": 12.0, "nice": 1.0, "system": 5.0, ...}
+   Task cpu_times_percent/*; provides
+   psmqtt/COMPUTER_NAME/cpu_times_percent/*; {"user": 12.0, "nice": 1.0, "system": 5.0, ...}
 
 
 =================
@@ -59,7 +59,7 @@ Formatting output
 Output of task could be formatted using `Jinja2 <http://jinja.pocoo.org/>`_ templates. Append template to the task after one more "/" separator.
 
 E.g.
-    psmqtt/cpu_times_percent/user/{{x}}%
+    cpu_times_percent/user/{{x}}%
 To append % symbol after CPU usage.
 
 For task providing many parameters (having \*) all parameters are available by name if they are named or by index as x[1] if they are numbered.
@@ -103,7 +103,7 @@ You can check examples of recurring period definitions `here <https://github.com
 
 Also value for scheduled task could be specified as Python dict ({"key": "value"} notation) to send result to the topic different to the task name.
 
-E.g. {"boot_time/{{x|uptime}}": "uptime"} to have boot time posted to the psmqtt/uptime topic.
+E.g. {"boot_time/{{x|uptime}}": "uptime"} to have boot time posted to the psmqtt/COMPUTER_NAME/uptime topic.
 
 **NOTE**: Please note that keys in Python dict (**schedule**) should be unique and if there are several schedules with the same period - only last one will be used.
 To avoid such issue please use period mapped to the list (or dict) of tasks.
@@ -112,13 +112,13 @@ To avoid such issue please use period mapped to the list (or dict) of tasks.
 MQTT request
 ============
 It's better to describe how to use it using example.
-To get information for task "cpu_percent" with MQTT prefix "psmqtt/" you need to send any string on topic::
+To get information for task "cpu_percent" with MQTT prefix "psmqtt/COMPUTER_NAME/" you need to send any string on topic::
 
-  psmqtt/request/cpu_percent
+  psmqtt/COMPUTER_NAME/request/cpu_percent
   
 and result will be pushed on the topic::
 
-  psmqtt/cpu_percent
+  psmqtt/COMPUTER_NAME/cpu_percent
 
 
 =====
@@ -261,24 +261,24 @@ Processes
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
    
-=============
-Useful topics
-=============
-**psmqtt/boot_time/{{x|uptime}}** - Up time
+============
+Useful tasks
+============
+**boot_time/{{x|uptime}}** - Up time
 
-**psmqtt/cpu_percent** - CPU usage in percent
+**cpu_percent** - CPU usage in percent
 
-**psmqtt/virtual_memory/percent** - RAM usage in percent
+**virtual_memory/percent** - RAM usage in percent
 
-**psmqtt/virtual_memory/free/{{x|MB}}** - Free RAM in MB
+**virtual_memory/free/{{x|MB}}** - Free RAM in MB
 
-**psmqtt/disk_usage/percent/|** - root drive (slash replaced with vertical slash) usage in percent (Linux)
+**disk_usage/percent/|** - root drive (slash replaced with vertical slash) usage in percent (Linux)
 
-**psmqtt/disk_usage/free/|/{{x|GB}}** - space left in GB for root drive (Linux)
+**disk_usage/free/|/{{x|GB}}** - space left in GB for root drive (Linux)
 
-**psmqtt/disk_usage/percent/C:** - C:/ drive usage in percent (Windows)
+**disk_usage/percent/C:** - C:/ drive usage in percent (Windows)
 
-**psmqtt/processes/top_cpu/name** - name of top process consuming CPU
+**processes/top_cpu/name** - name of top process consuming CPU
 
-**psmqtt/processes/top_memory/exe** - executable file of top process consuming memory
+**processes/top_memory/exe** - executable file of top process consuming memory
 

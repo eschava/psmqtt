@@ -35,7 +35,7 @@ except Exception, e:
     print "Cannot load configuration from file %s: %s" % (CONFIG, str(e))
     sys.exit(2)
 
-topic_prefix = cf.get('mqtt_topic_prefix', 'psmqtt/')
+topic_prefix = cf.get('mqtt_topic_prefix', 'psmqtt/' + os.environ['COMPUTERNAME'] + '/')
 request_topic = cf.get('mqtt_request_topic', 'request')
 if request_topic != '':
     request_topic = topic_prefix + request_topic + '/'
