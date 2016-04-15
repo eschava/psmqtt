@@ -143,7 +143,11 @@ def on_timer(s, rrule, tasks):
             run_task(k, tasks[k])
     elif isinstance(tasks, list):
         for task in tasks:
-            run_task(task, task)
+            if isinstance(task, dict):
+                for k in task:
+                    run_task(k, task[k])
+            else:
+                run_task(task, task)
     else:
         run_task(tasks, tasks)
 
