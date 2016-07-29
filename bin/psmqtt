@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+from psmqtt.psmqtt import PsmqttApp
+
+if __name__ == '__main__':
+    app = PsmqttApp()
+    app.run()
