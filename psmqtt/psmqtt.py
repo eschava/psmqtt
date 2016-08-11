@@ -90,6 +90,8 @@ class TimerThread(Thread):
         self.s.run()
 
 # noinspection PyUnusedLocal
+
+
 def on_message(mosq, userdata, msg):
     logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
@@ -100,6 +102,8 @@ def on_message(mosq, userdata, msg):
         logging.warn('Unknown topic: ' + msg.topic)
 
 # noinspection PyUnusedLocal
+
+
 def on_connect(mosq, userdata, result_code):
     if userdata.request_topic != '':
         topic = userdata.request_topic + '#'
@@ -108,6 +112,8 @@ def on_connect(mosq, userdata, result_code):
         mosq.subscribe(topic, userdata.qos)
 
 # noinspection PyUnusedLocal
+
+
 def on_disconnect(mosq, userdata, rc):
     logging.debug("OOOOPS! psmqtt disconnects")
     time.sleep(10)
@@ -115,7 +121,7 @@ def on_disconnect(mosq, userdata, rc):
 
 class PsmqttApp(object):
 
-    qos = 2
+    qos = 0
     module_path = os.path.dirname(__file__)
     default_config = os.path.join(module_path, 'psmqtt.conf')
     CONFIG = os.getenv('PSMQTTCONFIG', default_config)
@@ -219,7 +225,7 @@ class PsmqttApp(object):
 
         # initialise MQTT broker connection
         mqttc = paho.Client(
-            clientid, clean_session=False, userdata=mqttc_userdata)
+            clientid, clean_session=True, userdata=mqttc_userdata)
         self.mqttc = mqttc
 
         mqttc.on_message = on_message
