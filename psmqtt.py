@@ -16,7 +16,6 @@ from dateutil.rrule import *  # pip install python-dateutil
 from handlers import handlers
 from format import Formatter
 
-qos = 2
 CONFIG = os.getenv('PSMQTTCONFIG', 'psmqtt.conf')
 
 
@@ -34,6 +33,9 @@ try:
 except Exception, e:
     print "Cannot load configuration from file %s: %s" % (CONFIG, str(e))
     sys.exit(2)
+
+qos = cf.get('mqtt_qos', 0)
+retain = cf.get('mqtt_retain', False)
 
 topic_prefix = cf.get('mqtt_topic_prefix', 'psmqtt/' + socket.gethostname() + '/')
 request_topic = cf.get('mqtt_request_topic', 'request')
@@ -59,16 +61,16 @@ def run_task(task, topic):
         if isinstance(payload, list):
             for i, v in enumerate(payload):
                 topic = topic.get_subtopic(str(i))
-                mqttc.publish(topic, str(v), qos=qos, retain=False)
+                mqttc.publish(topic, str(v), qos=qos, retain=retain)
         elif isinstance(payload, dict):
             for key in payload:
                 topic = topic.get_subtopic(str(key))
                 v = payload[key]
-                mqttc.publish(topic, str(v), qos=qos, retain=False)
+                mqttc.publish(topic, str(v), qos=qos, retain=retain)
         else:
-            mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=False)
+            mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=retain)
     except Exception, ex:
-        mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=False)
+        mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=retain)
         logging.exception(task + ": " + str(ex))
 
 
@@ -188,7 +190,7 @@ class TimerThread(Thread):
 if __name__ == '__main__':
     clientid = cf.get('mqtt_clientid', 'psmqtt-%s' % os.getpid())
     # initialise MQTT broker connection
-    mqttc = paho.Client(clientid, clean_session=False)
+    mqttc = paho.Client(clientid, clean_session=cf.get('mqtt_clean_session', False))
 
     mqttc.on_message = on_message
     mqttc.on_connect = on_connect
