@@ -160,7 +160,7 @@ def on_timer(s, rrule, tasks):
 
 
 # noinspection PyUnusedLocal
-def on_connect(mosq, userdata, result_code):
+def on_connect(client, userdata, flags, result_code):
     if request_topic != '':
         topic = request_topic + '#'
         logging.debug("Connected to MQTT broker, subscribing to topic " + topic)
