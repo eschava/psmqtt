@@ -5,6 +5,7 @@ import sys
 import time
 import socket
 import logging
+import logging.config
 import sched
 from threading import Thread
 from datetime import datetime
@@ -16,7 +17,9 @@ from dateutil.rrule import *  # pip install python-dateutil
 from handlers import handlers
 from format import Formatter
 
+# read initial config files
 dirname = os.path.dirname(os.path.abspath(__file__)) + '/'
+logging.config.fileConfig(dirname + 'logging.conf')
 CONFIG = os.getenv('PSMQTTCONFIG', dirname + 'psmqtt.conf')
 
 
