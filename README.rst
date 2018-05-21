@@ -188,6 +188,17 @@ Network
    net_io_counters/*/{eth0/wlan0/etc} - Network I/O counters for single device. Topic per parameter
    net_io_counters/*;/{eth0/wlan0/etc} - Network I/O counters for single device in one topic (JSON string)
 
+Temperature
+::
+
+   sensors_temperatures/* - Sensors temperatures. Topic per sensor
+   sensors_temperatures/*;  - Sensors temperatures in one topic (JSON string)
+   sensors_temperatures/{SENSOR_NAME}/* - Single sensor temperatures. Topic per temperature
+   sensors_temperatures/{SENSOR_NAME}/*; - Single sensor temperatures in one topic (JSON string)
+   sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single sensor device by number/label temperature. Topic per parameter
+   sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single sensor device by number/label temperature in one topic (JSON string)
+   sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single sensor device by number/label temperature separate parameters
+
 Other system info
 ::
 

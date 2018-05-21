@@ -283,22 +283,24 @@ class SensorsTemperaturesCommandHandler(CommandHandler):
         tup = self.get_value()
         source, param = split(params)
         if source == '*' or source == '*;':
+            tup = {k: map(lambda i: i._asdict(), v) for k, v in tup.items()}
             return string_from_dict_optionally(tup, source.endswith(';'))
         elif source in tup:
             llist = tup[source]
             label, param = split(param)
             if label == '*' or label == '*;':
+                llist = map(lambda i: i._asdict(), llist)
                 return string_from_dict_optionally(llist, label.endswith(';'))
             else:
-                temps = next((x for x in llist if x.label == label), None)
+                temps = llist[int(label)] if label.isdigit() else next((x for x in llist if x.label == label), None)
                 if temps is None:
-                    raise Exception("Temperature '" + label + "' in '" + self.name + "' is not supported")
+                    raise Exception("Device '" + label + "' in '" + self.name + "' is not supported")
                 if param == '*' or param == '*;':
                     return string_from_dict_optionally(temps._asdict(), param.endswith(';'))
                 else:
                     return temps._asdict()[param]
         else:
-            raise Exception("Parameter '" + source + "' in '" + self.name + "' is not supported")
+            raise Exception("Sensor '" + source + "' in '" + self.name + "' is not supported")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self):
