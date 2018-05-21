@@ -275,6 +275,19 @@ class DiskUsageCommandHandler(CommandHandler):
         return psutil.disk_usage(disk)
 
 
+class SensorsTemperaturesCommandHandler(CommandHandler):
+    def __init__(self, name):
+        CommandHandler.__init__(self, name)
+
+    def handle(self, params):
+        tup = psutil.sensors_temperatures()
+        name, param = split(params)
+        if name == '*' or name == '*;':
+            return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
+        else:
+            raise Exception("Parameter '" + name + "' in '" + self.name + "' is not supported")
+
+
 class ProcessesCommandHandler(CommandHandler):
     top_cpu_regexp = re.compile("^top_cpu(\[\d+\])*$")
     top_memory_regexp = re.compile("^top_memory(\[\d+\])*$")
@@ -488,8 +501,9 @@ handlers = {
 
     'boot_time': type("BootTimeCommandHandler", (ValueCommandHandler, object), {})('boot_time'),
 
-
     'pids': type("PidsCommandHandler", (IndexCommandHandler, object), {})('pids'),
+
+    'sensors_temperatures': SensorsTemperaturesCommandHandler('sensors_temperatures'),
 }
 
 process_handlers = {
