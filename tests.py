@@ -1,7 +1,9 @@
 import unittest
+import collections
 from collections import namedtuple
 from handlers import *
 from psmqtt import *
+import psutil._common
 
 
 def get_subtopic(topic, param):
@@ -217,6 +219,24 @@ class TestHandlers(unittest.TestCase):
         if disk is not None:
             self.assertEqual(disk, d)
         return namedtuple('test', 'a b')(10, 20)
+
+    def test_temperature_sensors(self):
+        handler = type("TestHandler", (SensorsTemperaturesCommandHandler, object),
+                       {"get_value": lambda s: self._temperature_sensors_get_value()})('test')
+        print(handler.handle('*'))
+        print(handler.handle('*;'))
+        print(handler.handle('asus/*'))
+        print(handler.handle('asus/*;'))
+        self.assertEqual(handler.handle('coretemp/Core 0/*'), {'label': 'Core 0', 'current': 45.0, 'high': 100.0, 'critical': 100.0})
+        self.assertEqual(handler.handle('coretemp/Core 0/*;'), '{"label": "Core 0", "current": 45.0, "high": 100.0, "critical": 100.0}')
+        self.assertEqual(handler.handle('coretemp/Core 0/current'), 45.0)
+
+    def _temperature_sensors_get_value(self):
+        ret = collections.defaultdict(list)
+        ret['coretemp'].append(psutil._common.shwtemp('Core 0', 45.0, 100.0, 100.0))
+        ret['coretemp'].append(psutil._common.shwtemp('Core 1', 52.0, 100.0, 100.0))
+        ret['asus'].append(psutil._common.shwtemp('', 30.0, None, None))
+        return dict(ret)
 
 
 class TestFormatter(unittest.TestCase):
