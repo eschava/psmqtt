@@ -7,6 +7,7 @@ import socket
 import logging
 import logging.config
 import sched
+import json
 from threading import Thread
 from datetime import datetime
 
@@ -64,13 +65,13 @@ def run_task(task, topic):
             raise Exception("Result of task '" + task + "' has several values but topic doesn't contain '*' char")
         if isinstance(payload, list):
             for i, v in enumerate(payload):
-                topic = topic.get_subtopic(str(i))
-                mqttc.publish(topic, str(v), qos=qos, retain=retain)
+                subtopic = topic.get_subtopic(str(i))
+                mqttc.publish(subtopic, json.dumps(v) if isinstance(v, dict) else str(v), qos=qos, retain=retain)
         elif isinstance(payload, dict):
             for key in payload:
-                topic = topic.get_subtopic(str(key))
+                subtopic = topic.get_subtopic(str(key))
                 v = payload[key]
-                mqttc.publish(topic, str(v), qos=qos, retain=retain)
+                mqttc.publish(subtopic, json.dumps(v) if isinstance(v, dict) else str(v), qos=qos, retain=retain)
         else:
             mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=retain)
     except Exception, ex:
