@@ -16,7 +16,8 @@ from dateutil.rrule import *  # pip install python-dateutil
 from handlers import handlers
 from format import Formatter
 
-CONFIG = os.getenv('PSMQTTCONFIG', 'psmqtt.conf')
+dirname = os.path.dirname(os.path.abspath(__file__)) + '/'
+CONFIG = os.getenv('PSMQTTCONFIG', dirname + 'psmqtt.conf')
 
 
 class Config(object):
