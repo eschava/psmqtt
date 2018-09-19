@@ -283,19 +283,23 @@ class SensorsTemperaturesCommandHandler(CommandHandler):
         tup = self.get_value()
         source, param = split(params)
         if source == '*' or source == '*;':
-            tup = {k: map(lambda i: i._asdict(), v) for k, v in tup.items()}
+            tup = {k: map(lambda i: i.current, v) for k, v in tup.items()}
             return string_from_dict_optionally(tup, source.endswith(';'))
         elif source in tup:
             llist = tup[source]
             label, param = split(param)
-            if label == '*' or label == '*;':
+            if label == '' and param == '':
+                return map(lambda i: i.current, llist)
+            elif label == '*' or label == '*;':
                 llist = map(lambda i: i._asdict(), llist)
                 return string_from_dict_optionally(llist, label.endswith(';'))
             else:
                 temps = llist[int(label)] if label.isdigit() else next((x for x in llist if x.label == label), None)
                 if temps is None:
                     raise Exception("Device '" + label + "' in '" + self.name + "' is not supported")
-                if param == '*' or param == '*;':
+                if param == '':
+                    return temps.current
+                elif param == '*' or param == '*;':
                     return string_from_dict_optionally(temps._asdict(), param.endswith(';'))
                 else:
                     return temps._asdict()[param]

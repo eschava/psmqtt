@@ -223,21 +223,26 @@ class TestHandlers(unittest.TestCase):
     def test_temperature_sensors(self):
         handler = type("TestHandler", (SensorsTemperaturesCommandHandler, object),
                        {"get_value": lambda s: self._temperature_sensors_get_value()})('test')
-        self.assertEqual(handler.handle('*'), {"asus": [{"label": "", "current": 30.0, "high": None, "critical": None}], "coretemp": [{"label": "Core 0", "current": 45.0, "high": 100.0, "critical": 100.0}, {"label": "Core 1", "current": 52.0, "high": 100.0, "critical": 100.0}]})
-        self.assertEqual(handler.handle('*;'), '{"asus": [{"label": "", "current": 30.0, "high": null, "critical": null}], "coretemp": [{"label": "Core 0", "current": 45.0, "high": 100.0, "critical": 100.0}, {"label": "Core 1", "current": 52.0, "high": 100.0, "critical": 100.0}]}')
+        self.assertEqual(handler.handle('*'), {"asus": [30.0], "coretemp": [45.0, 52.0]})
+        self.assertEqual(handler.handle('*;'), '{"asus": [30.0], "coretemp": [45.0, 52.0]}')
+        self.assertEqual(handler.handle('asus'), [30.0])
         self.assertEqual(handler.handle('asus/*'), [{"label": "", "current": 30.0, "high": None, "critical": None}])
         self.assertEqual(handler.handle('asus/*;'), '[{"label": "", "current": 30.0, "high": null, "critical": null}]')
         self.assertEqual(handler.handle('asus//*'), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
         self.assertEqual(handler.handle('asus//*;'), '{"label": "", "current": 30.0, "high": null, "critical": null}')
         self.assertEqual(handler.handle('asus//current'), 30.0)
+        self.assertEqual(handler.handle('asus/0'), 30.0)
         self.assertEqual(handler.handle('asus/0/*'), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
         self.assertEqual(handler.handle('asus/0/*;'), '{"label": "", "current": 30.0, "high": null, "critical": null}')
         self.assertEqual(handler.handle('asus/0/current'), 30.0)
+        self.assertEqual(handler.handle('coretemp'), [45.0, 52.0])
+        self.assertEqual(handler.handle('coretemp/Core 0'), 45.0)
         self.assertEqual(handler.handle('coretemp/Core 0/*'), {'label': 'Core 0', 'current': 45.0, 'high': 100.0, 'critical': 100.0})
         self.assertEqual(handler.handle('coretemp/Core 0/*;'), '{"label": "Core 0", "current": 45.0, "high": 100.0, "critical": 100.0}')
         self.assertEqual(handler.handle('coretemp/Core 0/current'), 45.0)
 
-    def _temperature_sensors_get_value(self):
+    @staticmethod
+    def _temperature_sensors_get_value():
         ret = collections.defaultdict(list)
         ret['coretemp'].append(psutil._common.shwtemp('Core 0', 45.0, 100.0, 100.0))
         ret['coretemp'].append(psutil._common.shwtemp('Core 1', 52.0, 100.0, 100.0))

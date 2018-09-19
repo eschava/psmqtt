@@ -66,17 +66,28 @@ def run_task(task, topic):
         if isinstance(payload, list):
             for i, v in enumerate(payload):
                 subtopic = topic.get_subtopic(str(i))
-                mqttc.publish(subtopic, json.dumps(v) if isinstance(v, dict) else str(v), qos=qos, retain=retain)
+                mqttc.publish(subtopic, payload_as_string(v), qos=qos, retain=retain)
         elif isinstance(payload, dict):
             for key in payload:
                 subtopic = topic.get_subtopic(str(key))
                 v = payload[key]
-                mqttc.publish(subtopic, json.dumps(v) if isinstance(v, dict) else str(v), qos=qos, retain=retain)
+                mqttc.publish(subtopic, payload_as_string(v), qos=qos, retain=retain)
         else:
             mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=retain)
     except Exception, ex:
         mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=retain)
         logging.exception(task + ": " + str(ex))
+
+
+def payload_as_string(v):
+    if isinstance(v, dict):
+        return json.dumps(v)
+    elif not isinstance(v, list):
+        return str(v)
+    elif len(v) == 1:  # single-element array should be presented as single value
+        return payload_as_string(v[0])
+    else:
+        return json.dumps(v)
 
 
 def get_value(path):
