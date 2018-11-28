@@ -155,7 +155,7 @@ def on_message(mosq, userdata, msg):
         logging.warn('Unknown topic: ' + msg.topic)
 
 
-def on_timer(s, rrule, tasks):
+def on_timer(s, dt, tasks):
     if isinstance(tasks, dict):
         for k in tasks:
             run_task(k, tasks[k])
@@ -171,8 +171,9 @@ def on_timer(s, rrule, tasks):
 
     # add next timer task
     now = datetime.now()
-    delay = (rrule.after(now) - now).total_seconds()
-    s.enter(delay, 1, on_timer, [s, rrule, tasks])
+    # need reparse rule (see #10)
+    delay = (rrulestr(dt).after(now) - now).total_seconds()
+    s.enter(delay, 1, on_timer, [s, dt, tasks])
 
 
 # noinspection PyUnusedLocal
@@ -231,9 +232,8 @@ if __name__ == '__main__':
         if not r.is_recurring:
             logging.error(t + " is not recurring time. Skipping")
             continue
-        rrule = rrulestr(dt)
-        delay = (rrule.after(now) - now).total_seconds()
-        s.enter(delay, 1, on_timer, [s, rrule, schedule[t]])
+        delay = (rrulestr(dt).after(now) - now).total_seconds()
+        s.enter(delay, 1, on_timer, [s, dt, schedule[t]])
 
     tt = TimerThread(s)
     tt.daemon = True
