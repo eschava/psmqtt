@@ -27,7 +27,7 @@ CONFIG = os.getenv('PSMQTTCONFIG', dirname + 'psmqtt.conf')
 class Config(object):
     def __init__(self, filename=CONFIG):
         self.config = {}
-        execfile(filename, self.config)
+        exec(compile(open(filename, "rb").read(), filename, 'exec'), self.config)
 
     def get(self, key, default=None):
         return self.config.get(key, default)
@@ -35,8 +35,8 @@ class Config(object):
 
 try:
     cf = Config()
-except Exception, e:
-    print "Cannot load configuration from file %s: %s" % (CONFIG, str(e))
+except Exception as e:
+    print("Cannot load configuration from file %s: %s" % (CONFIG, str(e)))
     sys.exit(2)
 
 qos = cf.get('mqtt_qos', 0)
@@ -74,7 +74,7 @@ def run_task(task, topic):
                 mqttc.publish(subtopic, payload_as_string(v), qos=qos, retain=retain)
         else:
             mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=retain)
-    except Exception, ex:
+    except Exception as ex:
         mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=retain)
         logging.exception(task + ": " + str(ex))
 
