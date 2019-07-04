@@ -13,8 +13,7 @@ Installation
 ============
 Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
-   pip install recurrent paho-mqtt python-dateutil psutil jinja2
-   (Jinja2 is needed for formatting output and could be skipped if formatting is not used)
+   pip install -r requirements.txt
    
 After you can run main file using::
 

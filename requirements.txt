@@ -1,0 +1,5 @@
+recurrent
+paho-mqtt
+python-dateutil
+psutil
+jinja2
