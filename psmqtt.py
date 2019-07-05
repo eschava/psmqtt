@@ -220,7 +220,12 @@ if __name__ == '__main__':
 
     mqttc.username_pw_set(cf.get('mqtt_username'), cf.get('mqtt_password'))
 
-    mqttc.connect(cf.get('mqtt_broker', 'localhost'), int(cf.get('mqtt_port', '1883')), 60)
+    mqtt_port = int(cf.get('mqtt_port', '1883'))
+    ssl = (mqtt_port == 8883)
+    if ssl:
+        mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None, cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS, ciphers=None)
+    
+    mqttc.connect(cf.get('mqtt_broker', 'localhost'), mqtt_port, 60)
 
     # parse schedule
     schedule = cf.get('schedule', {})
