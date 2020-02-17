@@ -527,6 +527,8 @@ handlers = {
     'pids': type("PidsCommandHandler", (IndexCommandHandler, object), {})('pids'),
 
     'sensors_temperatures': SensorsTemperaturesCommandHandler('sensors_temperatures'),
+
+    'sensors_battery': TupleCommandHandler('sensors_battery'),
 }
 
 process_handlers = {

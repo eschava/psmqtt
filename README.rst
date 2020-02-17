@@ -200,6 +200,13 @@ Temperature
    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single sensor device by number/label temperature in one topic (JSON string)
    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single sensor device by number/label temperature separate parameters
 
+Battery
+::
+
+   sensors_battery/* - Battery state. Topic per parameter
+   sensors_battery/*;  - Battery state parameters in one topic (JSON string)
+   sensors_battery/{percent/secsleft/power_plugged} - Battery state separate parameters
+
 Other system info
 ::
 
