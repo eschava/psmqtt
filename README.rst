@@ -206,6 +206,10 @@ Battery
    sensors_battery/* - Battery state. Topic per parameter
    sensors_battery/*;  - Battery state parameters in one topic (JSON string)
    sensors_battery/{percent/secsleft/power_plugged} - Battery state separate parameters
+        where secsleft could be
+            -1 if time is unknown
+            -2 for unlimited time (power is plugged)
+            or time in seconds
 
 Other system info
 ::

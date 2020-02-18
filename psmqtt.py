@@ -18,6 +18,12 @@ from dateutil.rrule import *  # pip install python-dateutil
 from handlers import handlers
 from format import Formatter
 
+try:
+    from enum import IntEnum
+except ImportError:
+    class IntEnum:
+        pass
+
 # read initial config files
 dirname = os.path.dirname(os.path.abspath(__file__)) + '/'
 logging.config.fileConfig(dirname + 'logging.conf')
@@ -73,7 +79,7 @@ def run_task(task, topic):
                 v = payload[key]
                 mqttc.publish(subtopic, payload_as_string(v), qos=qos, retain=retain)
         else:
-            mqttc.publish(topic.get_topic(), str(payload), qos=qos, retain=retain)
+            mqttc.publish(topic.get_topic(), payload_as_string(payload), qos=qos, retain=retain)
     except Exception as ex:
         mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=retain)
         logging.exception(task + ": " + str(ex))
@@ -82,6 +88,8 @@ def run_task(task, topic):
 def payload_as_string(v):
     if isinstance(v, dict):
         return json.dumps(v)
+    elif isinstance(v, IntEnum):
+        return v.value
     elif not isinstance(v, list):
         return str(v)
     elif len(v) == 1:  # single-element array should be presented as single value
