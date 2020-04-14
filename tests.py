@@ -169,7 +169,7 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;'))
         self.assertEqual(10, handler.handle('a'))
         self.assertEqual({"x": 1, "y": 3}, handler.handle('a/*'))
-        self.assertEqual('{"y": 3, "x": 1}', handler.handle('a/*;'))
+        self.assertEqual('{"x": 1, "y": 3}', handler.handle('a/*;'))
         self.assertEqual(3, handler.handle('a/y'))
         self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/y'))
         self.assertEqual('{"a": 3, "b": 4}', handler.handle('*;/y'))
@@ -227,18 +227,18 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual(handler.handle('*;'), '{"asus": [30.0], "coretemp": [45.0, 52.0]}')
         self.assertEqual(handler.handle('asus'), [30.0])
         self.assertEqual(handler.handle('asus/*'), [{"label": "", "current": 30.0, "high": None, "critical": None}])
-        self.assertEqual(handler.handle('asus/*;'), '[{"label": "", "current": 30.0, "high": null, "critical": null}]')
+        self.assertEqual(handler.handle('asus/*;'), '[{"critical": null, "current": 30.0, "high": null, "label": ""}]')
         self.assertEqual(handler.handle('asus//*'), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
-        self.assertEqual(handler.handle('asus//*;'), '{"label": "", "current": 30.0, "high": null, "critical": null}')
+        self.assertEqual(handler.handle('asus//*;'), '{"critical": null, "current": 30.0, "high": null, "label": ""}')
         self.assertEqual(handler.handle('asus//current'), 30.0)
         self.assertEqual(handler.handle('asus/0'), 30.0)
         self.assertEqual(handler.handle('asus/0/*'), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
-        self.assertEqual(handler.handle('asus/0/*;'), '{"label": "", "current": 30.0, "high": null, "critical": null}')
+        self.assertEqual(handler.handle('asus/0/*;'), '{"critical": null, "current": 30.0, "high": null, "label": ""}')
         self.assertEqual(handler.handle('asus/0/current'), 30.0)
         self.assertEqual(handler.handle('coretemp'), [45.0, 52.0])
         self.assertEqual(handler.handle('coretemp/Core 0'), 45.0)
         self.assertEqual(handler.handle('coretemp/Core 0/*'), {'label': 'Core 0', 'current': 45.0, 'high': 100.0, 'critical': 100.0})
-        self.assertEqual(handler.handle('coretemp/Core 0/*;'), '{"label": "Core 0", "current": 45.0, "high": 100.0, "critical": 100.0}')
+        self.assertEqual(handler.handle('coretemp/Core 0/*;'), '{"critical": 100.0, "current": 45.0, "high": 100.0, "label": "Core 0"}')
         self.assertEqual(handler.handle('coretemp/Core 0/current'), 45.0)
 
     @staticmethod
@@ -286,6 +286,7 @@ class TestFormatter(unittest.TestCase):
         self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60))
         self.assertEqual("2 days, 1:39", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60+30))
         self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60-30))
+
 
 if __name__ == '__main__':
     unittest.main()

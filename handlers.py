@@ -283,15 +283,15 @@ class SensorsTemperaturesCommandHandler(CommandHandler):
         tup = self.get_value()
         source, param = split(params)
         if source == '*' or source == '*;':
-            tup = {k: map(lambda i: i.current, v) for k, v in tup.items()}
+            tup = {k: [i.current for i in v] for k, v in tup.items()}
             return string_from_dict_optionally(tup, source.endswith(';'))
         elif source in tup:
             llist = tup[source]
             label, param = split(param)
             if label == '' and param == '':
-                return map(lambda i: i.current, llist)
+                return [i.current for i in llist]
             elif label == '*' or label == '*;':
-                llist = map(lambda i: i._asdict(), llist)
+                llist = [i._asdict() for i in llist]
                 return string_from_dict_optionally(llist, label.endswith(';'))
             else:
                 temps = llist[int(label)] if label.isdigit() else next((x for x in llist if x.label == label), None)
@@ -585,7 +585,7 @@ def dict_from_dict_of_namedtupes(dict_of_namedtupes, key, func, join=False):
 
 
 def string_from_dict(d):
-    return json.dumps(d)
+    return json.dumps(d, sort_keys=True)
 
 
 def string_from_dict_optionally(d, join):

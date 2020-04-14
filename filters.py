@@ -1,13 +1,13 @@
 def kb(value):
-    return str(value / 1024) + " KB"
+    return str(value // 1024) + " KB"
 
 
 def mb(value):
-    return str(value / 1024 / 1024) + " MB"
+    return str(value // 1024 // 1024) + " MB"
 
 
 def gb(value):
-    return str(value / 1024 / 1024 / 1024) + " GB"
+    return str(value // 1024 / 1024 // 1024) + " GB"
 
 
 def uptime(boot_time):
