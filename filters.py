@@ -33,8 +33,16 @@ def uptime(boot_time):
     return retval
 
 
+def uptimesec(boot_time):
+    import time
+    upt = time.time() - boot_time
+
+    return round(upt)
+
+
 def register_filters(env):
     env.filters['KB'] = kb
     env.filters['MB'] = mb
     env.filters['GB'] = gb
     env.filters['uptime'] = uptime
+    env.filters['uptimesec'] = uptimesec
