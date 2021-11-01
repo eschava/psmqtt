@@ -1,0 +1,13 @@
+[Unit]
+Description=Resource daemon to MQTT
+After=multi-user.target
+
+[Service]
+WorkingDirectory=/path/to/psmqtt
+User=nobody
+Type=idle
+ExecStart=/usr/bin/python3 /path/to/psmqtt/psmqtt.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
