@@ -1,35 +1,39 @@
-FROM python:3.7.9
+FROM public.ecr.aws/docker/library/python:3.10-alpine AS builder
 
-# based on https://github.com/pfichtner/docker-mqttwarn
+RUN apk add build-base linux-headers
 
-# install python libraries
-#RUN pip install -r requirements.txt
+WORKDIR /build
+COPY ./requirements.txt .
+RUN python -m pip install --upgrade pip
+RUN pip install --target=/build/deps -r requirements.txt
+RUN rm -r requirements.txt 
 
-RUN mkdir -p /opt/psmqtt
+# Cleanup files we dont want to bring over
+WORKDIR /build/deps
+RUN find . -type f -name "*.pyc" -delete
+RUN rm -rf __pycache__ pip pip* psutil/tests
+
+FROM public.ecr.aws/docker/library/python:3.10-alpine
+RUN apk add bash
+
 WORKDIR /opt/psmqtt
-RUN mkdir -p /var/log/psmqtt
-
-COPY ./requirements.txt /opt/psmqtt
-RUN pip install -r /opt/psmqtt/requirements.txt
+COPY --from=builder /build .
+COPY *.py ./
+COPY psmqtt.service .
+COPY logging.conf .
 
 # add user psmqtt to image
-RUN groupadd -r psmqtt && useradd -r -g psmqtt psmqtt
+RUN addgroup -S psmqtt && adduser -S psmqtt -G psmqtt
 RUN chown -R psmqtt:psmqtt /opt/psmqtt
-RUN chown -R psmqtt:psmqtt /var/log/psmqtt
-#RUN chown -R psmqtt /home/psmqtt
 
 # process run as psmqtt user
 USER psmqtt
 
-# conf file from host
-VOLUME ["/opt/psmqtt/conf"]
-
 # set conf path
 ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.conf"
 
-# finally, copy the current code (ideally we'd copy only what we need, but it
-#  is not clear what that is, yet)
-COPY . /opt/psmqtt
+# add deps to PYTHONPATH
+ENV PYTHONPATH="${PYTHONPATH}:/opt/psmqtt/deps"
 
 # run process
 CMD python psmqtt.py
