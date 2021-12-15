@@ -11,7 +11,7 @@ RUN rm -r requirements.txt
 # Cleanup files we dont want to bring over
 WORKDIR /build/deps
 RUN find . -type f -name "*.pyc" -delete
-RUN rm -rf __pycache__ pip pip* deps/psutil/tests
+RUN rm -rf __pycache__ pip pip* psutil/tests
 
 FROM public.ecr.aws/docker/library/python:3.10-alpine
 RUN apk add bash
