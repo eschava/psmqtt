@@ -311,6 +311,42 @@ class SensorsTemperaturesCommandHandler(CommandHandler):
         return psutil.sensors_temperatures()
 
 
+class NetIfAddrsCommandHandler(CommandHandler):
+    def __init__(self, name):
+        CommandHandler.__init__(self, name)
+
+    def handle(self, params):
+        tup = self.get_value()
+        source, param = split(params)
+        if source == '*' or source == '*;':
+            tup = {k: [i.address for i in v] for k, v in tup.items()}
+            return string_from_dict_optionally(tup, source.endswith(';'))
+        elif source in tup:
+            llist = tup[source]
+            label, param = split(param)
+            if label == '' and param == '':
+                return [i.address for i in llist]
+            elif label == '*' or label == '*;':
+                llist = [i._asdict() for i in llist]
+                return string_from_dict_optionally(llist, label.endswith(';'))
+            else:
+                temps = llist[int(label)]
+                if temps is None:
+                    raise Exception("Device '" + label + "' in '" + self.name + "' is not supported")
+                if param == '':
+                    return temps.address
+                elif param == '*' or param == '*;':
+                    return string_from_dict_optionally(temps._asdict(), param.endswith(';'))
+                else:
+                    return temps._asdict()[param]
+        else:
+            raise Exception("Device '" + source + "' in '" + self.name + "' is not supported")
+
+    # noinspection PyMethodMayBeStatic
+    def get_value(self):
+        return psutil.net_if_addrs()
+
+
 class ProcessesCommandHandler(CommandHandler):
     top_cpu_regexp = re.compile("^top_cpu(\[\d+\])*$")
     top_memory_regexp = re.compile("^top_memory(\[\d+\])*$")
@@ -516,6 +552,8 @@ handlers = {
 
     'net_io_counters': type("NetIOCountersCommandHandler", (NameOrTotalTupleCommandHandler, object),
                              {"get_value": lambda self, total: psutil.net_io_counters(pernic=not total)})('net_io_counters'),
+
+    'net_if_addrs': NetIfAddrsCommandHandler('net_if_addrs'),
 
     'processes': ProcessesCommandHandler('processes'),
 

@@ -249,6 +249,34 @@ class TestHandlers(unittest.TestCase):
         ret['asus'].append(psutil._common.shwtemp('', 30.0, None, None))
         return dict(ret)
 
+    def test_net_if_addrs(self):
+        handler = type("TestHandler", (NetIfAddrsCommandHandler, object),
+                       {"get_value": lambda s: self._net_if_addrs_get_value()})('test')
+        self.assertEqual(handler.handle('*'), {"lo": ['127.0.0.1'], "wlan0": ['01-23-34-45-56-67', '123.32.56.78']})
+        self.assertEqual(handler.handle('*;'), '{"lo": ["127.0.0.1"], "wlan0": ["01-23-34-45-56-67", "123.32.56.78"]}')
+        self.assertEqual(handler.handle('lo'), ['127.0.0.1'])
+        self.assertEqual(handler.handle('lo/*'), [{"family": socket.AF_INET, "address": '127.0.0.1', "netmask": '255.0.0.0', "broadcast": None, "ptp": None}])
+        self.assertEqual(handler.handle('lo/*;'), '[{"address": "127.0.0.1", "broadcast": null, "family": 2, "netmask": "255.0.0.0", "ptp": null}]')
+        # self.assertEqual(handler.handle('lo//netmask'), 30.0)
+        self.assertEqual(handler.handle('lo/0'), '127.0.0.1')
+        self.assertEqual(handler.handle('lo/0/*'), {"family": socket.AF_INET, "address": '127.0.0.1', "netmask": '255.0.0.0', "broadcast": None, "ptp": None})
+        self.assertEqual(handler.handle('lo/0/*;'), '{"address": "127.0.0.1", "broadcast": null, "family": 2, "netmask": "255.0.0.0", "ptp": null}')
+        self.assertEqual(handler.handle('lo/0/netmask'), '255.0.0.0')
+        self.assertEqual(handler.handle('wlan0'), ['01-23-34-45-56-67', '123.32.56.78'])
+        self.assertEqual(handler.handle('wlan0/*'), "[{'address': '01-23-34-45-56-67', 'broadcast': None, 'family': -1, 'netmask': None, 'ptp': None}, {'address': '123.32.56.78', 'broadcast': None, 'family': <AddressFamily.AF_INET: 2>, 'netmask': '255.255.0.0', 'ptp': None}]")
+        self.assertEqual(handler.handle('wlan0/1'), '123.32.56.78')
+        self.assertEqual(handler.handle('wlan0/1/*'), {'label': 'Core 0', 'current': 45.0, 'high': 100.0, 'critical': 100.0})
+        self.assertEqual(handler.handle('wlan0/1/*;'), '{"critical": 100.0, "current": 45.0, "high": 100.0, "label": "Core 0"}')
+        self.assertEqual(handler.handle('wlan0/1/current'), 45.0)
+
+    @staticmethod
+    def _net_if_addrs_get_value():
+        ret = collections.defaultdict(list)
+        ret['lo'].append(psutil._common.snicaddr(socket.AF_INET, '127.0.0.1', '255.0.0.0', None, None))
+        ret['wlan0'].append(psutil._common.snicaddr(-1, '01-23-34-45-56-67', None, None, None))
+        ret['wlan0'].append(psutil._common.snicaddr(socket.AF_INET, '123.32.56.78', '255.255.0.0', None, None))
+        return dict(ret)
+
 
 class TestFormatter(unittest.TestCase):
     def test_get_format(self):
