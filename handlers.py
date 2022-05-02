@@ -311,6 +311,42 @@ class SensorsTemperaturesCommandHandler(CommandHandler):
         return psutil.sensors_temperatures()
 
 
+class SensorsFansCommandHandler(CommandHandler):
+    def __init__(self, name):
+        CommandHandler.__init__(self, name)
+
+    def handle(self, params):
+        tup = self.get_value()
+        source, param = split(params)
+        if source == '*' or source == '*;':
+            tup = {k: [i.current for i in v] for k, v in tup.items()}
+            return string_from_dict_optionally(tup, source.endswith(';'))
+        elif source in tup:
+            llist = tup[source]
+            label, param = split(param)
+            if label == '' and param == '':
+                return [i.current for i in llist]
+            elif label == '*' or label == '*;':
+                llist = [i._asdict() for i in llist]
+                return string_from_dict_optionally(llist, label.endswith(';'))
+            else:
+                temps = llist[int(label)] if label.isdigit() else next((x for x in llist if x.label == label), None)
+                if temps is None:
+                    raise Exception("Device '" + label + "' in '" + self.name + "' is not supported")
+                if param == '':
+                    return temps.current
+                elif param == '*' or param == '*;':
+                    return string_from_dict_optionally(temps._asdict(), param.endswith(';'))
+                else:
+                    return temps._asdict()[param]
+        else:
+            raise Exception("Fan '" + source + "' in '" + self.name + "' is not supported")
+
+    # noinspection PyMethodMayBeStatic
+    def get_value(self):
+        return psutil.sensors_fans()
+
+
 class ProcessesCommandHandler(CommandHandler):
     top_cpu_regexp = re.compile("^top_cpu(\[\d+\])*$")
     top_memory_regexp = re.compile("^top_memory(\[\d+\])*$")
@@ -527,6 +563,8 @@ handlers = {
     'pids': type("PidsCommandHandler", (IndexCommandHandler, object), {})('pids'),
 
     'sensors_temperatures': SensorsTemperaturesCommandHandler('sensors_temperatures'),
+
+    'sensors_fans': SensorsFansCommandHandler('sensors_fans'),
 
     'sensors_battery': TupleCommandHandler('sensors_battery'),
 }

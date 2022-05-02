@@ -200,6 +200,19 @@ Temperature
    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single sensor device by number/label temperature in one topic (JSON string)
    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single sensor device by number/label temperature separate parameters
 
+Fan speed
+::
+
+   sensors_fans/* - Funs current speeds. Topic per fun
+   sensors_fans/*;  - Funs current speeds in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME} - Single fun current speed (could be array value if fun has several devices)
+   sensors_fans/{SENSOR_NAME}/* - Single fun speeds. Topic per speed
+   sensors_fans/{SENSOR_NAME}/*; - Single fun speeds in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single fun device by number/label current speed
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single fun device by number/label speed. Topic per parameter
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single fun device by number/label speed in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single fun device by number/label speed separate parameters
+
 Battery
 ::
 
