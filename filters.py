@@ -1,17 +1,19 @@
-def kb(value):
+import time
+from jinja2 import Environment  # pip install jinja2
+
+def kb(value:int) -> str:
     return str(value // 1024) + " KB"
 
 
-def mb(value):
+def mb(value:int) -> str:
     return str(value // 1024 // 1024) + " MB"
 
 
-def gb(value):
+def gb(value:int) -> str:
     return str(value // 1024 / 1024 // 1024) + " GB"
 
 
-def uptime(boot_time):
-    import time
+def uptime(boot_time:float) -> str:
     upt = time.time() - boot_time
 
     retval = ""
@@ -32,17 +34,15 @@ def uptime(boot_time):
 
     return retval
 
-
-def uptimesec(boot_time):
-    import time
+def uptimesec(boot_time: float) -> int:
     upt = time.time() - boot_time
-
     return round(upt)
 
 
-def register_filters(env):
+def register_filters(env: Environment) -> None:
     env.filters['KB'] = kb
     env.filters['MB'] = mb
     env.filters['GB'] = gb
     env.filters['uptime'] = uptime
     env.filters['uptimesec'] = uptimesec
+    return

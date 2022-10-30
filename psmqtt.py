@@ -1,261 +1,140 @@
 #!/usr/bin/env python
-
+#
+# 1. Read configuration pointed to by PSMQTTCONFIG env var, or use `psmqtt.conf`
+#    by default.
+# 2. Extract from config file settings, e.g. mqtt broker and schedule.
+# 2. Execute schedule...
+# 3. Perform tasks from the schedule, which involves reading sensors and sending
+#    values to the broker
+#
 import os
-import sys
+#import sys
 import time
 import socket
+from typing import Any, Dict, List, Union
 import logging
-import logging.config
-import sched
-import json
 from threading import Thread
 from datetime import datetime
-
-import paho.mqtt.client as paho  # pip install paho-mqtt
 from recurrent import RecurringEvent  # pip install recurrent
-from dateutil.rrule import *  # pip install python-dateutil
+from dateutil.rrule import rrulestr  # pip install python-dateutil
 
-from handlers import handlers
-from format import Formatter
+from config import load_config
+from task import MqttClient, run_task
+import sched
 
-try:
-    from enum import IntEnum
-except ImportError:
-    class IntEnum:
-        pass
+def run_tasks(tasks: Union[str, Dict[str, str],
+        List[Union[Dict[str, str], str]]]) -> None:
+    '''
+    tasks come from conf file, e.g.:
+        ["cpu_percent", "virtual_memory/percent"]
+        or
+        "disk_usage/percent/|"
+        or
+        {"boot_time/{{x|uptime}}": "uptime" }
+    '''
+    logging.debug("run_tasks(%s)", tasks)
 
-# read initial config files
-dirname = os.path.dirname(os.path.abspath(__file__)) + '/'
-logging.config.fileConfig(dirname + 'logging.conf')
-CONFIG = os.getenv('PSMQTTCONFIG', dirname + 'psmqtt.conf')
-
-
-class Config(object):
-    def __init__(self, filename=CONFIG):
-        self.config = {}
-        exec(compile(open(filename, "rb").read(), filename, 'exec'), self.config)
-
-    def get(self, key, default=None):
-        return self.config.get(key, default)
-
-
-try:
-    cf = Config()
-except Exception as e:
-    print("Cannot load configuration from file %s: %s" % (CONFIG, str(e)))
-    sys.exit(2)
-
-qos = cf.get('mqtt_qos', 0)
-retain = cf.get('mqtt_retain', False)
-
-topic_prefix = cf.get('mqtt_topic_prefix', 'psmqtt/' + socket.gethostname() + '/')
-request_topic = cf.get('mqtt_request_topic', 'request')
-if request_topic != '':
-    request_topic = topic_prefix + request_topic + '/'
-
-# fix for error 'No handlers could be found for logger "recurrent"'
-reccurrent_logger = logging.getLogger('recurrent')
-if len(reccurrent_logger.handlers) == 0:
-    reccurrent_logger.addHandler(logging.NullHandler())
-
-
-def run_task(task, topic):
-    if task.startswith(topic_prefix):
-        task = task[len(topic_prefix):]
-
-    topic = Topic(topic if topic.startswith(topic_prefix) else topic_prefix + topic)
-    try:
-        payload = get_value(task)
-        is_seq = isinstance(payload, list) or isinstance(payload, dict)
-        if is_seq and not topic.is_multitopic():
-            raise Exception("Result of task '" + task + "' has several values but topic doesn't contain '*' char")
-        if isinstance(payload, list):
-            for i, v in enumerate(payload):
-                subtopic = topic.get_subtopic(str(i))
-                mqttc.publish(subtopic, payload_as_string(v), qos=qos, retain=retain)
-        elif isinstance(payload, dict):
-            for key in payload:
-                subtopic = topic.get_subtopic(str(key))
-                v = payload[key]
-                mqttc.publish(subtopic, payload_as_string(v), qos=qos, retain=retain)
-        else:
-            mqttc.publish(topic.get_topic(), payload_as_string(payload), qos=qos, retain=retain)
-    except Exception as ex:
-        mqttc.publish(topic.get_error_topic(), str(ex), qos=qos, retain=retain)
-        logging.exception(task + ": " + str(ex))
-
-
-def payload_as_string(v):
-    if isinstance(v, dict):
-        return json.dumps(v)
-    elif isinstance(v, IntEnum):
-        return v.value
-    elif not isinstance(v, list):
-        return str(v)
-    elif len(v) == 1:  # single-element array should be presented as single value
-        return payload_as_string(v[0])
-    else:
-        return json.dumps(v)
-
-
-def get_value(path):
-    path, _format = Formatter.get_format(path)
-    head, tail = split(path)
-
-    if head in handlers:
-        value = handlers[head].handle(tail)
-        if _format is not None:
-            value = Formatter.format(_format, value)
-        return value
-    else:
-        raise Exception("Element '" + head + "' in '" + path + "' is not supported")
-
-
-class Topic:
-    def __init__(self, topic):
-        self.topic = topic
-        self.wildcard_index, self.wildcard_len = self._find_wildcard(topic)
-
-    @staticmethod
-    def _find_wildcard(topic):
-        start = 0
-        # search for * or ** (but not *; or **;) outside of []
-        while start < len(topic):
-            wildcard_index = topic.find('*', start)
-            if wildcard_index < 0:
-                break
-            bracket_index = topic.find('[', start)
-            if 0 <= bracket_index < wildcard_index:
-                start = topic.find(']', bracket_index)
-                continue
-            wildcard_len = 1
-            if wildcard_index + 1 < len(topic) and topic[wildcard_index + 1] == '*':  # ** sequence
-                wildcard_len += 1
-            if wildcard_index + wildcard_len < len(topic) and topic[wildcard_index + wildcard_len] == ';':
-                start = wildcard_index + wildcard_len
-                continue
-            return wildcard_index, wildcard_len
-        return -1, -1
-
-    def is_multitopic(self):
-        return self.wildcard_index > 0
-
-    def get_subtopic(self, param):
-        if self.wildcard_index < 0:
-            raise Exception("Topic " + self.topic + " have no wildcard")
-        return self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
-
-    def get_topic(self):
-        return self.topic
-
-    def get_error_topic(self):
-        return self.topic + "/error"
-
-
-# noinspection PyUnusedLocal
-def on_message(mosq, userdata, msg):
-    logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
-
-    if msg.topic.startswith(request_topic):
-        task = msg.topic[len(request_topic):]
-        run_task(task, task)
-    else:
-        logging.warn('Unknown topic: ' + msg.topic)
-
-
-def on_timer(s, dt, tasks):
     if isinstance(tasks, dict):
         for k in tasks:
             run_task(k, tasks[k])
     elif isinstance(tasks, list):
         for task in tasks:
             if isinstance(task, dict):
-                for k in task:
-                    run_task(k, task[k])
+                for k,t in task.items():
+                    run_task(k, t)
             else:
                 run_task(task, task)
     else:
         run_task(tasks, tasks)
+    return
 
+class TimerThread(Thread):
+
+    def __init__(self, scheduler:sched.scheduler):
+        super().__init__(daemon=True)
+        self.scheduler = scheduler
+        return
+
+    def run(self) -> None:
+        self.scheduler.run()
+        return
+
+def on_timer(s:sched.scheduler, dt: str, tasks: Any) -> None:
+    logging.debug("on_timer(%s, %s, %s)", s, dt, tasks)
+
+    run_tasks(tasks)
     # add next timer task
     now = datetime.now()
     # need reparse rule (see #10)
     delay = (rrulestr(dt).after(now) - now).total_seconds()
-    s.enter(delay, 1, on_timer, [s, dt, tasks])
+    s.enter(delay, 1, on_timer, (s, dt, tasks))
+    return
 
-
-# noinspection PyUnusedLocal
-def on_connect(client, userdata, flags, result_code):
+def run() -> None:
+    '''
+    Main loop
+    '''
+    #
+    # read initial config files - this may exit(2)
+    #
+    cf = load_config()
+    #
+    # create MqttClient
+    #
+    topic_prefix = cf.get(
+        'mqtt_topic_prefix', f'psmqtt/{socket.gethostname()}/')
+    request_topic = cf.get('mqtt_request_topic', 'request')
     if request_topic != '':
-        topic = request_topic + '#'
-        logging.debug("Connected to MQTT broker, subscribing to topic " + topic)
-        mqttc.subscribe(topic, qos)
+        request_topic = topic_prefix + request_topic + '/'
 
-
-# noinspection PyUnusedLocal
-def on_disconnect(mosq, userdata, rc):
-    logging.debug("OOOOPS! psmqtt disconnects")
-    time.sleep(10)
-
-
-def split(s):
-    parts = s.split("/", 1)
-    return parts if len(parts) == 2 else [parts[0], '']
-
-
-class TimerThread(Thread):
-    def __init__(self, s):
-        Thread.__init__(self)
-        self.s = s
-
-    def run(self):
-        self.s.run()
-
-
-if __name__ == '__main__':
-    clientid = cf.get('mqtt_clientid', 'psmqtt-%s' % os.getpid())
-    # initialise MQTT broker connection
-    mqttc = paho.Client(clientid, clean_session=cf.get('mqtt_clean_session', False))
-
-    mqttc.on_message = on_message
-    mqttc.on_connect = on_connect
-    mqttc.on_disconnect = on_disconnect
-
-    mqttc.will_set('clients/psmqtt', payload="Adios!", qos=0, retain=False)
-
-    # Delays will be: 3, 6, 12, 24, 30, 30, ...
-    # mqttc.reconnect_delay_set(delay=3, delay_max=30, exponential_backoff=True)
-
-    mqttc.username_pw_set(cf.get('mqtt_username'), cf.get('mqtt_password'))
-
-    mqtt_port = int(cf.get('mqtt_port', '1883'))
-    ssl = (mqtt_port == 8883)
-    if ssl:
-        mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None, cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS, ciphers=None)
-    
-    mqttc.connect(cf.get('mqtt_broker', 'localhost'), mqtt_port, 60)
-
+    mqttc = MqttClient(
+        cf.get('mqtt_clientid', 'psmqtt-%s' % os.getpid()),
+        cf.get('mqtt_clean_session', False),
+        topic_prefix,
+        request_topic,
+        cf.get('mqtt_qos', 0),
+        cf.get('mqtt_retain', False))
+    #
+    # connect MqttClient to broker
+    #
+    mqttc.connect(
+        cf.get('mqtt_broker', 'localhost'),
+        int(cf.get('mqtt_port', '1883')),
+        cf.get('mqtt_username', ''),
+        cf.get('mqtt_password', None))
+    #
     # parse schedule
+    #
     schedule = cf.get('schedule', {})
+    assert isinstance(schedule, dict)
     s = sched.scheduler(time.time, time.sleep)
     now = datetime.now()
-    for t in schedule:
+    for t, tasks in schedule.items():
+        logging.debug("Periodicity: '%s'", t)
+        logging.debug("Tasks: '%s'", tasks)
         r = RecurringEvent()
         dt = r.parse(t)
         if not r.is_recurring:
             logging.error(t + " is not recurring time. Skipping")
             continue
+
         delay = (rrulestr(dt).after(now) - now).total_seconds()
-        s.enter(delay, 1, on_timer, [s, dt, schedule[t]])
+        s.enter(delay, 1, on_timer, (s, dt, tasks))
 
-    tt = TimerThread(s)
-    tt.daemon = True
-    tt.start()
-
+    TimerThread(s).start()
     while True:
         try:
-            mqttc.loop_forever()
+            mqttc.mqttc.loop_forever()
+
         except socket.error:
+            logging.debug("socket.error caught, sleeping for 5 sec...")
             time.sleep(5)
+
         except KeyboardInterrupt:
-            sys.exit(0)
+            logging.debug("KeyboardInterrupt caught, exiting")
+            break
+    return
+
+
+if __name__ == '__main__':
+    run()

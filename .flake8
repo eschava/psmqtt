@@ -1,0 +1,4 @@
+[flake8]
+extend-ignore = E127,E128,E231,E265,E302,E501
+exclude = doc,.git,.mypy_cache,__pycache__,.vscode
+max-complexity = 20
