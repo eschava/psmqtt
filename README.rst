@@ -11,15 +11,15 @@ Is written in Python and based on briliant `psutil <https://github.com/giampaolo
 ============
 Installation
 ============
-Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
+Just install the required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
    pip install -r requirements.txt
-   
+
 After you can run main file using::
 
   python psmqtt.py
 
-  
+
 ===============================================
 General information about tasks and MQTT topics
 ===============================================
@@ -114,7 +114,7 @@ It's better to describe how to use it using example.
 To get information for task "cpu_percent" with MQTT prefix "psmqtt/COMPUTER_NAME/" you need to send any string on topic::
 
   psmqtt/COMPUTER_NAME/request/cpu_percent
-  
+
 and result will be pushed on the topic::
 
   psmqtt/COMPUTER_NAME/cpu_percent
@@ -134,7 +134,7 @@ CPU
    cpu_percent/*; - CPU usage in percent per CPU in one topic (JSON string)
    cpu_percent/{0/1/2/etc} - CPU usage for single CPU
    cpu_times_percent/* - CPU times in percent. Topic per parameter
-   cpu_times_percent/*;  - CPU times in percent in one topic (JSON string)   
+   cpu_times_percent/*;  - CPU times in percent in one topic (JSON string)
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest} - CPU times in percent separate parameters
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/* - CPU times in percent separate parameters. Topic per CPU number
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/*; - CPU times in percent separate parameters per CPU number in one topic (JSON string)
@@ -144,7 +144,7 @@ CPU
    cpu_stats/* - CPU statistics. Topic per parameter
    cpu_stats/*;  - CPU statistics in one topic (JSON string)
    cpu_stats/{ctx_switches/interrupts/soft_interrupts/syscalls} - CPU statistics separate parameters
-   
+
 Memory
 ::
 
@@ -154,7 +154,7 @@ Memory
    swap_memory/* - Swap memory. Topic per parameter
    swap_memory/*;  - Swap memory in one topic (JSON string)
    swap_memory/{total/used/free/percent/sin/sout} - Swap memory separate parameters
-   
+
 Disks
 ::
 
@@ -203,15 +203,15 @@ Temperature
 Fan speed
 ::
 
-   sensors_fans/* - Funs current speeds. Topic per fun
-   sensors_fans/*;  - Funs current speeds in one topic (JSON string)
-   sensors_fans/{SENSOR_NAME} - Single fun current speed (could be array value if fun has several devices)
-   sensors_fans/{SENSOR_NAME}/* - Single fun speeds. Topic per speed
-   sensors_fans/{SENSOR_NAME}/*; - Single fun speeds in one topic (JSON string)
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single fun device by number/label current speed
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single fun device by number/label speed. Topic per parameter
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single fun device by number/label speed in one topic (JSON string)
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single fun device by number/label speed separate parameters
+   sensors_fans/* - Fans current speeds. Topic per fan
+   sensors_fans/*;  - Fans current speeds in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME} - Single fan current speed (could be array value if fan has several devices)
+   sensors_fans/{SENSOR_NAME}/* - Single fan speeds. Topic per speed
+   sensors_fans/{SENSOR_NAME}/*; - Single fan speeds in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single fan device by number/label current speed
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single fan device by number/label speed. Topic per parameter
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single fan device by number/label speed in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single fan device by number/label speed separate parameters
 
 Battery
 ::
@@ -296,7 +296,7 @@ Processes
             - ** - all process properties and sub-properties. Topic per property
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
-   
+
 ============
 Useful tasks
 ============
@@ -317,4 +317,3 @@ Useful tasks
 **processes/top_cpu/name** - name of top process consuming CPU
 
 **processes/top_memory/exe** - executable file of top process consuming memory
-
