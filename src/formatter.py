@@ -1,6 +1,7 @@
 from typing import Any, Optional, Text, Tuple
 from jinja2 import Environment  # pip install jinja2
-import filters
+
+from . import filters
 
 
 class Formatter:

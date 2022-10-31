@@ -13,7 +13,7 @@ I use `mypy` and `flake8`:
 Just do:
 
 ```
-python3 -m unittest -v *_test.py
+python3 -m unittest -v src/*_test.py
 ```
 
 ## Dependencies
@@ -29,5 +29,6 @@ and
 * document use of testing - DONE
 * document docker build and run - DONE
 * document use as a service - DONE
+* reorg files into src directory - DONE
 * support MQTTv5?
 * use `smartctl` to determine the disk HD temps

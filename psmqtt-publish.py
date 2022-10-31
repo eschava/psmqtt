@@ -10,7 +10,7 @@ import os
 import socket
 from typing import Any, Dict, List, Union
 
-from task import MqttClient, run_task
+from src.task import MqttClient, run_task
 
 def run_tasks(tasks: List[str]) -> None:
     def parse_task(t:str) -> Union[str, Dict[str, Any]]:
@@ -77,7 +77,6 @@ def run() -> None:
         help='Broker host and optional port, e.g. "mqtt:1883"')
     parser.add_argument('task', nargs='+',
         help='Task, e.g. "cpu_percent", "virtual_memory/percent"')
-        # {"boot_time/{{x|uptime}}": "uptime"}
 
     args = validate_args(parser.parse_args())
 

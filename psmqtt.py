@@ -7,20 +7,20 @@
 # 3. Perform tasks from the schedule, which involves reading sensors and sending
 #    values to the broker
 #
+from datetime import datetime
+from dateutil.rrule import rrulestr  # pip install python-dateutil
 import os
 #import sys
-import time
+from recurrent import RecurringEvent  # pip install recurrent
+import sched
 import socket
-from typing import Any, Dict, List, Union
 import logging
 from threading import Thread
-from datetime import datetime
-from recurrent import RecurringEvent  # pip install recurrent
-from dateutil.rrule import rrulestr  # pip install python-dateutil
+import time
+from typing import Any, Dict, List, Union
 
-from config import load_config
-from task import MqttClient, run_task
-import sched
+from src.config import load_config
+from src.task import MqttClient, run_task
 
 def run_tasks(tasks: Union[str, Dict[str, str],
         List[Union[Dict[str, str], str]]]) -> None:

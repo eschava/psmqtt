@@ -1,6 +1,6 @@
 import unittest
 
-from topic import Topic
+from .topic import Topic
 
 def get_subtopic(topic:str, param:str) -> str:
     t = Topic(topic)

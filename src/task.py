@@ -6,8 +6,8 @@ import time
 from typing import Any, Optional
 
 
-from handlers import get_value
-from topic import Topic
+from .handlers import get_value
+from .topic import Topic
 
 theClient: Optional["MqttClient"] = None
 

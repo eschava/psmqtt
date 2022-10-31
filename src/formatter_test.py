@@ -1,6 +1,6 @@
 import unittest
 
-from formatter import Formatter
+from .formatter import Formatter
 
 class TestFormatter(unittest.TestCase):
 

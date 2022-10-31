@@ -1,12 +1,22 @@
-from collections import namedtuple
+#from collections import namedtuple
 import fnmatch
 import json
 import logging
 import psutil  # pip install psutil
 import re
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sized,
+    Tuple,
+    Union
+)
 
-from formatter import Formatter
+from .formatter import Formatter
 
 Payload = Union[List[Any], Dict[str, Any], NamedTuple, str, float, int]
 
@@ -75,8 +85,7 @@ class IndexCommandHandler(MethodCommandHandler):
         elif param == 'count':
             return len(arr)
         elif param.isdigit():
-            res = arr[int(param)]
-            return res
+            return arr[int(param)]
         raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
 
 
@@ -143,7 +152,7 @@ class IndexTupleCommandHandler(MethodCommandHandler):
 class IndexOrTotalCommandHandler(CommandHandler):
     '''
     CommandHandler with self.method pointing to a psutil function which
-    returns a ??, e.g. cpu_percent.
+    returns a ??, e.g. psutils.cpu_percent.
     '''
     def __init__(self, name:str):
         super().__init__(name)
@@ -170,17 +179,22 @@ class IndexOrTotalCommandHandler(CommandHandler):
 
         try:
             result = self.get_value(total)
+            assert isinstance(result, list) or isinstance(result, float) or isinstance(result, int)
             if count:
+                assert isinstance(result, Sized)
                 return len(result)
             elif index >= 0:
+                assert isinstance(result, list)
                 return result[index]
-            else:
+            elif isinstance(result, list):
                 return string_from_list_optionally(result, join)
+            else:
+                return result
         except IndexError:
             raise Exception("Element #" + str(index) + " is not present")
 
     # noinspection PyMethodMayBeStatic
-    def get_value(self, total:bool) -> Payload:
+    def get_value(self, total:bool) -> List[Any]:
         '''
         cpu_percent is not using this
         '''
@@ -217,34 +231,36 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
             raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
 
         result = self.get_value(total)
-        #assert isinstance(result, tuple)
+        assert isinstance(result, tuple) or isinstance(result, list)
         #assert hasattr(result, '_asdict')
         #assert hasattr(result, '_fields')
         if index < 0:
             if all_params:  # not total
+                assert isinstance(result, tuple)
+                assert hasattr(result, '_asdict')
                 return string_from_dict_optionally(result._asdict(), params_join)
-            else:
-                if not total:
-                    return list_from_array_of_namedtupes(result, param, params, index_join)
-                elif param in result._fields:
-                    return getattr(result, param)
-                else:
-                    raise Exception("Element '" + param + "' in '" + params + "' is not supported")
-        else:  # index selected
-            try:
-                result = result[index]
-                if all_params:
-                    assert isinstance(result, namedtuple)
-                    return string_from_dict_optionally(result._asdict(), params_join)
-                elif param in result._fields:
-                    return getattr(result, param)
-                else:
-                    raise Exception("Parameter '" + param + "' in '" + params + "' is not supported")
-            except IndexError:
-                raise Exception("Element #" + str(index) + " is not present")
+            elif not total:
+                return list_from_array_of_namedtupes(result, param, params, index_join)
+            assert isinstance(result, tuple)
+            assert hasattr(result, '_fields')
+            if param in result._fields:
+                return getattr(result, param)
+            raise Exception(f"Element '{param}' in '{params}' is not supported")
+
+        # index selected
+        try:
+            result = result[index]
+            if all_params:
+                #assert isinstance(result, namedtuple)
+                return string_from_dict_optionally(result._asdict(), params_join)
+            elif param in result._fields:
+                return getattr(result, param)
+            raise Exception(f"Element '{param}' in '{params}' is not supported")
+        except IndexError:
+            raise Exception(f"Element #{index} is not present")
 
     # noinspection PyMethodMayBeStatic
-    def get_value(self, total:bool) -> Tuple[Any,...]:
+    def get_value(self, total:bool) -> Union[List[NamedTuple], NamedTuple]:
         raise Exception("Not implemented")
 
 
@@ -275,30 +291,35 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
             raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
 
         result = self.get_value(total)
+        assert isinstance(result, tuple) or isinstance(result, dict)
         if name is None or name == '':
             if all_params:  # not total
+                #assert isinstance(result, NamedTuple)
+                assert isinstance(result, tuple)
                 return string_from_dict_optionally(result._asdict(), params_join)
-            else:
-                if not total:
-                    return dict_from_dict_of_namedtupes(result, param, params, index_join)
-                elif param in result._fields:
-                    return getattr(result, param)
-                else:
-                    raise Exception("Element '" + param + "' in '" + params + "' is not supported")
-        else:  # name selected
-            result = result[name]
-            if all_params:
-                return string_from_dict_optionally(result._asdict(), params_join)
-            elif param in result._fields:
+            if not total:
+                return dict_from_dict_of_namedtupes(result, param, params, index_join)
+            assert isinstance(result, tuple)
+            if param in result._fields:
                 return getattr(result, param)
-            else:
-                raise Exception("Parameter '" + param + "' in '" + params + "' is not supported")
+            raise Exception(f"Element '{param}' in '{params}' is not supported")
+
+        res = result[name]
+        if all_params:
+            return string_from_dict_optionally(res._asdict(), params_join)
+        elif param in res._fields:
+            return getattr(res, param)
+        raise Exception(f"Parameter '{param}' in '{params}' is not supported")
 
     # noinspection PyMethodMayBeStatic
-    def get_value(self, total:bool) -> Tuple[Any,...]:
+    def get_value(self, total:bool) -> Union[Dict[str, NamedTuple], NamedTuple]:
         raise Exception("Not implemented")
 
 class DiskUsageCommandHandler(MethodCommandHandler):
+
+    def __init__(self) -> None:
+        super().__init__('disk_usage')
+        return
 
     def handle(self, params:str) -> Payload:
         param, disk = split(params)
@@ -307,15 +328,15 @@ class DiskUsageCommandHandler(MethodCommandHandler):
         disk = disk.replace('|', '/')  # replace slashes with vertical slashes to do not conflict with MQTT topic name
 
         tup = self.get_value(disk)
+        assert isinstance(tup, tuple)
         if param == '*' or param == '*;':
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)
-        else:
-            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+        raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
 
     # noinspection PyMethodMayBeStatic
-    def get_value(self, disk:str):
+    def get_value(self, disk:str) -> NamedTuple:
         return psutil.disk_usage(disk)
 
 
@@ -329,10 +350,13 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
         '''
         '''
         tup = self.get_value()
+        # tup is a Dict[str, List[NamedTuple]]
+        assert isinstance(tup, dict)
+
         source, param = split(params)
         if source == '*' or source == '*;':
-            tup = {k: [i.current for i in v] for k, v in tup.items()}
-            return string_from_dict_optionally(tup, source.endswith(';'))
+            d = {k: [i.current for i in v] for k, v in tup.items()}
+            return string_from_dict_optionally(d, source.endswith(';'))
 
         elif source in tup:
             llist = tup[source]
@@ -369,7 +393,8 @@ class SensorsFansCommandHandler(MethodCommandHandler):
             tup = {k: [i.current for i in v] for k, v in tup.items()}
             return string_from_dict_optionally(tup, source.endswith(';'))
 
-        elif source in tup:
+        assert isinstance(tup, dict)
+        if source in tup:
             llist = tup[source]
             label, param = split(param)
             if label == '' and param == '':
@@ -421,171 +446,55 @@ class ProcessesCommandHandler(CommandHandler):
         elif self.top_memory_regexp.match(process):
             pid = self.find_process(process, lambda p: p.memory_percent(), True)
         elif self.pid_file_regexp.match(process):
-            pid = self.get_pid_from_file(self.pid_file_regexp.match(process).group(1).replace('|', '/'))
+            m = self.pid_file_regexp.match(process)
+            assert m is not None
+            pid = self.get_pid_from_file(m.group(1).replace('|', '/'))
         elif self.name_pattern_regexp.match(process):
-            pid = self.get_find_process(self.name_pattern_regexp.match(process).group(1))
+            m = self.name_pattern_regexp.match(process)
+            assert m is not None
+            pid = self.get_find_process(m.group(1))
         else:
             raise Exception("Process in '" + params + "' should be selected")
 
         if pid < 0:
             raise Exception("Process " + process + " not found")
-        process = psutil.Process(pid)
-        return self.get_process_value(process, param, params)
+        return self.get_process_value(
+            psutil.Process(pid), param, params)
 
-    def find_process(self, request, cmp_func, reverse):
-        procs = []
+    def find_process(self, request:str, cmp_func:Callable[..., int],
+            reverse:bool) -> int:
+        procs:List[psutil.Process] = []
         for p in psutil.process_iter():
+            # do we just go and set a new attribute on a built-in object?
             p._sort_value = cmp_func(p)
             procs.append(p)
+
         procs = sorted(procs, key=lambda p: p._sort_value, reverse=reverse)
         m = self.top_number_regexp.match(request)
         index = 0 if m is None else int(m.group(1))
         return procs[index].pid
 
     @staticmethod
-    def get_pid_from_file(filename):
+    def get_pid_from_file(filename:str) -> int:
         with open(filename) as f:
             return int(f.read())
 
     @staticmethod
-    def get_find_process(pattern):
+    def get_find_process(pattern:str) -> int:
         for p in psutil.process_iter():
             if fnmatch.fnmatch(p.name(), pattern):
                 return p.pid
         raise Exception("Process matching '" + pattern + "' not found")
 
     @staticmethod
-    def get_process_value(process, params, all_params):
+    def get_process_value(process:psutil.Process, params:str,
+            all_params:str) -> Any:
         prop, param = split(params)
         process_handler = process_handlers.get(prop, None)
         if process_handler is None:
             raise Exception(f"Parameter '{prop}' in '{all_params}' is not supported")
 
         return process_handler.handle(param, process)
-
-
-class ProcessCommandHandler:
-    '''
-
-    '''
-    def __init__(self, name:str):
-        self.name = name
-
-    def handle(self, param:str, process) -> Payload:
-        raise Exception("Not implemented")
-
-
-class ProcessPropertiesCommandHandler(ProcessCommandHandler):
-    '''
-    '''
-
-    def __init__(self, name, join, subproperties):
-        super().__init__(name)
-        self.join = join
-        self.subproperties = subproperties
-
-    def handle(self, param:str, process) -> Payload:
-        if param != '':
-            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
-
-        return self.get_value(process)
-
-    def get_value(self, process) -> Payload:
-        result: Dict[str, Any] = dict()
-        for k, handler in process_handlers.items():
-            if hasattr(handler, "method") and handler.method is not None:  # property is defined for current OS
-                try:
-                    if isinstance(handler, ProcessMethodCommandHandler):
-                        v = handler.handle('', process)
-                        self.add_to_dict(result, k, v, self.join)
-                    elif self.subproperties:
-                        if isinstance(handler, ProcessMethodIndexCommandHandler) \
-                                or isinstance(handler, ProcessMethodTupleCommandHandler):
-                            v = handler.handle('*', process)
-                            self.add_to_dict(result, k, v, self.join)
-                except psutil.AccessDenied:  # just skip with property
-                    logging.error(f"AccessDenied when calling {handler}.handle()")
-
-        return string_from_dict_optionally(result, self.join)
-
-    @staticmethod
-    def add_to_dict(d:Dict[str, Any], key:str, val:Any,
-            join:bool) -> None:
-        '''
-        Join or merge d and val
-        '''
-        if join:
-            assert isinstance(d, dict)
-            d[key] = val
-        elif isinstance(val, dict):
-            for k, v in val.items():
-                d[key + "/" + k] = v
-        elif isinstance(val, list):
-            for i, v in enumerate(val):
-                d[f"{key}/{i}"] = v
-        else:
-            d[key] = val
-        return
-
-
-class ProcessMethodCommandHandler(ProcessCommandHandler):
-    def __init__(self, name:str):
-        super().__init__(name)
-        try:
-            self.method = getattr(psutil.Process, self.name)
-        except AttributeError:
-            self.method = None  # method not defined
-        return
-
-    def handle(self, param, process):
-        if param != '':
-            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
-
-        return self.get_value(process)
-
-    def get_value(self, process):
-        return self.method(process)
-
-
-class ProcessMethodIndexCommandHandler(ProcessCommandHandler):
-    def __init__(self, name:str):
-        super().__init__(name)
-        try:
-            self.method = getattr(psutil.Process, self.name)
-        except AttributeError:
-            self.method = None  # method not defined
-        return
-
-    def handle(self, param, process):
-        arr = self.method(process)
-
-        if param == '*' or param == '*;':
-            return string_from_list_optionally(arr, param.endswith(';'))
-        elif param == 'count':
-            return len(arr)
-        elif param.isdigit():
-            return arr[int(param)]
-        #else:
-        raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
-
-
-class ProcessMethodTupleCommandHandler(ProcessCommandHandler):
-    def __init__(self, name:str):
-        super().__init__(name)
-        try:
-            self.method = getattr(psutil.Process, self.name)
-        except AttributeError:
-            self.method = None  # method not defined
-        return
-
-    def handle(self, param, process):
-        tup = self.method(process)
-        if param == '*' or param == '*;':
-            return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
-        elif param in tup._fields:
-            return getattr(tup, param)
-        #else:
-        raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
 
 
 handlers = {
@@ -611,7 +520,7 @@ handlers = {
     'virtual_memory': TupleCommandHandler('virtual_memory'),
     'swap_memory': TupleCommandHandler('swap_memory'),
     'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
-    'disk_usage': DiskUsageCommandHandler('disk_usage'),
+    'disk_usage': DiskUsageCommandHandler(),
 
     'disk_io_counters': type(
         "DiskIOCountersCommandHandler",
@@ -637,6 +546,120 @@ handlers = {
     'sensors_fans': SensorsFansCommandHandler(),
     'sensors_battery': TupleCommandHandler('sensors_battery'),
 }
+
+
+class ProcessCommandHandler:
+    '''
+
+    '''
+    def __init__(self, name:str):
+        self.name = name
+
+    def handle(self, param:str, process:psutil.Process) -> Payload:
+        raise Exception("Not implemented")
+
+
+class ProcessMethodCommandHandler(ProcessCommandHandler):
+    def __init__(self, name:str):
+        super().__init__(name)
+        try:
+            self.method = getattr(psutil.Process, self.name)
+        except AttributeError:
+            self.method = None  # method not defined
+        return
+
+    def handle(self, param:str, process:psutil.Process) -> Payload:
+        if param != '':
+            raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+
+        return self.get_value(process)
+
+    def get_value(self, process:psutil.Process) -> Payload:
+        if self.method is None:
+            raise Exception(f"Not implemented: psutil.{self.name}")
+        return self.method(process)
+
+
+class ProcessPropertiesCommandHandler(ProcessCommandHandler):
+    '''
+    '''
+
+    def __init__(self, name:str, join:bool, subproperties:bool):
+        super().__init__(name)
+        self.join = join
+        self.subproperties = subproperties
+        return
+
+    def handle(self, param:str, process:psutil.Process) -> Payload:
+        if param != '':
+            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+
+        return self.get_value(process)
+
+    def get_value(self, process:psutil.Process) -> Payload:
+        result: Dict[str, Any] = dict()
+        for k, handler in process_handlers.items():
+            if hasattr(handler, "method") and handler.method is not None:  # property is defined for current OS
+                try:
+                    if isinstance(handler, ProcessMethodCommandHandler):
+                        v = handler.handle('', process)
+                        self.add_to_dict(result, k, v)
+                    elif self.subproperties:
+                        if isinstance(handler, ProcessMethodIndexCommandHandler) \
+                                or isinstance(handler, ProcessMethodTupleCommandHandler):
+                            v = handler.handle('*', process)
+                            self.add_to_dict(result, k, v)
+                except psutil.AccessDenied:  # just skip with property
+                    logging.error(f"AccessDenied when calling {handler}.handle()")
+
+        return string_from_dict_optionally(result, self.join)
+
+    def add_to_dict(self, d:Dict[str, Any], key:str, val:Any) -> None:
+        '''
+        Join or merge d and val
+        '''
+        if self.join:
+            assert isinstance(d, dict)
+            d[key] = val
+        elif isinstance(val, dict):
+            for k, v in val.items():
+                d[key + "/" + k] = v
+        elif isinstance(val, list):
+            for i, v in enumerate(val):
+                d[f"{key}/{i}"] = v
+        else:
+            d[key] = val
+        return
+
+
+class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
+
+    def handle(self, param:str, process:psutil.Process) -> Payload:
+        assert self.method is not None
+        arr = self.method(process)
+
+        if param == '*' or param == '*;':
+            return string_from_list_optionally(arr, param.endswith(';'))
+        elif param == 'count':
+            return len(arr)
+        elif param.isdigit():
+            return arr[int(param)]
+        #else:
+        raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+
+
+class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
+
+    def handle(self, param:str, process:psutil.Process) -> Payload:
+        assert self.method is not None
+        tup = self.method(process)
+        if param == '*' or param == '*;':
+            return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
+        elif param in tup._fields:
+            return getattr(tup, param)
+        #else:
+        raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+
 
 process_handlers = {
     '*': ProcessPropertiesCommandHandler('*', False, False),
@@ -670,8 +693,9 @@ process_handlers = {
 }
 
 
-def list_from_array_of_namedtupes(array_of_namedtupes: List[Any], key,
-        func, join=False) -> Union[List[Any], str]:
+def list_from_array_of_namedtupes(
+        array_of_namedtupes: Union[List[Any], NamedTuple], key, func,
+        join=False) -> Union[List[Any], str]:
     result = list()
     for tup in array_of_namedtupes:
         if key in tup._fields:
@@ -681,8 +705,8 @@ def list_from_array_of_namedtupes(array_of_namedtupes: List[Any], key,
     return string_from_list_optionally(result, join)
 
 
-def dict_from_dict_of_namedtupes(dict_of_namedtupes:Dict[str, Any], key:str,
-        func, join=False) -> Union[Dict[str, Any], str]:
+def dict_from_dict_of_namedtupes(dict_of_namedtupes:Dict[str, NamedTuple],
+        key:str, func, join=False) -> Union[Dict[str, Any], str]:
     result = dict()
     for name, tup in dict_of_namedtupes.items():
         if key in tup._fields:
@@ -691,22 +715,21 @@ def dict_from_dict_of_namedtupes(dict_of_namedtupes:Dict[str, Any], key:str,
             raise Exception(f"Element '{key}' in '{func}' is not supported")
     return string_from_dict_optionally(result, join)
 
-
-def string_from_dict(d:Dict[str, Any]) -> str:
-    return json.dumps(d, sort_keys=True)
-
-
-def string_from_dict_optionally(d, join) -> Union[Dict[str, Any], str]:
+def string_from_dict_optionally(d:dict, join) -> Union[dict, str]:
     return string_from_dict(d) if join else d
 
+def string_from_dict(d:dict) -> str:
+    return json.dumps(d, sort_keys=True)
 
 def string_from_list_optionally(lst:List[Any], join) -> Union[List[Any], str]:
     return json.dumps(lst) if join else lst
 
 
-def split(s: str) -> List[str]:
+def split(s: str) -> Tuple[str, str]:
     parts = s.split("/", 1)
-    return parts if len(parts) == 2 else [parts[0], '']
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    return parts[0], ''
 
 def get_value(path:str) -> Payload:
     '''

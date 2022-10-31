@@ -4,7 +4,7 @@ from collections import namedtuple
 from typing import Any, Dict, NamedTuple, Optional
 import psutil._common
 
-from handlers import (
+from .handlers import (
     DiskUsageCommandHandler,
     IndexCommandHandler,
     IndexOrTotalCommandHandler,
@@ -13,6 +13,7 @@ from handlers import (
     NameOrTotalTupleCommandHandler,
     SensorsTemperaturesCommandHandler,
     TupleCommandHandler,
+    SensorsFansCommandHandler,
     ValueCommandHandler,
     get_value
 )
@@ -108,7 +109,8 @@ class TestHandlers(unittest.TestCase):
                 'sensors_battery'):
             handler = TupleCommandHandler(foo)
             val = handler.get_value()
-            print(val)
+            #print(val)
+            self.assertIsInstance(val, tuple)
 
         return
 
@@ -231,7 +233,7 @@ class TestHandlers(unittest.TestCase):
     def test_disk_usage_command_handler(self) -> None:
         disk: Optional[str] = '/'
         handler = type("TestHandler", (DiskUsageCommandHandler, object),
-                       {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})('test')
+                       {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})()
         # normal execution
         self.assertEqual(10, handler.handle('a//'))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*//'))
@@ -260,9 +262,20 @@ class TestHandlers(unittest.TestCase):
         test = namedtuple('test', 'a b')
         return test(10, 20)
 
+    def test_DiskUsageCommandHandler(self) -> None:
+        handler = DiskUsageCommandHandler()
+        val = handler.get_value('/')
+        #print(val)
+        self.assertIsInstance(val, tuple)
+        return
+
     def test_temperature_sensors(self) -> None:
-        handler = type("TestHandler", (SensorsTemperaturesCommandHandler, object),
-                       {"get_value": lambda s: self._temperature_sensors_get_value()})()
+        handler = type(
+            "TestHandler",
+            (SensorsTemperaturesCommandHandler, object),
+            {
+                "get_value": lambda s: self._temperature_sensors_get_value()
+            })()
         self.assertEqual(handler.handle('*'), {"asus": [30.0], "coretemp": [45.0, 52.0]})
         self.assertEqual(handler.handle('*;'), '{"asus": [30.0], "coretemp": [45.0, 52.0]}')
         self.assertEqual(handler.handle('asus'), [30.0])
@@ -288,6 +301,19 @@ class TestHandlers(unittest.TestCase):
         ret['coretemp'].append(psutil._common.shwtemp('Core 1', 52.0, 100.0, 100.0))
         ret['asus'].append(psutil._common.shwtemp('', 30.0, None, None))
         return dict(ret)
+
+    def test_SensorsFansCommandHandler(self) -> None:
+        handler = SensorsFansCommandHandler()
+        val = handler.get_value()
+        #print(val)
+        self.assertIsInstance(val, dict)
+        assert isinstance(val, dict)
+        for k,v in val.items():
+            self.assertIsInstance(k, str)
+            self.assertIsInstance(v, list)
+            for t in v:
+                self.assertIsInstance(t, tuple)
+        return
 
     def test_get_value(self) -> None:
         val = get_value('cpu_percent')
