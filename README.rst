@@ -11,7 +11,7 @@ Is written in Python and based on briliant `psutil <https://github.com/giampaolo
 ============
 Installation
 ============
-Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
+Just install the required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
    pip install -r requirements.txt
 
@@ -203,15 +203,15 @@ Temperature
 Fan speed
 ::
 
-   sensors_fans/* - Funs current speeds. Topic per fun
-   sensors_fans/*;  - Funs current speeds in one topic (JSON string)
-   sensors_fans/{SENSOR_NAME} - Single fun current speed (could be array value if fun has several devices)
-   sensors_fans/{SENSOR_NAME}/* - Single fun speeds. Topic per speed
-   sensors_fans/{SENSOR_NAME}/*; - Single fun speeds in one topic (JSON string)
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single fun device by number/label current speed
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single fun device by number/label speed. Topic per parameter
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single fun device by number/label speed in one topic (JSON string)
-   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single fun device by number/label speed separate parameters
+   sensors_fans/* - Fans current speeds. Topic per fan
+   sensors_fans/*;  - Fans current speeds in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME} - Single fan current speed (could be array value if fan has several devices)
+   sensors_fans/{SENSOR_NAME}/* - Single fan speeds. Topic per speed
+   sensors_fans/{SENSOR_NAME}/*; - Single fan speeds in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single fan device by number/label current speed
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single fan device by number/label speed. Topic per parameter
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single fan device by number/label speed in one topic (JSON string)
+   sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single fan device by number/label speed separate parameters
 
 Battery
 ::
