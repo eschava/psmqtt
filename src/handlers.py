@@ -388,12 +388,13 @@ class SensorsFansCommandHandler(MethodCommandHandler):
 
     def handle(self, params:str) -> Payload:
         tup = self.get_value()
+        assert isinstance(tup, dict)
+
         source, param = split(params)
         if source == '*' or source == '*;':
             tup = {k: [i.current for i in v] for k, v in tup.items()}
             return string_from_dict_optionally(tup, source.endswith(';'))
 
-        assert isinstance(tup, dict)
         if source in tup:
             llist = tup[source]
             label, param = split(param)
@@ -425,19 +426,18 @@ class ProcessesCommandHandler(CommandHandler):
     pid_file_regexp = re.compile("^pid\[(.*)\]$")
     name_pattern_regexp = re.compile("^name\[(.*)\]$")
 
-    def __init__(self, name:str):
-        super().__init__(name)
+    def __init__(self) -> None:
+        super().__init__('processes')
+        return
 
     def handle(self, params:str) -> Payload:
         process, param = split(params)
 
-        if process == '*' or process == '*;':
+        if process in ('*', '*;'):
             if param == '*':
-                raise Exception("Parameter name in '" + self.name + "' should be specified")
-            result = dict()
-            for p in psutil.process_iter():
-                value = self.get_process_value(p, param, params)
-                result[p.pid] = value
+                raise Exception(f"Parameter name in '{self.name}' should be specified")
+            result = {p.pid: self.get_process_value(p, param, params)
+                for p in psutil.process_iter()}
             return string_from_dict_optionally(result, process.endswith(';'))
         elif process.isdigit():
             pid = int(process)
@@ -461,11 +461,11 @@ class ProcessesCommandHandler(CommandHandler):
         return self.get_process_value(
             psutil.Process(pid), param, params)
 
-    def find_process(self, request:str, cmp_func:Callable[..., int],
+    def find_process(self, request:str, cmp_func:Callable[..., float],
             reverse:bool) -> int:
         procs:List[psutil.Process] = []
         for p in psutil.process_iter():
-            # do we just go and set a new attribute on a built-in object?
+            # do we just set a new attribute on a built-in object?
             p._sort_value = cmp_func(p)
             procs.append(p)
 
@@ -538,7 +538,7 @@ handlers = {
                 psutil.net_io_counters(pernic=not total)
         })('net_io_counters'),
 
-    'processes': ProcessesCommandHandler('processes'),
+    'processes': ProcessesCommandHandler(),
     'users': IndexTupleCommandHandler('users'),
     'boot_time': ValueCommandHandler('boot_time'),
     'pids': IndexCommandHandler('pids'),
@@ -610,7 +610,7 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
                             v = handler.handle('*', process)
                             self.add_to_dict(result, k, v)
                 except psutil.AccessDenied:  # just skip with property
-                    logging.error(f"AccessDenied when calling {handler}.handle()")
+                    logging.warning(f"AccessDenied when calling {handler}.handle()")
 
         return string_from_dict_optionally(result, self.join)
 

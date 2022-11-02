@@ -14,12 +14,12 @@ Installation
 Just install required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
    pip install -r requirements.txt
-   
+
 After you can run main file using::
 
   python psmqtt.py
 
-  
+
 ===============================================
 General information about tasks and MQTT topics
 ===============================================
@@ -114,7 +114,7 @@ It's better to describe how to use it using example.
 To get information for task "cpu_percent" with MQTT prefix "psmqtt/COMPUTER_NAME/" you need to send any string on topic::
 
   psmqtt/COMPUTER_NAME/request/cpu_percent
-  
+
 and result will be pushed on the topic::
 
   psmqtt/COMPUTER_NAME/cpu_percent
@@ -134,7 +134,7 @@ CPU
    cpu_percent/*; - CPU usage in percent per CPU in one topic (JSON string)
    cpu_percent/{0/1/2/etc} - CPU usage for single CPU
    cpu_times_percent/* - CPU times in percent. Topic per parameter
-   cpu_times_percent/*;  - CPU times in percent in one topic (JSON string)   
+   cpu_times_percent/*;  - CPU times in percent in one topic (JSON string)
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest} - CPU times in percent separate parameters
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/* - CPU times in percent separate parameters. Topic per CPU number
    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/*; - CPU times in percent separate parameters per CPU number in one topic (JSON string)
@@ -144,7 +144,7 @@ CPU
    cpu_stats/* - CPU statistics. Topic per parameter
    cpu_stats/*;  - CPU statistics in one topic (JSON string)
    cpu_stats/{ctx_switches/interrupts/soft_interrupts/syscalls} - CPU statistics separate parameters
-   
+
 Memory
 ::
 
@@ -154,7 +154,7 @@ Memory
    swap_memory/* - Swap memory. Topic per parameter
    swap_memory/*;  - Swap memory in one topic (JSON string)
    swap_memory/{total/used/free/percent/sin/sout} - Swap memory separate parameters
-   
+
 Disks
 ::
 
@@ -251,7 +251,7 @@ Processes
             - top_memory - top memory consuming process
             - top_memory[N] - memory consuming process number N
             - pid[PATH] - process with ID specified in the file having PATH path (.pid file). Slashes in path should be replaced with vertical slash
-            - name[PATTERN] - process with name mathing PATTERN pattern (use * to match zero or more characters, ? for single character)
+            - name[PATTERN] - process with name matching PATTERN pattern (use * to match zero or more characters, ? for single character)
             - * - to get value of some property for all processes. Topic per process ID
             - *; - to get value of some property for all processes in one topic (JSON string)
         and PARAMETER_NAME could be one of
@@ -296,7 +296,7 @@ Processes
             - ** - all process properties and sub-properties. Topic per property
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
-   
+
 ============
 Useful tasks
 ============
@@ -317,4 +317,3 @@ Useful tasks
 **processes/top_cpu/name** - name of top process consuming CPU
 
 **processes/top_memory/exe** - executable file of top process consuming memory
-

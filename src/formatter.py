@@ -1,13 +1,58 @@
+import time
 from typing import Any, Optional, Text, Tuple
 from jinja2 import Environment  # pip install jinja2
 
-from . import filters
+def kb(value:int) -> str:
+    return str(value // 1024) + " KB"
 
+
+def mb(value:int) -> str:
+    return str(value // 1024 // 1024) + " MB"
+
+
+def gb(value:int) -> str:
+    return str(value // 1024 / 1024 // 1024) + " GB"
+
+
+def uptime(boot_time:float) -> str:
+    upt = time.time() - boot_time
+
+    retval = ""
+    days = int(upt / (60 * 60 * 24))
+
+    if days != 0:
+        retval += str(days) + " " + ("days" if days > 1 else "day") + ", "
+
+    minutes = int(upt / 60)
+    hours = int(minutes / 60)
+    hours %= 24
+    minutes %= 60
+
+    if hours != 0:
+        retval += str(hours) + ":" + (str(minutes) if minutes >= 10 else "0" + str(minutes))
+    else:
+        retval += str(minutes) + " min"
+
+    return retval
+
+def uptimesec(boot_time: float) -> int:
+    upt = time.time() - boot_time
+    return round(upt)
+
+
+def register_filters() -> Environment:
+    env = Environment()
+    env.filters['KB'] = kb
+    env.filters['MB'] = mb
+    env.filters['GB'] = gb
+    env.filters['uptime'] = uptime
+    env.filters['uptimesec'] = uptimesec
+    return env
 
 class Formatter:
     '''
     '''
-    env:Optional[Environment] = None
+    env = register_filters()
 
     @classmethod
     def get_format(cls, path:str) -> Tuple[str, Optional[str]]:
@@ -23,13 +68,5 @@ class Formatter:
 
     @classmethod
     def format(cls, f:str, value: Any) -> Text:
-        env = cls.get_environment()
-        return env.from_string(f).render(value if isinstance(value, dict) else {"x": value})
-
-    @classmethod
-    def get_environment(cls) -> Environment:
-        if cls.env is None:
-            cls.env = Environment()
-            filters.register_filters(cls.env)
-
-        return cls.env
+        return cls.env.from_string(f).render(
+            value if isinstance(value, dict) else {"x": value})

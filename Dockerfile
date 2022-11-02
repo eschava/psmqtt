@@ -12,9 +12,10 @@ RUN rm -r requirements.txt
 WORKDIR /build/deps
 RUN rm -rf \
     __pycache__ \
+    src/__pycache__ \
     pip \
     pip* \
-    *_test.py \
+    src/*_test.py \
     psutil/tests
 
 FROM public.ecr.aws/docker/library/python:3.11-alpine
