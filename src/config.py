@@ -32,6 +32,8 @@ def load_config() -> Config:
     '''
 
     dirname = os.path.dirname(os.path.abspath(__file__))
+    dirname = os.path.abspath(os.path.join(dirname, '..'))
+
     logging_conf_path = os.path.join(dirname, 'logging.conf')
     psmqtt_conf_path = os.getenv(
         'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.conf'))
