@@ -4,9 +4,18 @@
 Summary
 =======
 
-**PSMQTT** is a cross-platform utility for reporting system and processes utilization (CPU, memory, disks, network) using MQTT protocol.
+**PSMQTT** is a cross-platform utility for reporting system and processes
+metrics (CPU, memory, disks, network, smart disk data) to an MQTT broker.
 
-Is written in Python and based on briliant `psutil <https://github.com/giampaolo/psutil>`_ library.
+**PSMQTT**  is written in Python and is based on:
+
+* `paho-mqtt <https://github.com/eclipse/paho.mqtt.python>` to communicate with
+the MQTT broker;
+* `psutil <https://github.com/giampaolo/psutil>` to collect metrics;
+* `pySMART <https://github.com/jakogut/pySMART>` to collect SMART data;
+* `recurrent <https://github.com/kvh/recurrent>` to describe reporting
+schedule.
+* `jinja2 <https://github.com/alex-foundation/jinja2>` to format the data.
 
 ============
 Installation
@@ -84,9 +93,9 @@ Examples::
 =============
 Configuration
 =============
-All configuration is present in **psmqtt.conf** file at the app's directory or any other file referenced by **PSMQTTCONFIG** environment variable.
+All configuration is present in **psmqtt.conf** file in the app's directory or any other file referenced by **PSMQTTCONFIG** environment variable.
 
-It's parsed using Python interpreter and contains constants for MQTT broker connection and tasks that have to be executed periodically (schedule).
+The configuration file is parsed using Python interpreter and contains constants for MQTT broker connection and tasks that have to be executed periodically (schedule).
 
 There are two ways how to force sending some system state parameter over MQTT topic
 
@@ -317,3 +326,7 @@ Useful tasks
 **processes/top_cpu/name** - name of top process consuming CPU
 
 **processes/top_memory/exe** - executable file of top process consuming memory
+
+**smart/nvme0/** - all the device 'nvme0' SMART data, requries SUDO
+
+**smart/nvme0/temperature** - 'nvme0' temperature, requires SUDO

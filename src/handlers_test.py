@@ -13,6 +13,7 @@ from .handlers import (
     NameOrTotalTupleCommandHandler,
     ProcessesCommandHandler,
     SensorsTemperaturesCommandHandler,
+    SmartCommandHandler,
     TupleCommandHandler,
     SensorsFansCommandHandler,
     ValueCommandHandler,
@@ -352,6 +353,22 @@ class TestHandlers(unittest.TestCase):
 
         val = get_value('virtual_memory/percent')
         self.assertIsInstance(val, float)
+
+        return
+
+    def test_SmartCommandHandler(self) -> None:
+        handler = SmartCommandHandler()
+        #val = handler.get_value()
+        try:
+            val = handler.handle('dev/nvme0')
+            #print(val)
+            self.assertIsInstance(val, dict)
+            assert isinstance(val, dict)
+
+            self.assertEqual(
+                handler.handle('*'), {"asus": [30.0], "coretemp": [45.0, 52.0]})
+        except Exception:
+            pass
 
         return
 

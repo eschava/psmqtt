@@ -3,6 +3,7 @@ import fnmatch
 import json
 import logging
 import psutil  # pip install psutil
+from pySMART import Device as SmartDevice
 import re
 from typing import (
     Any,
@@ -497,6 +498,52 @@ class ProcessesCommandHandler(CommandHandler):
         return process_handler.handle(param, process)
 
 
+class SmartCommandHandler(CommandHandler):
+    '''
+    Handler of commands addressed to SMART
+    '''
+
+    def __init__(self) -> None:
+        '''
+
+        '''
+        super().__init__('smart')
+        return
+
+    def handle(self, params:str) -> Payload:
+        '''
+        Will call self.get_value()
+        '''
+        all_params = params
+        dev, params = split(params)
+        if dev == 'dev':
+            self.name, params = split(params)
+        else:
+            self.name = dev
+
+        self.name = f'/dev/{self.name}'
+        self.device = SmartDevice(self.name)
+        if self.device.serial is None:
+            errmsg = f"Use sudo to read '{self.name}' SMART data"
+            logging.error(errmsg)
+            raise Exception(errmsg)
+
+        info = self.device.__getstate__()
+        if params == '':
+            return string_from_dict_optionally(info, True) #params.endswith(';')
+        elif params == '*':
+            return string_from_dict_optionally(info, False)
+        elif params == '*;':
+            return string_from_dict_optionally(info, True)
+        val = info.get(params, None)
+        if val is not None:
+            return val
+        raise Exception(f"Parameter '{all_params}' is not supported")
+
+    def get_value(self) -> Payload:
+        raise Exception("Not implemented")
+
+
 handlers = {
     'cpu_times': TupleCommandHandler('cpu_times'),
 
@@ -545,6 +592,7 @@ handlers = {
     'sensors_temperatures': SensorsTemperaturesCommandHandler(),
     'sensors_fans': SensorsFansCommandHandler(),
     'sensors_battery': TupleCommandHandler('sensors_battery'),
+    'smart': SmartCommandHandler(),
 }
 
 
@@ -695,7 +743,7 @@ process_handlers = {
 
 def list_from_array_of_namedtupes(
         array_of_namedtupes: Union[List[Any], NamedTuple], key, func,
-        join=False) -> Union[List[Any], str]:
+        join:bool = False) -> Union[List[Any], str]:
     result = list()
     for tup in array_of_namedtupes:
         if key in tup._fields:
@@ -715,13 +763,13 @@ def dict_from_dict_of_namedtupes(dict_of_namedtupes:Dict[str, NamedTuple],
             raise Exception(f"Element '{key}' in '{func}' is not supported")
     return string_from_dict_optionally(result, join)
 
-def string_from_dict_optionally(d:dict, join) -> Union[dict, str]:
+def string_from_dict_optionally(d:Dict[Any,Any], join:bool) -> Union[Dict[Any,Any], str]:
     return string_from_dict(d) if join else d
 
-def string_from_dict(d:dict) -> str:
+def string_from_dict(d:Dict[Any,Any]) -> str:
     return json.dumps(d, sort_keys=True)
 
-def string_from_list_optionally(lst:List[Any], join) -> Union[List[Any], str]:
+def string_from_list_optionally(lst:List[Any], join:bool) -> Union[List[Any], str]:
     return json.dumps(lst) if join else lst
 
 
