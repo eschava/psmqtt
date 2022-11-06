@@ -8,11 +8,13 @@ import argparse
 import logging
 import os
 import socket
+import sys
 from typing import Any, Dict, List, Union
 
-from src.task import MqttClient, run_task
-
 def run_tasks(tasks: List[str]) -> None:
+    # delay import to enable PYTHONPATH adjustment
+    from src.task import run_task
+
     def parse_task(t:str) -> Union[str, Dict[str, Any]]:
         logging.debug("Parsing: %s", t)
         if t.startswith('{'):
@@ -73,17 +75,28 @@ def run() -> None:
         help='Broker host and optional port, e.g. "mqtt:1883"')
     parser.add_argument('--password', default='',  # BAD IDEA
         help='MQTT password, defaults to ""')
+    parser.add_argument('--pythonpath', default='',
+        help='Add this directory to PYTHONPATH, defaults to ""')
     parser.add_argument('broker',
         help='Broker host and optional port, e.g. "mqtt:1883"')
     parser.add_argument('task', nargs='+',
         help='Task, e.g. "cpu_percent", "virtual_memory/percent"')
 
     args = validate_args(parser.parse_args())
+    #
+    # start processing args
+    #
+    if args.pythonpath:
+        logging.debug("Adding to PYTHONPATH: '%s'", args.pythonpath)
+        sys.path.append(args.pythonpath)
 
     topic_prefix = f'psmqtt/{socket.gethostname()}/'
-    request_topic = ''  # 'request'
+    request_topic = 'request'
     if request_topic != '':
         request_topic = topic_prefix + request_topic + '/'
+
+    # delayed import to enable PYTHONPATH adjustment
+    from src.task import MqttClient
 
     mqttc = MqttClient(f'psmqtt-once-{os.getpid()}', False, topic_prefix,
         request_topic, args.qos, args.retain)

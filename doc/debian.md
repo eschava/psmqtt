@@ -38,17 +38,17 @@ smartctl --scan
 
 ```
 git clone https://github.com/asokolsky/psmqtt.git
-git checkout typing
+git switch typing
 python3 -m pip install -r requirements.txt
 ```
 
 ## First Run
 
-I repeatedly run `psmqtt-publish.py` adding more and more tasks untill I arrive
+I repeatedly run `psmqtt-publish.py` adding more and more tasks until I arrive
 at something like:
 
 ```sh
-python3 psmqtt-publish.py -vvv mqtt \
+sudo python3 psmqtt-publish.py -vvv mqtt \
     cpu_percent \
     virtual_memory/percent \
     sensors_temperatures/coretemp/0/ \

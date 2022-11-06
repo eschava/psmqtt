@@ -11,16 +11,15 @@ from datetime import datetime
 from dateutil.rrule import rrulestr  # pip install python-dateutil
 import os
 #import sys
-from recurrent import RecurringEvent  # pip install recurrent
 import sched
 import socket
 import logging
+import sys
 from threading import Thread
 import time
 from typing import Any, Dict, List, Union
 
 from src.config import load_config
-from src.task import MqttClient, run_task
 
 def run_tasks(tasks: Union[str, Dict[str, str],
         List[Union[Dict[str, str], str]]]) -> None:
@@ -32,6 +31,9 @@ def run_tasks(tasks: Union[str, Dict[str, str],
         or
         {"boot_time/{{x|uptime}}": "uptime" }
     '''
+    # delayed import to enable PYTHONPATH adjustment
+    from src.task import run_task
+
     logging.debug("run_tasks(%s)", tasks)
 
     if isinstance(tasks, dict):
@@ -78,15 +80,23 @@ def run() -> None:
     # read initial config files - this may exit(2)
     #
     cf = load_config()
-    #
-    # create MqttClient
-    #
+    pythonpath = cf.get('pythonpath', '')
+    if pythonpath:
+        logging.debug("Adding to PYTHONPATH: '%s'", pythonpath)
+        sys.path.append(pythonpath)
+
     topic_prefix = cf.get(
         'mqtt_topic_prefix', f'psmqtt/{socket.gethostname()}/')
     request_topic = cf.get('mqtt_request_topic', 'request')
     if request_topic != '':
         request_topic = topic_prefix + request_topic + '/'
 
+    # delayed import to enable PYTHONPATH adjustment
+    from recurrent import RecurringEvent  # pip install recurrent
+    from src.task import MqttClient
+    #
+    # create MqttClient
+    #
     mqttc = MqttClient(
         cf.get('mqtt_clientid', 'psmqtt-%s' % os.getpid()),
         cf.get('mqtt_clean_session', False),
@@ -107,6 +117,10 @@ def run() -> None:
     #
     schedule = cf.get('schedule', {})
     assert isinstance(schedule, dict)
+    if not schedule:
+        logging.error("No schedule to execute, exiting")
+        return
+
     s = sched.scheduler(time.time, time.sleep)
     now = datetime.now()
     for t, tasks in schedule.items():

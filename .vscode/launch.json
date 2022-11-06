@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["asokolsky.github.io"],
+            "args": ["--pythonpath", "/foo/bar", "mqtt", "cpu_percent"],
         }
     ]
 }

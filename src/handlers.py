@@ -46,7 +46,12 @@ class MethodCommandHandler(CommandHandler):
 
     def __init__(self, name:str):
         super().__init__(name)
-        self.method: Callable[..., Payload] = getattr(psutil, name)
+        #
+        # on FreeBSD sensors_fans is not defined!
+        #
+        self.method: Optional[Callable[..., Payload]] = getattr(psutil, name, None)
+        if self.method is None:
+            logging.warning(f"psutil '{self.name}' not implemented")
         return
 
     def handle(self, params:str) -> Payload:
@@ -56,6 +61,8 @@ class MethodCommandHandler(CommandHandler):
         raise Exception("Not implemented")
 
     def get_value(self) -> Payload:
+        if self.method is None:
+            raise Exception(f"psutil '{self.name}' not implemented")
         return self.method()
 
 class ValueCommandHandler(MethodCommandHandler):

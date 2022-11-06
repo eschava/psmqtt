@@ -138,7 +138,7 @@ def run_task(task: str, topic_name: str) -> None:
     def mqttc_publish(topic:str, payload:str) -> None:
         assert self is not None
         assert self.mqttc is not None
-        logging.debug("mqttc.publish('%s', '%s')", topic, payload)
+        logging.info("mqttc.publish('%s', '%s')", topic, payload)
         self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
         return
 
