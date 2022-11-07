@@ -1,0 +1,14 @@
+__pycache__/
+__pypackages__/
+
+venv/
+
+.scrapy
+
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+*.log

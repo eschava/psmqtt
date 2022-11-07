@@ -3,3 +3,5 @@ paho-mqtt
 python-dateutil
 psutil
 jinja2
+types-paho-mqtt
+pySMART

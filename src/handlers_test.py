@@ -1,48 +1,32 @@
 import unittest
 import collections
 from collections import namedtuple
-from handlers import *
-from psmqtt import *
+from typing import Any, Dict, NamedTuple, Optional
 import psutil._common
 
-
-def get_subtopic(topic, param):
-    t = Topic(topic)
-    return t.get_subtopic(param) if t.is_multitopic() else topic
-
-
-class TestMain(unittest.TestCase):
-    def test_get_subtopic(self):
-        self.assertEqual("/haha", get_subtopic('/haha', 'a'))
-        self.assertEqual("/a", get_subtopic('/*', 'a'))
-        self.assertEqual("/a", get_subtopic('/**', 'a'))
-        self.assertEqual("/a/*", get_subtopic('/*/*', 'a'))
-        self.assertEqual("/a/**", get_subtopic('/*/**', 'a'))
-        self.assertEqual("/a/**", get_subtopic('/**/**', 'a'))
-
-        # wildcard inside brackets
-        self.assertEqual("/name[ppp*]/a", get_subtopic('/name[ppp*]/**', 'a'))
-        self.assertEqual("/name[ppp*]/*;", get_subtopic('/name[ppp*]/*;', 'a'))
-        self.assertEqual("/name[ppp*]/haha", get_subtopic('/name[ppp*]/haha', 'a'))
-        self.assertEqual("/a/name[ppp*]/**", get_subtopic('/*/name[ppp*]/**', 'a'))
-        self.assertEqual("/a/name[ppp*]/**", get_subtopic('/**/name[ppp*]/**', 'a'))
-        self.assertEqual("/*;/name[ppp*]/a", get_subtopic('/*;/name[ppp*]/**', 'a'))
-        self.assertEqual("/**;/name[ppp*]/a", get_subtopic('/**;/name[ppp*]/**', 'a'))
-        self.assertEqual("/**;/name[ppp*]/*;", get_subtopic('/**;/name[ppp*]/*;', 'a'))
-
-        # wildcard with ;
-        self.assertEqual("/*;", get_subtopic('/*;', 'a'))
-        self.assertEqual("/**;", get_subtopic('/**;', 'a'))
-        self.assertEqual("/*;/a", get_subtopic('/*;/*', 'a'))
-        self.assertEqual("/*;/a", get_subtopic('/*;/**', 'a'))
-        self.assertEqual("/*;/*;", get_subtopic('/*;/*;', 'a'))
-        self.assertEqual("/*;/**;", get_subtopic('/*;/**;', 'a'))
-
+from .handlers import (
+    DiskUsageCommandHandler,
+    IndexCommandHandler,
+    IndexOrTotalCommandHandler,
+    IndexOrTotalTupleCommandHandler,
+    IndexTupleCommandHandler,
+    NameOrTotalTupleCommandHandler,
+    ProcessesCommandHandler,
+    SensorsTemperaturesCommandHandler,
+    SmartCommandHandler,
+    TupleCommandHandler,
+    SensorsFansCommandHandler,
+    ValueCommandHandler,
+    get_value
+)
 
 class TestHandlers(unittest.TestCase):
-    def test_value_command_handler(self):
-        handler = type("TestHandler", (ValueCommandHandler, object),
-                       {"get_value": lambda s: 50})('test')
+
+    def test_value_command_handler(self) -> None:
+        handler = type(
+            "TestHandler",
+            (ValueCommandHandler, object),
+            {"get_value": lambda s: 50})('test')
         # normal execution
         self.assertEqual(50, handler.handle(''))
         # exceptions
@@ -50,14 +34,27 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/')
         self.assertRaises(Exception, handler.handle, '*')
 
-    def test_index_command_handler(self):
-        handler = type("TestHandler", (IndexCommandHandler, object),
-                       {"get_value": lambda s: [5, 6, 7]})('test')
+    def test_ValueCommandHandler(self) -> None:
+        handler = ValueCommandHandler("cpu_percent")
+        # normal execution
+        val = handler.handle('')
+        self.assertIsInstance(val, float)
+        # exceptions
+        self.assertRaises(Exception, handler.handle, 'a')
+
+        return
+
+    def test_index_command_handler(self) -> None:
+        handler = type(
+            "TestHandler",
+            (IndexCommandHandler, object),
+            {"get_value": lambda s: [5, 6, 7]})('test')
         # normal execution
         self.assertEqual(5, handler.handle('0'))
         self.assertEqual([5, 6, 7], handler.handle('*'))
         self.assertEqual("[5, 6, 7]", handler.handle('*;'))
         self.assertEqual(3, handler.handle('count'))
+
         # exceptions
         self.assertRaises(Exception, handler.handle, '')
         self.assertRaises(Exception, handler.handle, '3')
@@ -68,10 +65,33 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, 'bla/bla')
         self.assertRaises(Exception, handler.handle, 'bla/')
         self.assertRaises(Exception, handler.handle, '/bla')
+        return
 
-    def test_tuple_command_handler(self):
-        handler = type("TestHandler", (TupleCommandHandler, object),
-                       {"get_value": lambda s: namedtuple('test', 'a b')(10, 20)})('test')
+    def test_IndexCommandHandler(self) -> None:
+        handler = IndexCommandHandler('pids')
+        # normal execution
+        psutil_val = handler.get_value()
+        self.assertIsInstance(psutil_val, list)
+
+        val1 = handler.handle('*')
+        self.assertIsInstance(val1, list)
+
+        val2 = handler.handle('count')
+        assert isinstance(psutil_val, list)
+        self.assertEqual(val2, len(psutil_val))
+
+        val3 = handler.handle('1')
+        self.assertEqual(val3, psutil_val[1])
+        return
+
+    def test_tuple_command_handler(self) -> None:
+        test = namedtuple('test', 'a b')
+        handler = type(
+            "TestHandler",
+            (TupleCommandHandler, object),
+            {
+                "get_value": lambda s: test(10, 20)
+            })('test')
         # normal execution
         self.assertEqual(10, handler.handle('a'))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*'))
@@ -86,10 +106,26 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, 'bla/')
         self.assertRaises(Exception, handler.handle, '/bla')
 
-    def test_index_tuple_command_handler(self):
-        r = [namedtuple('test', 'a b')(1, 2), namedtuple('test', 'a b')(3, 4)]
-        handler = type("TestHandler", (IndexTupleCommandHandler, object),
-                       {"get_value": lambda s: r})('test')
+    def test_TupleCommandHandler(self) -> None:
+        for foo in ('cpu_times', 'cpu_stats', 'virtual_memory', 'swap_memory',
+                'sensors_battery'):
+            handler = TupleCommandHandler(foo)
+            val = handler.get_value()
+            #print(val)
+            self.assertIsInstance(val, tuple)
+
+        return
+
+    def test_index_tuple_command_handler(self) -> None:
+        test = namedtuple('test', 'a b')
+        r = [
+            test(1, 2),
+            test(3, 4)
+        ]
+        handler = type(
+            "TestHandler",
+            (IndexTupleCommandHandler, object),
+            {"get_value": lambda s: r})('test')
         # normal execution
         self.assertEqual([1, 3], handler.handle('a/*'))
         self.assertEqual("[1, 3]", handler.handle('a/*;'))
@@ -110,7 +146,7 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, 'bla/')
         self.assertRaises(Exception, handler.handle, '/bla')
 
-    def test_index_or_total_command_handler(self):
+    def test_index_or_total_command_handler(self) -> None:
         handler = type("TestHandler", (IndexOrTotalCommandHandler, object),
                        {"get_value": lambda s, t: 5 if t else [1, 2, 3]})('test')
         # normal execution
@@ -131,9 +167,10 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, 'bla/')
         self.assertRaises(Exception, handler.handle, '/bla')
 
-    def test_index_or_total_tuple_command_handler(self):
-        total = namedtuple('test', 'a b')(10, 20)
-        single = [namedtuple('test', 'a b')(1, 2), namedtuple('test', 'a b')(3, 4)]
+    def test_index_or_total_tuple_command_handler(self) -> None:
+        test = namedtuple('test', 'a b')
+        total = test(10, 20)
+        single = [test(1, 2), test(3, 4)]
         handler = type("TestHandler", (IndexOrTotalTupleCommandHandler, object),
                        {"get_value": lambda s, t: total if t else single})('test')
         # normal execution
@@ -146,9 +183,9 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/1'))
         self.assertEqual('{"a": 3, "b": 4}', handler.handle('*;/1'))
         # exceptions
-        self.assertRaisesRegexp(Exception, "Element '' in '' is not supported", handler.handle, '')
+        self.assertRaisesRegex(Exception, "Element '' in '' is not supported", handler.handle, '')
         self.assertRaises(Exception, handler.handle, '/')
-        self.assertRaisesRegexp(Exception, "Cannot list all elements and parameters at the same.*", handler.handle, '*/*')
+        self.assertRaisesRegex(Exception, "Cannot list all elements and parameters at the same.*", handler.handle, '*/*')
         self.assertRaises(Exception, handler.handle, '*-')
         self.assertRaises(Exception, handler.handle, '/*')
         self.assertRaises(Exception, handler.handle, '3')
@@ -159,11 +196,17 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/bla')
         self.assertRaises(Exception, handler.handle, '*/5')
 
-    def test_name_or_total_tuple_command_handler(self):
-        total = namedtuple('test', 'a b')(10, 20)
-        single = {"x":  namedtuple('test', 'a b')(1, 2), "y": namedtuple('test', 'a b')(3, 4)}
-        handler = type("TestHandler", (NameOrTotalTupleCommandHandler, object),
-                       {"get_value": lambda s, t: total if t else single})('test')
+    def test_name_or_total_tuple_command_handler(self) -> None:
+        test = namedtuple('test', 'a b')
+        total = test(10, 20)
+        single = {
+            "x":  test(1, 2),
+            "y": test(3, 4)
+        }
+        handler = type(
+            "TestHandler",
+            (NameOrTotalTupleCommandHandler, object),
+            {"get_value": lambda s, t: total if t else single})('test')
         # normal execution
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*'))
         self.assertEqual('{"a": 10, "b": 20}', handler.handle('*;'))
@@ -174,9 +217,9 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual({'a': 3, 'b': 4}, handler.handle('*/y'))
         self.assertEqual('{"a": 3, "b": 4}', handler.handle('*;/y'))
         # exceptions
-        self.assertRaisesRegexp(Exception, "Element '' in '' is not supported", handler.handle, '')
+        self.assertRaisesRegex(Exception, "Element '' in '' is not supported", handler.handle, '')
         self.assertRaises(Exception, handler.handle, '/')
-        self.assertRaisesRegexp(Exception, "Cannot list all elements and parameters at the same.*", handler.handle, '*/*')
+        self.assertRaisesRegex(Exception, "Cannot list all elements and parameters at the same.*", handler.handle, '*/*')
         self.assertRaises(Exception, handler.handle, '*-')
         self.assertRaises(Exception, handler.handle, '/*')
         self.assertRaises(Exception, handler.handle, '3')
@@ -189,10 +232,10 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/bla')
         self.assertRaises(Exception, handler.handle, '*/5')
 
-    def test_disk_usage_command_handler(self):
-        disk = '/'
+    def test_disk_usage_command_handler(self) -> None:
+        disk: Optional[str] = '/'
         handler = type("TestHandler", (DiskUsageCommandHandler, object),
-                       {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})('test')
+                       {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})()
         # normal execution
         self.assertEqual(10, handler.handle('a//'))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle('*//'))
@@ -215,14 +258,26 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, 'bla/')
         self.assertRaises(Exception, handler.handle, '/bla')
 
-    def _disk_usage_get_value(self, disk, d):
+    def _disk_usage_get_value(self, disk: Optional[str], d:str) -> NamedTuple:
         if disk is not None:
             self.assertEqual(disk, d)
-        return namedtuple('test', 'a b')(10, 20)
+        test = namedtuple('test', 'a b')
+        return test(10, 20)
 
-    def test_temperature_sensors(self):
-        handler = type("TestHandler", (SensorsTemperaturesCommandHandler, object),
-                       {"get_value": lambda s: self._temperature_sensors_get_value()})('test')
+    def test_DiskUsageCommandHandler(self) -> None:
+        handler = DiskUsageCommandHandler()
+        val = handler.get_value('/')
+        #print(val)
+        self.assertIsInstance(val, tuple)
+        return
+
+    def test_temperature_sensors(self) -> None:
+        handler = type(
+            "TestHandler",
+            (SensorsTemperaturesCommandHandler, object),
+            {
+                "get_value": lambda s: self._temperature_sensors_get_value()
+            })()
         self.assertEqual(handler.handle('*'), {"asus": [30.0], "coretemp": [45.0, 52.0]})
         self.assertEqual(handler.handle('*;'), '{"asus": [30.0], "coretemp": [45.0, 52.0]}')
         self.assertEqual(handler.handle('asus'), [30.0])
@@ -242,50 +297,80 @@ class TestHandlers(unittest.TestCase):
         self.assertEqual(handler.handle('coretemp/Core 0/current'), 45.0)
 
     @staticmethod
-    def _temperature_sensors_get_value():
+    def _temperature_sensors_get_value() -> Dict[str, Any]:
         ret = collections.defaultdict(list)
         ret['coretemp'].append(psutil._common.shwtemp('Core 0', 45.0, 100.0, 100.0))
         ret['coretemp'].append(psutil._common.shwtemp('Core 1', 52.0, 100.0, 100.0))
         ret['asus'].append(psutil._common.shwtemp('', 30.0, None, None))
         return dict(ret)
 
+    def test_SensorsFansCommandHandler(self) -> None:
+        handler = SensorsFansCommandHandler()
+        val = handler.get_value()
+        #print(val)
+        self.assertIsInstance(val, dict)
+        assert isinstance(val, dict)
+        for k,v in val.items():
+            self.assertIsInstance(k, str)
+            self.assertIsInstance(v, list)
+            for t in v:
+                self.assertIsInstance(t, tuple)
+        return
 
-class TestFormatter(unittest.TestCase):
-    def test_get_format(self):
-        f = Formatter.get_format("123/ddd/ddd{{sdd}}/444")
-        self.assertEqual("123/ddd", f[0])
-        self.assertEqual("ddd{{sdd}}/444", f[1])
+    def test_ProcessesCommandHandler(self) -> None:
+        handler = ProcessesCommandHandler()
+        processes = handler.handle('*/name')
+        self.assertIsInstance(processes, dict)
+        assert isinstance(processes, dict)
+        self.assertGreater(len(processes), 3)
+        last_pid = 0
+        last_name = ''
+        for k,v in processes.items():
+            if not last_name:
+                assert isinstance(k, int)
+                last_pid = k
+                last_name = v
+            assert isinstance(k, int)
+            assert isinstance(v, str)
+            assert isinstance(k, int)
 
-        f = Formatter.get_format("123/ddd/ddd{sdd}}/444")
-        self.assertEqual("123/ddd/ddd{sdd}}/444", f[0])
-        self.assertEqual(None, f[1])
+        res = handler.handle(f'{last_pid}/name')
+        self.assertEqual(res, last_name)
 
-        f = Formatter.get_format("ddd{{sdd}}/444")
-        self.assertEqual("ddd{{sdd}}/444", f[0])
-        self.assertEqual(None, f[1])
+        processes = handler.handle('top_cpu/name')
+        self.assertIsInstance(processes, str)
 
-    def test_format(self):
-        self.assertEqual("10", Formatter.format("{{a}}", {"a": 10}))
-        self.assertEqual("10", Formatter.format("{{x}}", 10))
-        self.assertEqual("3", Formatter.format("{{x[2]}}", [1, 2, 3]))
-        self.assertEqual("2.0", Formatter.format("{{a/5}}", {"a": 10}))
-        self.assertEqual("15", Formatter.format("{{a+b}}", {"a": 10, "b": 5}))
-        self.assertEqual("1.2 MB", Formatter.format("{{a/1000000}} MB", {"a": 1200000}))
-        self.assertEqual("1 MB", Formatter.format("{{a|MB}}", {"a": 1200000}))
+        processes = handler.handle('top_memory/exe')
+        self.assertIsInstance(processes, str)
 
-    def test_format_uptime(self):
-        import time
-        n = int(time.time())
-        self.assertEqual("0 min", Formatter.format("{{x|uptime}}", n))
-        self.assertEqual("1 min", Formatter.format("{{x|uptime}}", n - 60))
-        self.assertEqual("1:00", Formatter.format("{{x|uptime}}", n - 1*60*60))
-        self.assertEqual("1:40", Formatter.format("{{x|uptime}}", n - 1*60*60 - 40*60))
-        self.assertEqual("1 day, 0 min", Formatter.format("{{x|uptime}}", n - 24*60*60))
-        self.assertEqual("1 day, 40 min", Formatter.format("{{x|uptime}}", n - 24*60*60 - 40*60))
-        self.assertEqual("1 day, 1:40", Formatter.format("{{x|uptime}}", n - 25*60*60 - 40*60))
-        self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60))
-        self.assertEqual("2 days, 1:39", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60+30))
-        self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60-30))
+        pid = handler.handle(f'name[{last_name}]/pid')
+        self.assertEqual(pid, last_pid)
+        return
+
+    def test_get_value(self) -> None:
+        val = get_value('cpu_percent')
+        self.assertIsInstance(val, float)
+
+        val = get_value('virtual_memory/percent')
+        self.assertIsInstance(val, float)
+
+        return
+
+    def test_SmartCommandHandler(self) -> None:
+        handler = SmartCommandHandler()
+        #val = handler.get_value()
+        try:
+            val = handler.handle('dev/nvme0')
+            #print(val)
+            self.assertIsInstance(val, dict)
+            assert isinstance(val, dict)
+
+            self.assertEqual(
+                handler.handle('*'), {"asus": [30.0], "coretemp": [45.0, 52.0]})
+        except Exception:
+            pass
+
+        return
 
 
 if __name__ == '__main__':
