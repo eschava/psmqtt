@@ -34,8 +34,9 @@ class MqttClient:
         self.qos = qos
         self.retain = retain
         # initialise MQTT broker connection
-        self.mqttc = paho.Client(client_id, clean_session=clean_session,
-            userdata=self, protocol=paho.MQTTv311)
+        self.mqttc = paho.Client(paho.CallbackAPIVersion.VERSION1, 
+            client_id, clean_session=clean_session, userdata=self, 
+            protocol=paho.MQTTv311)
         # protocol=paho.MQTTv5
         # see http://www.steves-internet-guide.com/python-mqtt-client-changes/
 
