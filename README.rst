@@ -9,12 +9,10 @@ metrics (CPU, memory, disks, network, smart disk data) to an MQTT broker.
 
 **PSMQTT**  is written in Python and is based on:
 
-* `paho-mqtt <https://github.com/eclipse/paho.mqtt.python>` to communicate with
-the MQTT broker;
+* `paho-mqtt <https://github.com/eclipse/paho.mqtt.python>` to communicate with the MQTT broker;
 * `psutil <https://github.com/giampaolo/psutil>` to collect metrics;
 * `pySMART <https://github.com/jakogut/pySMART>` to collect SMART data;
-* `recurrent <https://github.com/kvh/recurrent>` to describe reporting
-schedule.
+* `recurrent <https://github.com/kvh/recurrent>` to describe reporting schedule.
 * `jinja2 <https://github.com/alex-foundation/jinja2>` to format the data.
 
 ============
