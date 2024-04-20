@@ -19,20 +19,26 @@ RUN rm -rf \
     psutil/tests
 
 FROM public.ecr.aws/docker/library/python:3.11-alpine
-RUN apk add bash
+RUN apk add bash smartmontools
 
 WORKDIR /opt/psmqtt
 COPY --from=builder /build .
+
+RUN mkdir ./src
 COPY *.py ./
+COPY src/*.py ./src
 COPY psmqtt.service .
 COPY logging.conf .
 
+RUN mkdir ./conf
+COPY psmqtt.conf ./conf
+
 # add user psmqtt to image
-RUN addgroup -S psmqtt && adduser -S psmqtt -G psmqtt
-RUN chown -R psmqtt:psmqtt /opt/psmqtt
+#RUN addgroup -S psmqtt && adduser -S psmqtt -G psmqtt
+#RUN chown -R psmqtt:psmqtt /opt/psmqtt
 
 # process run as psmqtt user
-USER psmqtt
+#USER psmqtt
 
 # set conf path
 ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.conf"
