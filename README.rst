@@ -1,4 +1,43 @@
-.. contents:: Table of Contents
+=======
+About this fork
+=======
+
+I created this fork to allow psmqtt to run on my TerraMaster NAS.
+Use it like this::
+
+   docker run -d -v <your config file>:/opt/psmqtt/conf/psmqtt.conf \
+      --privileged --hostname tnas \
+      ghcr.io/f18m/psmqtt:1.0.2
+
+Example of my psmqtt.conf::
+
+   mqtt_broker = '192.168.1.8'       # default: 'localhost'
+   mqtt_username = 'psmqtt'
+   mqtt_password = 'psmqtt'
+   mqtt_clean_session = False
+   mqtt_qos = 0
+   mqtt_retain = False
+   mqtt_request_topic = 'request'
+
+   schedule = {
+      "every 5 sec": [
+         "cpu_percent",
+         "virtual_memory/percent",
+         "sensors_temperatures/rtk_thermal/*",
+         'smart/sdc/temperature',
+         'smart/sdd/temperature',
+      ],
+      "every 60 minutes": "disk_usage/percent/|",  # slash replaced with vertical slash
+      "every 3 hours": {
+         "boot_time/{{x|uptime}}": "uptime",
+      }
+   }
+
+To push a new docker version with architecture arm64, use::
+
+   docker buildx build --platform linux/arm64/v8 --tag ghcr.io/f18m/psmqtt:1.0.2 --push .
+
+(remember to update the tag version)
 
 =======
 Summary

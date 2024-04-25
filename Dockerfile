@@ -1,3 +1,7 @@
+#
+# Builder docker
+#
+
 FROM public.ecr.aws/docker/library/python:3.11-alpine AS builder
 
 RUN apk add build-base linux-headers
@@ -18,7 +22,15 @@ RUN rm -rf \
     src/*_test.py \
     psutil/tests
 
+
+#
+# Production docker
+#
+
 FROM public.ecr.aws/docker/library/python:3.11-alpine
+
+LABEL org.opencontainers.image.source=https://github.com/f18m/psmqtt
+
 RUN apk add bash smartmontools
 
 WORKDIR /opt/psmqtt
