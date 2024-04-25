@@ -1,6 +1,6 @@
-=======
+===============
 About this fork
-=======
+===============
 
 I created this fork to allow psmqtt to run on my TerraMaster NAS.
 Use it like this::
