@@ -35,7 +35,7 @@ Example of my psmqtt.conf::
 
 To push a new docker version with architecture arm64, use::
 
-   docker buildx build --platform linux/arm64/v8 --tag ghcr.io/f18m/psmqtt:1.0.2 --push .
+   docker buildx build --platform linux/arm64/v8 --tag ghcr.io/f18m/psmqtt:1.0.2 --build-arg USERNAME=root --push .
 
 (remember to update the tag version)
 

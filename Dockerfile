@@ -29,6 +29,10 @@ RUN rm -rf \
 
 FROM public.ecr.aws/docker/library/python:3.11-alpine
 
+# when USERNAME=root is provided, the application runs as root within the container, this is useful in case 'pySMART' or any SMART attribute
+# has been configured (smartctl requires root permissions)
+ARG USERNAME=psmqtt
+
 LABEL org.opencontainers.image.source=https://github.com/f18m/psmqtt
 
 RUN apk add bash smartmontools
@@ -46,11 +50,14 @@ RUN mkdir ./conf
 COPY psmqtt.conf ./conf
 
 # add user psmqtt to image
-#RUN addgroup -S psmqtt && adduser -S psmqtt -G psmqtt
-#RUN chown -R psmqtt:psmqtt /opt/psmqtt
+RUN if [[ "$USERNAME" != "root" ]]; then \
+    addgroup -S psmqtt && \
+    adduser -S ${USERNAME} -G psmqtt && \
+    chown -R ${USERNAME}:psmqtt /opt/psmqtt ; \
+    fi
 
 # process run as psmqtt user
-#USER psmqtt
+USER ${USERNAME}
 
 # set conf path
 ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.conf"
