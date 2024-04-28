@@ -28,3 +28,15 @@ jobs:
       #  uses: pypa/gh-action-pypi-publish@release/v1
       #  with:
       #    password: ${{ secrets.PYPI_API_TOKEN }}
+
+
+      - name: Build and push Docker image
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          image: f18m/psmqtt
+          multiPlatform: true
+          platform: linux/amd64,linux/arm64,linux/arm/v7
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
