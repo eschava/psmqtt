@@ -3,7 +3,7 @@ Summary
 =======
 
 **PSMQTT** is a cross-platform utility for reporting system and processes
-metrics (CPU, memory, disks, network, smart disk data) to an MQTT broker.
+metrics (CPU, memory, disks, network, S.M.A.R.T. disk data) to an MQTT broker.
 
 **PSMQTT**  is written in Python and is based on:
 
