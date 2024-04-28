@@ -21,16 +21,32 @@ Clone this repository and then install the required Python libraries using `pip 
 
    pip install -r requirements.txt
 
-(Note that you should consider installing the required libraries in a Python venv to maintain them isolated from the rest of your Python installation.)
+(Note that you should consider installing the required libraries in a Python venv to maintain them isolated from the rest of your Python installation.
+See `this page for more info <doc/debian.md>`.)
 
 Finally you can run **PSMQTT** using::
 
    python psmqtt.py
 
+You may want to install **PSMQTT** as a service/system-daemon, see `this page for more info <doc/service.md>`.
 
-===================
-Install with Docker
-===================
+
+=====================
+Installing on FreeBSD
+=====================
+
+See `FreeBSD doc <doc/freebsd.md>`.)
+
+=====================
+Installing on Windows
+=====================
+
+See `Windows doc <doc/windows.md>`.)
+
+
+==================
+Deploy with Docker
+==================
 
 **PSMQTT** is packaged also a multi-arch Docker image. If your system does not have Python3 installed or 
 you don't want to install **PSMQTT** Python dependencies in your environment, you can launch
