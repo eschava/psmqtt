@@ -428,11 +428,11 @@ class ProcessesCommandHandler(CommandHandler):
     '''
     '''
 
-    top_cpu_regexp = re.compile("^top_cpu(\[\d+\])*$")
-    top_memory_regexp = re.compile("^top_memory(\[\d+\])*$")
-    top_number_regexp = re.compile("^top_[a-z_]+\[(\d+)\]$")
-    pid_file_regexp = re.compile("^pid\[(.*)\]$")
-    name_pattern_regexp = re.compile("^name\[(.*)\]$")
+    top_cpu_regexp = re.compile(r"^top_cpu(\[\d+\])*$")
+    top_memory_regexp = re.compile(r"^top_memory(\[\d+\])*$")
+    top_number_regexp = re.compile(r"^top_[a-z_]+\[(\d+)\]$")
+    pid_file_regexp = re.compile(r"^pid\[(.*)\]$")
+    name_pattern_regexp = re.compile(r"^name\[(.*)\]$")
 
     def __init__(self) -> None:
         super().__init__('processes')
@@ -537,7 +537,7 @@ class SmartCommandHandler(CommandHandler):
 
         info = self.device.__getstate__()
         if params == '':
-            return string_from_dict_optionally(info, True) #params.endswith(';')
+            return string_from_dict_optionally(info, True)
         elif params == '*':
             return string_from_dict_optionally(info, False)
         elif params == '*;':
