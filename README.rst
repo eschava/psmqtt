@@ -22,26 +22,26 @@ Clone this repository and then install the required Python libraries using `pip 
    pip install -r requirements.txt
 
 (Note that you should consider installing the required libraries in a Python venv to maintain them isolated from the rest of your Python installation.
-See `this page for more info <doc/debian.md>`.)
+See `this page for more info <doc/debian.md>`_.)
 
 Finally you can run **PSMQTT** using::
 
    python psmqtt.py
 
-You may want to install **PSMQTT** as a service/system-daemon, see `this page for more info <doc/service.md>`.
+You may want to install **PSMQTT** as a service/system-daemon, see `this page for more info <doc/service.md>`_.
 
 
 =====================
 Installing on FreeBSD
 =====================
 
-See `FreeBSD doc <doc/freebsd.md>`.)
+See `FreeBSD doc <doc/freebsd.md>`_
 
 =====================
 Installing on Windows
 =====================
 
-See `Windows doc <doc/windows.md>`.)
+See `Windows doc <doc/windows.md>`_
 
 
 ==================
