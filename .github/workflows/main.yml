@@ -37,7 +37,7 @@ jobs:
           dockerfile: ./Dockerfile
           multiPlatform: true
           platform: linux/amd64,linux/arm64,linux/arm/v7
-          image: f18m/psmqtt
+          image: psmqtt
           # options related to PUSHing the docker image:
           registry: ghcr.io
           username: ${{ secrets.GHCR_USERNAME }}
