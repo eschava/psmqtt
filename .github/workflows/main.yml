@@ -1,0 +1,44 @@
+# This workflow will build a Python project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python
+
+on: [push]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Lint code with flake8
+        run: |
+          pip install flake8
+          flake8
+
+      # TODO: it would be nice to have the project published on Pypi for easy installation via pip:
+      #- name: Publish package
+      #  uses: pypa/gh-action-pypi-publish@release/v1
+      #  with:
+      #    password: ${{ secrets.PYPI_API_TOKEN }}
+
+
+      - name: Build and push Docker image
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          # options related to BUILDing the docker image:
+          dockerfile: ./Dockerfile
+          multiPlatform: true
+          platform: linux/amd64,linux/arm64,linux/arm/v7
+          image: psmqtt
+          # options related to PUSHing the docker image:
+          registry: ghcr.io
+          username: eschava
+          password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}

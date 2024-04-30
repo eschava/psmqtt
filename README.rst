@@ -1,50 +1,9 @@
-===============
-About this fork
-===============
-
-I created this fork to allow psmqtt to run on my TerraMaster NAS.
-Use it like this::
-
-   docker run -d -v <your config file>:/opt/psmqtt/conf/psmqtt.conf \
-      --privileged --hostname tnas \
-      ghcr.io/f18m/psmqtt:1.0.2
-
-Example of my psmqtt.conf::
-
-   mqtt_broker = '192.168.1.8'       # default: 'localhost'
-   mqtt_username = 'psmqtt'
-   mqtt_password = 'psmqtt'
-   mqtt_clean_session = False
-   mqtt_qos = 0
-   mqtt_retain = False
-   mqtt_request_topic = 'request'
-
-   schedule = {
-      "every 5 sec": [
-         "cpu_percent",
-         "virtual_memory/percent",
-         "sensors_temperatures/rtk_thermal/*",
-         'smart/sdc/temperature',
-         'smart/sdd/temperature',
-      ],
-      "every 60 minutes": "disk_usage/percent/|",  # slash replaced with vertical slash
-      "every 3 hours": {
-         "boot_time/{{x|uptime}}": "uptime",
-      }
-   }
-
-To push a new docker version with architecture arm64, use::
-
-   docker buildx build --platform linux/arm64/v8 --tag ghcr.io/f18m/psmqtt:1.0.2 --build-arg USERNAME=root --push .
-
-(remember to update the tag version)
-
 =======
 Summary
 =======
 
 **PSMQTT** is a cross-platform utility for reporting system and processes
-metrics (CPU, memory, disks, network, smart disk data) to an MQTT broker.
+metrics (CPU, memory, disks, network, S.M.A.R.T. disk data) to an MQTT broker.
 
 **PSMQTT**  is written in Python and is based on:
 
@@ -54,16 +13,48 @@ metrics (CPU, memory, disks, network, smart disk data) to an MQTT broker.
 * `recurrent <https://github.com/kvh/recurrent>` to describe reporting schedule.
 * `jinja2 <https://github.com/alex-foundation/jinja2>` to format the data.
 
-============
-Installation
-============
-Just install the required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
+=====================
+Installation with pip
+=====================
+
+Clone this repository and then install the required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 
    pip install -r requirements.txt
 
-After you can run main file using::
+(Note that you should consider installing the required libraries in a Python venv to maintain them isolated from the rest of your Python installation.
+See `this page for more info <doc/debian.md>`_.)
 
-  python psmqtt.py
+Finally you can run **PSMQTT** using::
+
+   python psmqtt.py
+
+You may want to install **PSMQTT** as a service/system-daemon, see `this page for more info <doc/service.md>`_.
+
+
+=====================
+Installing on FreeBSD
+=====================
+
+See `FreeBSD doc <doc/freebsd.md>`_
+
+=====================
+Installing on Windows
+=====================
+
+See `Windows doc <doc/windows.md>`_
+
+
+==================
+Deploy with Docker
+==================
+
+**PSMQTT** is packaged also a multi-arch Docker image. If your system does not have Python3 installed or 
+you don't want to install **PSMQTT** Python dependencies in your environment, you can launch
+a Docker container::
+
+   docker run -d -v <your config file>:/opt/psmqtt/conf/psmqtt.conf \
+      --privileged --hostname $(hostname) \
+      ghcr.io/eschava/psmqtt:latest
 
 
 ===============================================
@@ -367,3 +358,16 @@ Useful tasks
 **smart/nvme0/** - all the device 'nvme0' SMART data, requries SUDO
 
 **smart/nvme0/temperature** - 'nvme0' temperature, requires SUDO
+
+
+======================
+Creating a new release
+======================
+
+New docker releases will be automatically published by the GitHub CI whenever a new tag is released on the project.
+Sometimes however it may be useful to publish a docker release manually.
+To push manually a new multi-arch docker version, use::
+
+   docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8, --tag ghcr.io/eschava/psmqtt:1.0.2 --build-arg USERNAME=root --push .
+
+(remember to update the tag version)
