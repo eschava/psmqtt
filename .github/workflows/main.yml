@@ -40,5 +40,5 @@ jobs:
           image: psmqtt
           # options related to PUSHing the docker image:
           registry: ghcr.io
-          username: f18m
-          password: ${{ secrets.MY_PAT_TOKEN_FOR_GITHUB }}
+          username: eschava
+          password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
