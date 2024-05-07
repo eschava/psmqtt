@@ -29,7 +29,8 @@ jobs:
       - name: Lint code with flake8
         run: |
           pip install flake8
-          flake8
+          echo "Running flake8 on repo"
+          flake8 -v
 
       # TODO: it would be nice to have the project published on Pypi for easy installation via pip:
       #- name: Publish package
@@ -41,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build Docker image (no push)
         # see https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#accessing-secrets
         # for the reason why DependaBot pull requests have no access to secrets like ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
