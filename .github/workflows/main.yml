@@ -22,6 +22,10 @@ jobs:
   lint_code:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' 
       - name: Lint code with flake8
         run: |
           pip install flake8
@@ -36,6 +40,8 @@ jobs:
   build_docker:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Build Docker image (no push)
         # see https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#accessing-secrets
         # for the reason why DependaBot pull requests have no access to secrets like ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
