@@ -43,6 +43,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Metadata extraction
+        id: meta
+        uses: docker/metadata-action@v5
+
+      - run: |
+          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}"
+
       - name: Build Docker image (no push)
         # see https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#accessing-secrets
         # for the reason why DependaBot pull requests have no access to secrets like ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
@@ -75,6 +82,7 @@ jobs:
           pushImage: true
 
       - name: Build and push Docker image [root]
+        if: ${{ github.actor != 'dependabot[bot]' }}
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
           # options related to BUILDing the docker image:
