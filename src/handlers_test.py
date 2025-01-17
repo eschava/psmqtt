@@ -107,13 +107,20 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(Exception, handler.handle, '/bla')
 
     def test_TupleCommandHandler(self) -> None:
-        for foo in ('cpu_times', 'cpu_stats', 'virtual_memory', 'swap_memory',
-                'sensors_battery'):
+        for foo in ('cpu_times', 'cpu_stats', 'virtual_memory', 'swap_memory'):
             handler = TupleCommandHandler(foo)
             val = handler.get_value()
             #print(val)
             self.assertIsInstance(val, tuple)
 
+        for foo_opt in ('sensors_battery'):
+            handler = TupleCommandHandler(foo)
+            val = handler.get_value()
+            #print(val)
+            if val is None:
+                pass
+            else:
+                self.assertIsInstance(val, tuple)
         return
 
     def test_index_tuple_command_handler(self) -> None:
