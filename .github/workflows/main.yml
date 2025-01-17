@@ -58,7 +58,7 @@ jobs:
           registry: ghcr.io
           pushImage: false
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image [non-root]
         if: ${{ github.actor != 'dependabot[bot]' }}
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
@@ -82,7 +82,7 @@ jobs:
           multiPlatform: true
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
-          buildArgs: USER=root
+          buildArgs: USERNAME=root
           tags: root
           # options related to PUSHing the docker image:
           registry: ghcr.io
