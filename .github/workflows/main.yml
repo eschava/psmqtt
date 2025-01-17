@@ -73,3 +73,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
           pushImage: true
+
+      - name: Build and push Docker image [root]
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          # options related to BUILDing the docker image:
+          dockerfile: ./Dockerfile
+          multiPlatform: true
+          platform: linux/amd64,linux/arm64,linux/arm/v7
+          image: psmqtt
+          buildArgs: USER=root
+          tags: root
+          # options related to PUSHing the docker image:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
