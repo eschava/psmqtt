@@ -92,7 +92,7 @@ jobs:
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
           buildArgs: USERNAME=root
-          tags: ${{ steps.meta.outputs.version }}:root
+          tags: ${{ steps.meta.outputs.version }}-root
           addLatest: false
           # options related to PUSHing the docker image:
           registry: ghcr.io
