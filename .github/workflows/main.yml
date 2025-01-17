@@ -104,7 +104,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
       - run: |
-          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}"
+          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}-root"
 
       - name: Build and push Docker image [root]
         uses: mr-smithers-excellent/docker-build-push@v6

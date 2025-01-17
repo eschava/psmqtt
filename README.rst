@@ -59,7 +59,7 @@ a Docker container::
 This works for most use cases, except in case you want to publish to the MQTT broker the SMART data
 for some hard drive.
 If that's the case, you will need to launch the docker container with the ``--cap-add SYS_RAWIO`` flag
-and passing all devices using the ``--device`` flag:
+and passing all devices using the ``--device`` flag::
 
    docker run -d -v <your config file>:/opt/psmqtt/conf/psmqtt.conf \
       --hostname $(hostname) \
@@ -68,7 +68,7 @@ and passing all devices using the ``--device`` flag:
       ghcr.io/eschava/psmqtt:latest-root
 
 For example if your ``/home/user/psmqtt.conf`` file contains references to ``/dev/sda`` and ``/dev/sdb`` you may want
-to launch **PSMQTT** as:
+to launch **PSMQTT** as::
 
    docker run -d -v /home/user/psmqtt.conf:/opt/psmqtt/conf/psmqtt.conf \
       --hostname $(hostname) \
