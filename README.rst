@@ -58,8 +58,8 @@ a Docker container::
 
 This works for most use cases, except in case you want to publish to the MQTT broker the SMART data
 for some hard drive.
-If that's the case, you will need to launch the docker container with the ``--cap-add SYS_RAWIO`` flag
-and passing all devices using the ``--device`` flag::
+If that's the case, you will need to launch the docker container with the ``--cap-add SYS_RAWIO`` flag,
+passing all hard drive devices using the ``--device`` flag and using the ``latest-root`` tag::
 
    docker run -d -v <your config file>:/opt/psmqtt/conf/psmqtt.conf \
       --hostname $(hostname) \
