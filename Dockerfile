@@ -63,7 +63,7 @@ USER ${USERNAME}
 ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.conf"
 
 # add deps to PYTHONPATH
-ENV PYTHONPATH="${PYTHONPATH}:/opt/psmqtt/deps"
+ENV PYTHONPATH="/opt/psmqtt/deps"
 
 # run process
-CMD python psmqtt.py
+CMD ["python", "psmqtt.py"]

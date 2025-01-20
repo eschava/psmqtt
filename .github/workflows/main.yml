@@ -54,15 +54,22 @@ jobs:
         run: |
           pytest
       
-  build_docker:
+  build_docker_dependabot:
     runs-on: ubuntu-latest
+    # see https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#accessing-secrets
+    # for the reason why DependaBot pull requests have no access to secrets like ${{ secrets.PAT_TOKEN_FOR_GITHUB }};
+    # this lack of access forces us not to push images when dependabot runs
+    if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Metadata extraction
+        id: meta
+        uses: docker/metadata-action@v5
+      - run: |
+          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}"
+
       - name: Build Docker image (no push)
-        # see https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#accessing-secrets
-        # for the reason why DependaBot pull requests have no access to secrets like ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
-        if: ${{ github.actor == 'dependabot[bot]' }}
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
           # options related to BUILDing the docker image:
@@ -74,8 +81,20 @@ jobs:
           registry: ghcr.io
           pushImage: false
 
-      - name: Build and push Docker image
-        if: ${{ github.actor != 'dependabot[bot]' }}
+
+  build_docker_nonroot_variant:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Metadata extraction
+        id: meta
+        uses: docker/metadata-action@v5
+      - run: |
+          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}"
+
+      - name: Build and push Docker image [non-root]
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
           # options related to BUILDing the docker image:
@@ -83,9 +102,38 @@ jobs:
           multiPlatform: true
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
+          tags: ${{ steps.meta.outputs.version }}
           addLatest: true
           # options related to PUSHing the docker image:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
           pushImage: true
+
+  build_docker_root_variant:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Metadata extraction
+        id: meta
+        uses: docker/metadata-action@v5
+      - run: |
+          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}-root"
+
+      - name: Build and push Docker image [root]
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          # options related to BUILDing the docker image:
+          dockerfile: ./Dockerfile
+          multiPlatform: true
+          platform: linux/amd64,linux/arm64,linux/arm/v7
+          image: psmqtt
+          buildArgs: USERNAME=root
+          tags: ${{ steps.meta.outputs.version }}-root,latest-root
+          addLatest: false
+          # options related to PUSHing the docker image:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
