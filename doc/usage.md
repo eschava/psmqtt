@@ -297,8 +297,8 @@ Task|Description
 `virtual_memory/percent`|Virtual memory used
 `virtual_memory/free/{{x\|GB}}`|Virtual memory free, GB
 `swap_memory/percent`|Swap memory used
-`disk_usage/percent/|`|Root drive (forward slash replaced with pipe) usage in percent (Linux)
-`disk_usage/free/|/{{x\|GB}}`|space left in GB for root drive (Linux)
+`disk_usage/percent/\|`|Root drive (forward slash replaced with pipe) usage in percent (Linux)
+`disk_usage/free/\|/{{x\|GB}}`|space left in GB for root drive (Linux)
 `smart/nvme0/`|All SMART attributes for the device \'nvme0\' (requires root priviliges)
 `smart/nvme0/temperature`|Just the device \'nvme0\' temperature (requires root priviliges)
 `processes/top_cpu/name`|name of top process consuming CPU
