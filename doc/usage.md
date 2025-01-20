@@ -301,7 +301,7 @@ Task|Description
 `disk_usage/free/\|/{{x\|GB}}`|space left in GB for root drive (Linux)
 `smart/nvme0/`|All SMART attributes for the device \'nvme0\' (requires root priviliges)
 `smart/nvme0/temperature`|Just the device \'nvme0\' temperature (requires root priviliges)
-`processes/top_cpu/name`|name of top process consuming CPU
-`processes/top_memory/exe`|executable file of top process consuming memory
+`processes/top_cpu/name`|Name of top process consuming CPU
+`processes/top_memory/exe`|Executable file of top process consuming memory
 `sensors_fans/dell_smm/0`|Fan seed
 `sensors_battery/percent`|Battery charge
