@@ -40,9 +40,9 @@ Output of task could be formatted using
 [Jinja2](http://jinja.pocoo.org/) templates. Append template to the task
 after one more \"/\" separator.
 
-E.g.
+E.g.:   
 
-:   cpu_times_percent/user/{{x}}%
+    cpu_times_percent/user/{{x}}%
 
 To append % symbol after CPU usage.
 
@@ -53,7 +53,7 @@ numbered.
 NOTE: After formatting tasks providing many parametes are combined to
 single one.
 
-Unnamed parameters are avaiable as x.
+Unnamed parameters are available as x.
 
 All additional filters are defined at the filters.py file. You also can
 add custom filters there.
@@ -284,35 +284,6 @@ Processes :
             - ** - all process properties and sub-properties. Topic per property
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
-## Useful tasks
-
-**boot_time/{{x\|uptime}}** - Up time
-
-**cpu_percent** - CPU usage in percent
-
-**virtual_memory/percent** - RAM usage in percent
-
-**virtual_memory/free/{{x\|MB}}** - Free RAM in MB
-
-**disk_usage/percent/\|** - root drive (slash replaced with vertical
-slash) usage in percent (Linux)
-
-**disk_usage/free/\|/{{x\|GB}}** - space left in GB for root drive
-(Linux)
-
-**disk_usage/percent/C:** - C:/ drive usage in percent (Windows)
-
-**processes/top_cpu/name** - name of top process consuming CPU
-
-**processes/top_memory/exe** - executable file of top process consuming
-memory
-
-**smart/nvme0/** - all the device \'nvme0\' SMART data, requries SUDO
-
-**smart/nvme0/temperature** - \'nvme0\' temperature, requires SUDO
-
-
-
 ## Useful Tasks
 
 These are 'tasks' I found most relevant and useful for tracking my
@@ -320,10 +291,17 @@ server(s) health and performance:
 
 Task|Description
 ----|------------
+`boot_time`|Up time
 `cpu_percent`|CPU total usage in percent
 `sensors_temperatures/coretemp/0/`|CPU package temperature
 `virtual_memory/percent`|Virtual memory used
 `virtual_memory/free/{{x\|GB}}`|Virtual memory free, GB
 `swap_memory/percent`|Swap memory used
+`disk_usage/percent/|`|Root drive (forward slash replaced with pipe) usage in percent (Linux)
+`disk_usage/free/|/{{x\|GB}}`|space left in GB for root drive (Linux)
+`smart/nvme0/`|All SMART attributes for the device \'nvme0\' (requires root priviliges)
+`smart/nvme0/temperature`|Just the device \'nvme0\' temperature (requires root priviliges)
+`processes/top_cpu/name`|name of top process consuming CPU
+`processes/top_memory/exe`|executable file of top process consuming memory
 `sensors_fans/dell_smm/0`|Fan seed
 `sensors_battery/percent`|Battery charge
