@@ -32,3 +32,16 @@ and
 * reorg files into src directory - DONE
 * support MQTTv5?
 * use `smartctl` to determine the disk HD temps
+
+
+## Creating a new release
+
+New docker releases will be automatically published by the GitHub CI whenever a new tag is released on the project.
+Sometimes however it may be useful to publish a docker release manually.
+To push manually a new multi-arch docker version, use::
+
+```
+   docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8, --tag ghcr.io/eschava/psmqtt:1.0.2 --build-arg USERNAME=root --push .
+```
+
+(remember to update the tag version)
