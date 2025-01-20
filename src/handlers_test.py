@@ -113,6 +113,8 @@ class TestHandlers(unittest.TestCase):
             #print(val)
             self.assertIsInstance(val, tuple)
 
+        # note that "sensors_battery" is not available on all platforms, so we accept
+        # None as return value of get_value() for "sensors_battery"
         for foo_opt in ('sensors_battery'):
             handler = TupleCommandHandler(foo)
             val = handler.get_value()
