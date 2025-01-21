@@ -1,3 +1,6 @@
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
 import os
 import shutil
 import tempfile
@@ -5,11 +8,9 @@ import time
 from testcontainers.core.container import DockerContainer
 from testcontainers.mqtt import MosquittoContainer
 
-# from testcontainers.core.utils import raise_for_deprecated_parameter
-
 class PSMQTTContainer(DockerContainer):
     """
-    Specialization of DockerContainer to test specifically PSMQTT
+    Specialization of DockerContainer to test PSMQTT docker image
     """
 
     CONFIG_FILE = "integration-tests-psmqtt.conf"
@@ -23,15 +24,15 @@ class PSMQTTContainer(DockerContainer):
         broker_container = broker.get_wrapped_container()
         broker_ip = broker.get_docker_client().bridge_ip(broker_container.id)
         broker_port = MosquittoContainer.MQTT_PORT
-        print(
-            f"Linking the {self.image} container with the MQTT broker at host:ip {broker_ip}:{broker_port}"
-        )
+        print(f"Linking the {self.image} container with the MQTT broker at host:ip {broker_ip}:{broker_port}")
         config_file = self._prepare_config_file(broker_ip, broker_port)
+
+        # bind-mount the generated, transient, config file to the standard location of config file within PSMQTT container
         self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.conf", mode="ro")
 
     def _prepare_config_file(self, broker_ip: str, broker_port: int):
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-        original_cfgfile = os.path.join(TEST_DIR, self.CONFIG_FILE) # Use self.CONFIG_FILE
+        original_cfgfile = os.path.join(TEST_DIR, self.CONFIG_FILE)
 
         temp_cfgfile = os.path.join(tempfile.mkdtemp(), self.CONFIG_FILE)
         shutil.copy(original_cfgfile, temp_cfgfile)
@@ -45,7 +46,6 @@ class PSMQTTContainer(DockerContainer):
             f.truncate()  # Remove any remaining old content
 
         print(f"Prepared configuration file '{temp_cfgfile}' for use in integration tests")
-        time.sleep(3)
         return temp_cfgfile
 
     def is_running(self):
