@@ -35,4 +35,3 @@ class TopicTest(unittest.TestCase):
         self.assertEqual("/*;/a", get_subtopic('/*;/**', 'a'))
         self.assertEqual("/*;/*;", get_subtopic('/*;/*;', 'a'))
         self.assertEqual("/*;/**;", get_subtopic('/*;/**;', 'a'))
-
