@@ -5,13 +5,13 @@ import pytest
 import time
 
 from integration_tests.psmqtt_container import PSMQTTContainer
-from testcontainers.mqtt import MosquittoContainer
+from integration_tests.mosquitto_container import MosquittoContainerEnhanced
 
 
 @pytest.mark.integration
 def test_mqtt_reconnection():
 
-    broker = MosquittoContainer()
+    broker = MosquittoContainerEnhanced()
     broker.start()
     with PSMQTTContainer(broker) as container:
         time.sleep(1)  # give time to the PSMQTTContainer to fully start

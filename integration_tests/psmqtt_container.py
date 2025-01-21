@@ -53,6 +53,10 @@ class PSMQTTContainer(DockerContainer):
         status = self.get_wrapped_container().status  # same as above
         return status == "running"
 
+    def get_short_id(self):
+        # the docker container ID is a long string, the "short ID" is just the first 12 characters
+        return self.get_wrapped_container().id[:12]
+
     def print_logs(self) -> str:
         print("** psmqtt LOGS [STDOUT]:")
         print(self.get_logs()[0].decode())
