@@ -4,7 +4,6 @@
 import os
 import shutil
 import tempfile
-import time
 from testcontainers.core.container import DockerContainer
 from testcontainers.mqtt import MosquittoContainer
 
