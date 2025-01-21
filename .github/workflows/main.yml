@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.13' 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.13' 
       - name: Lint code with flake8
         run: |
           pip install flake8
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.13' 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -52,8 +52,24 @@ jobs:
           pip install pytest
       - name: Run tests
         run: |
-          pytest
+          pytest -vvv --log-level=INFO -m unit
       
+  integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run tests
+        run: |
+          pytest -vvvv --log-level=INFO -s -m integration
+
   build_docker_dependabot:
     runs-on: ubuntu-latest
     # see https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#accessing-secrets

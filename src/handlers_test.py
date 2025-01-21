@@ -3,6 +3,7 @@ import collections
 from collections import namedtuple
 from typing import Any, Dict, NamedTuple, Optional
 import psutil._common
+import pytest
 
 from .handlers import (
     DiskUsageCommandHandler,
@@ -20,6 +21,7 @@ from .handlers import (
     get_value
 )
 
+@pytest.mark.unit
 class TestHandlers(unittest.TestCase):
 
     def test_value_command_handler(self) -> None:
@@ -381,6 +383,3 @@ class TestHandlers(unittest.TestCase):
 
         return
 
-
-if __name__ == '__main__':
-    unittest.main()
