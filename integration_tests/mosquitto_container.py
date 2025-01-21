@@ -1,13 +1,13 @@
-import os
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
 import time
 from testcontainers.mqtt import MosquittoContainer
-from testcontainers.core.waiting_utils import wait_container_is_ready
 from typing_extensions import Self
 
 from paho.mqtt import client as mqtt_client
 import paho.mqtt.enums
 from queue import Queue
-from typing import Optional
 
 # ---------------------------------------------------------------------------- #
 #                          MosquittoContainerEnhanced                          #

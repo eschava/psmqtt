@@ -1,6 +1,5 @@
 import pytest
 import time
-import signal
 
 from integration_tests.psmqtt_container import PSMQTTContainer
 from integration_tests.mosquitto_container import MosquittoContainerEnhanced
@@ -64,10 +63,10 @@ def test_basic_publish():
             print(f"** TEST RESULTS for topic [{tname}]")
             print(f"  Total messages in topic: {msg_count} msgs")
             print(f"  Last payload in topic: {last_payload}")
-            
+
             # some tolerance to deal with jitter during the test:
             assert msg_count >= t["min_msg_count"] and msg_count <= t["min_msg_count"]+2
-            
+
             # check payload
             if t["expected_payload"] == "FLOATING_POINT_NUMBER":
                 assert isinstance(float(last_payload), float)
