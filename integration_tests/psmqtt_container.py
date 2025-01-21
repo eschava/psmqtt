@@ -1,0 +1,61 @@
+import os
+import shutil
+import tempfile
+import time
+from testcontainers.core.container import DockerContainer
+from testcontainers.mqtt import MosquittoContainer
+
+# from testcontainers.core.utils import raise_for_deprecated_parameter
+
+class PSMQTTContainer(DockerContainer):
+    """
+    Specialization of DockerContainer to test specifically PSMQTT
+    """
+
+    CONFIG_FILE = "integration-tests-psmqtt.conf"
+
+    def __init__(self, broker: MosquittoContainer) -> None:
+        super().__init__(image="psmqtt")
+
+        # IMPORTANT: to link with the MQTT broker we want to use the IP address internal to the docker network,
+        #            and the standard MQTT port. The localhost:exposed_port address is not reachable from a
+        #            docker container that has been started inside a docker network!
+        broker_container = broker.get_wrapped_container()
+        broker_ip = broker.get_docker_client().bridge_ip(broker_container.id)
+        broker_port = MosquittoContainer.MQTT_PORT
+        print(
+            f"Linking the {self.image} container with the MQTT broker at host:ip {broker_ip}:{broker_port}"
+        )
+        config_file = self._prepare_config_file(broker_ip, broker_port)
+        self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.conf", mode="ro")
+
+    def _prepare_config_file(self, broker_ip: str, broker_port: int):
+        TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+        original_cfgfile = os.path.join(TEST_DIR, self.CONFIG_FILE) # Use self.CONFIG_FILE
+
+        temp_cfgfile = os.path.join(tempfile.mkdtemp(), self.CONFIG_FILE)
+        shutil.copy(original_cfgfile, temp_cfgfile)
+
+        with open(temp_cfgfile, 'r+') as f:  # Open for reading and writing
+            content = f.read()
+            content = content.replace("__MQTT_BROKER_IP_PLACEHOLDER__", broker_ip)
+            content = content.replace("__MQTT_BROKER_PORT_PLACEHOLDER__", f"{broker_port}")
+            f.seek(0)  # Rewind to the beginning
+            f.write(content)
+            f.truncate()  # Remove any remaining old content
+
+        print(f"Prepared configuration file '{temp_cfgfile}' for use in integration tests")
+        time.sleep(3)
+        return temp_cfgfile
+
+    def is_running(self):
+        self.get_wrapped_container().reload()  # force refresh of container status
+        # status = self.get_wrapped_container().attrs["State"]['Status']
+        status = self.get_wrapped_container().status  # same as above
+        return status == "running"
+
+    def print_logs(self) -> str:
+        print("** psmqtt LOGS [STDOUT]:")
+        print(self.get_logs()[0].decode())
+        print("** psmqtt LOGS [STDERR]:")
+        print(self.get_logs()[1].decode())
