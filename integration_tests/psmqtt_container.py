@@ -15,7 +15,7 @@ class PSMQTTContainer(DockerContainer):
     CONFIG_FILE = "integration-tests-psmqtt.conf"
 
     def __init__(self, broker: MosquittoContainer) -> None:
-        super().__init__(image="psmqtt")
+        super().__init__(image="psmqtt:latest")
 
         # IMPORTANT: to link with the MQTT broker we want to use the IP address internal to the docker network,
         #            and the standard MQTT port. The localhost:exposed_port address is not reachable from a

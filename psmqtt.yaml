@@ -3,13 +3,18 @@
 # All values shown here are the default values
 #
 
+logging:
+  level: DEBUG
+  # path to the log file; if not set, logs will be printed to the console
+  # file: 
+
 mqtt:
   # broker: details about the MQTT broker
   broker:
     host: localhost
     port: 1883
-    username:
-    password:
+    #username:
+    #password:
   
   # client_id: the identifier of the MQTT client created by psmqtt; this is useful to identify psmqtt
   # when inspecting the MQTT broker logs
@@ -35,6 +40,11 @@ mqtt:
   # to activate the request just send any payload message (e.g. "REQUEST") to a topic like:
   # <psmqtt/COMPUTER_NAME/request/cpu_percent>. 
   request_topic: request
+
+  # publish_topic_prefix: defines the prefix for all published topics;
+  # if not provided, it defaults to "psmqtt/<hostname>/"
+  #publish_topic_prefix: 
+
 
 
 schedule:

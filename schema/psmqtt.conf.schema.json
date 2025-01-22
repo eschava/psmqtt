@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PSMQTT Configuration",
+  "description": "Configuration file for PSMQTT",
+  "type": "object",
+  "properties": {
+    "mqtt": {
+      "type": "object",
+      "description": "MQTT broker and client settings",
+      "properties": {
+        "broker": {
+          "type": "object",
+          "description": "Details about the MQTT broker",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Hostname or IP address of the MQTT broker",
+              "default": "localhost"
+            },
+            "port": {
+              "type": "integer",
+              "description": "Port number of the MQTT broker",
+              "default": 1883
+            },
+            "username": {
+              "type": "string",
+              "description": "Username for authentication with the MQTT broker"
+            },
+            "password": {
+              "type": "string",
+              "description": "Password for authentication with the MQTT broker"
+            }
+          },
+          "required": [
+            "host"
+          ]
+        },
+        "clientid": {
+          "type": "string",
+          "description": "Identifier of the MQTT client created by psmqtt",
+          "default": "psmqtt"
+        },
+        "clean_session": {
+          "type": "boolean",
+          "description": "Whether to remove client information on disconnect",
+          "default": false
+        },
+        "qos": {
+          "type": "integer",
+          "description": "Quality of Service level (0, 1, or 2)",
+          "default": 0,
+          "enum": [0, 1, 2]
+        },
+        "retain": {
+          "type": "boolean",
+          "description": "Whether to retain messages",
+          "default": false
+        },
+        "request_topic": {
+          "type": "string",
+          "description": "Topic for information requests",
+          "default": "request"
+        }
+      },
+      "required": [
+        "broker"
+      ]
+    },
+    "schedule": {
+      "type": "array",
+      "description": "Scheduled tasks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cron": {
+            "type": "string",
+            "description": "Cron expression for scheduling"
+          },
+          "tasks": {
+            "type": "array",
+            "description": "List of tasks to execute",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "string",
+                  "description": "Name of the task"
+                },
+                "params": {
+                  "type": "array",
+                  "description": "Parameters for the task",
+                  "items": {}
+                },
+                "formatter": {
+                  "type": "string",
+                  "description": "Jinja2 formatter expression"
+                }
+              },
+              "required": [
+                "task"
+              ]
+            }
+          }
+        },
+        "required": [
+          "cron",
+          "tasks"
+        ]
+      }
+    }
+  },
+  "required": [
+    "mqtt",
+    "schedule"
+  ]
+}

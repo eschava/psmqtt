@@ -80,16 +80,6 @@ def run() -> None:
     # read initial config files - this may exit(2)
     #
     cf = load_config()
-    pythonpath = cf.get('pythonpath', '')
-    if pythonpath:
-        logging.debug("Adding to PYTHONPATH: '%s'", pythonpath)
-        sys.path.append(pythonpath)
-
-    topic_prefix = cf.get(
-        'mqtt_topic_prefix', f'psmqtt/{socket.gethostname()}/')
-    request_topic = cf.get('mqtt_request_topic', 'request')
-    if request_topic != '':
-        request_topic = topic_prefix + request_topic + '/'
 
     # delayed import to enable PYTHONPATH adjustment
     from recurrent import RecurringEvent  # pip install recurrent
@@ -98,20 +88,20 @@ def run() -> None:
     # create MqttClient
     #
     mqttc = MqttClient(
-        cf.get('mqtt_clientid', 'psmqtt-%s' % os.getpid()),
-        cf.get('mqtt_clean_session', False),
-        topic_prefix,
-        request_topic,
-        cf.get('mqtt_qos', 0),
-        cf.get('mqtt_retain', False))
+        cf.config["mqtt"]["clientid"],
+        cf.config["mqtt"]["clean_session"],
+        cf.config["mqtt"]["publish_topic_prefix"],
+        cf.config["mqtt"]["request_topic"],
+        cf.config["mqtt"]["qos"],
+        cf.config["mqtt"]["retain"])
     #
     # connect MqttClient to broker
     #
     mqttc.connect(
-        cf.get('mqtt_broker', 'localhost'),
-        int(cf.get('mqtt_port', '1883')),
-        cf.get('mqtt_username', ''),
-        cf.get('mqtt_password', None))
+        cf.config["mqtt"]["broker"]["host"],
+        cf.config["mqtt"]["broker"]["port"],
+        cf.config["mqtt"]["broker"]["username"],
+        cf.config["mqtt"]["broker"]["password"])
     #
     # parse schedule
     #
