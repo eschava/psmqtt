@@ -60,12 +60,12 @@ schedule:
       - task: smart
         params: [ /dev/sda, "*" ] # report all SMART attributes of "/dev/sda"; asterisks need quoting
       
-  - cron: every 60 minutes
+  - cron: "every 60 minutes"
     tasks:
       - task: disk_usage
         params: [ percent, "/" ]
     
-  - cron: every 3 hours
+  - cron: "every 3 hours"
     tasks:
 
       # task with a Jinja2 formatter; single or double-quoting is necessary

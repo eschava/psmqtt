@@ -47,7 +47,7 @@ COPY psmqtt.service .
 COPY logging.conf .
 
 RUN mkdir ./conf
-COPY psmqtt.conf ./conf
+COPY psmqtt.yaml ./conf
 
 # add user psmqtt to image
 RUN if [[ "$USERNAME" != "root" ]]; then \
@@ -60,7 +60,7 @@ RUN if [[ "$USERNAME" != "root" ]]; then \
 USER ${USERNAME}
 
 # set conf path
-ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.conf"
+ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.yaml"
 
 # add deps to PYTHONPATH
 ENV PYTHONPATH="/opt/psmqtt/deps"
