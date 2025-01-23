@@ -15,7 +15,7 @@ import logging
 import sys
 from threading import Thread
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, List
 
 from src.config import load_config
 
@@ -36,7 +36,7 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
     The list must contain dictionary items, each having "task", "params", "topic" and "formatter" fields.
     E.g.:
         [
-          { "task: "cpu_percent", 
+          { "task: "cpu_percent",
             "params": [],
             "topic": None,
             "formatter": None },
@@ -126,7 +126,7 @@ def run() -> int:
         if not r.is_recurring:
             logging.error(f"Invalid cron expression '{sch["cron"]}'. Please fix the syntax in the configuration file. Aborting.")
             return 4
-        
+
         # compute how many secs in the future this needs to run
         assert isinstance(parsed_rrule, str)
         delay_sec = (rrulestr(parsed_rrule).after(now) - now).total_seconds()

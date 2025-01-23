@@ -34,7 +34,6 @@ class Config:
         except jsonschema.exceptions.ValidationError as e:
             raise ValueError(f"Configuration file '{filename}' does not conform to schema: {e}")
 
-
         # add default values for optional configuration parameters, if they're missing:
 
         # mqtt.broker object
@@ -56,11 +55,9 @@ class Config:
         if "request_topic" not in self.config["mqtt"]:
             self.config["mqtt"]["request_topic"] = 'request'
 
-
         # provide defaults for the "schedule" key
         if not isinstance(self.config["schedule"], list):
             raise ValueError("Invalid 'schedule' key in configuration file: must be a list")
-        
 
         available_handlers_names = get_supported_handlers()
 
@@ -80,11 +77,11 @@ class Config:
                 if "topic" not in t:
                     t["topic"] = None
                 validated_tasks.append(t)
-            
+
             validated_schedule.append({"cron": s["cron"], "tasks": validated_tasks})
 
         self.config["schedule"] = validated_schedule
-     
+
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(validated_schedule)} validated schedules.")
         return
 

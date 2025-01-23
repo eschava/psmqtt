@@ -101,7 +101,7 @@ class MqttClient:
         mqtt callback
         '''
         logging.debug("OOOOPS! psmqtt disconnects")
-        time.sleep(10) # FIXME: make this configurable
+        time.sleep(10)  # FIXME: make this configurable
         return
 
     def on_message(self, mqttc: paho.Client, userdata: Any, msg: paho.MQTTMessage) -> None:
@@ -151,10 +151,6 @@ def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
         logging.info("mqttc.publish('%s', '%s')", topic, payload)
         mqttc.mqttc.publish(topic, payload, qos=mqttc.qos, retain=mqttc.retain)
         return
-
-
-    #if task.startswith(mqttc.topic_prefix):
-    #    task = task[len(mqttc.topic_prefix):]
 
     if task["topic"] is None:
         topic = Topic(mqttc.topic_prefix + "/" + task["task"])

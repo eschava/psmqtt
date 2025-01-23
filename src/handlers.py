@@ -574,7 +574,6 @@ class SmartCommandHandler(CommandHandler):
 
         dev = params[0]
         param = params[1] if len(params) == 2 else ''
-        
         self.name = dev
         self.device = SmartDevice(self.name)
 
