@@ -54,9 +54,9 @@ schedule:
   - cron: "every 1 second"
     tasks:
       # each task is defined by
-      # * the "task" name (see PSMQTT for full list of available tasks), 
-      # * optionally the task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc),
-      # * optionally the MQTT topic name
+      # * the "task" name (see PSMQTT for full list of available tasks);
+      # * optionally the task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
+      # * optionally the MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
       # * optionally a formatter expression, which is a Jinja2 expression
 
       # simple task, no parameter, no formatter:

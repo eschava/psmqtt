@@ -126,6 +126,8 @@ class MqttClient:
         logging.info('starting MQTT client loop')
         self.mqttc.loop_forever()
 
+# FIXME: introduce a Task class and move run_task() to it
+
 def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
     '''
     Runs a task, defined as a dictionary having "task", "params", "topic" and "formatter" fields.
@@ -153,8 +155,9 @@ def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
         return
 
     if task["topic"] is None:
-        topic = Topic(mqttc.topic_prefix + "/" + task["task"])
+        topic = Topic.from_task(mqttc.topic_prefix, task)
     else:
+        # use the specified MQTT topic name; just make sure that the MQTT topic prefix is present
         topic = Topic(task["topic"] if task["topic"].startswith(mqttc.topic_prefix)
                             else mqttc.topic_prefix + task["topic"])
     logging.debug(f"run_task({taskFriendlyId}): mqtt topic is '{topic.get_topic()}'")

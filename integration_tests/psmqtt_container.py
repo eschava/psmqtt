@@ -12,7 +12,7 @@ class PSMQTTContainer(DockerContainer):
     Specialization of DockerContainer to test PSMQTT docker image
     """
 
-    CONFIG_FILE = "integration-tests-psmqtt.conf"
+    CONFIG_FILE = "integration-tests-psmqtt.yaml"
 
     def __init__(self, broker: MosquittoContainer) -> None:
         super().__init__(image="psmqtt:latest")
@@ -27,7 +27,7 @@ class PSMQTTContainer(DockerContainer):
         config_file = self._prepare_config_file(broker_ip, broker_port)
 
         # bind-mount the generated, transient, config file to the standard location of config file within PSMQTT container
-        self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.conf", mode="ro")
+        self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.yaml", mode="ro")
 
     def _prepare_config_file(self, broker_ip: str, broker_port: int):
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -38,11 +38,16 @@ class PSMQTTContainer(DockerContainer):
 
         with open(temp_cfgfile, 'r+') as f:  # Open for reading and writing
             content = f.read()
+            original = content
             content = content.replace("__MQTT_BROKER_IP_PLACEHOLDER__", broker_ip)
             content = content.replace("__MQTT_BROKER_PORT_PLACEHOLDER__", f"{broker_port}")
-            f.seek(0)  # Rewind to the beginning
-            f.write(content)
-            f.truncate()  # Remove any remaining old content
+
+            if original != content:
+                f.seek(0)  # Rewind to the beginning
+                f.write(content)
+                f.truncate()  # Remove any remaining old content
+            else:
+                raise ValueError("Failed to replace placeholders in the configuration file")
 
         print(f"Prepared configuration file '{temp_cfgfile}' for use in integration tests")
         return temp_cfgfile

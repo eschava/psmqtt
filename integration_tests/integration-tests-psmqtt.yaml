@@ -1,0 +1,34 @@
+#
+# PSMQTT configuration file for INTEGRATION TESTS
+#
+
+logging:
+  level: DEBUG
+
+mqtt:
+  broker:
+    host: __MQTT_BROKER_IP_PLACEHOLDER__
+    port: __MQTT_BROKER_PORT_PLACEHOLDER__
+  
+  clientid: psmqtt-integration-test-client
+  clean_session: false
+  qos: 0
+  retain: false
+  request_topic: "psmqtt/request/"
+  #publish_topic_prefix: 
+
+schedule:
+  - cron: "every 1 second"
+    tasks:
+      - task: cpu_percent
+      - task: virtual_memory
+        params: [ percent ]
+  - cron: "every 3 seconds"
+    tasks:
+      - task: disk_usage
+        params: [ percent, "/" ]
+  - cron: "every 5 seconds"
+    tasks:
+      - task: boot_time
+        formatter: "{{x|uptime}}"
+        topic: uptime

@@ -1,10 +1,20 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 class Topic:
     def __init__(self, topic:str):
         self.topic = topic
         self.wildcard_index, self.wildcard_len = self._find_wildcard(topic)
         return
+
+    @classmethod
+    def from_task(cls, topic_prefix: str, task: Dict[str,str]) -> 'Topic':
+        # create the MQTT topic by concatenating the task name and its parameters with the MQTT topic-level separator '/'
+        topicName = topic_prefix + task["task"]
+        nonEmptyParams = [x for x in task["params"] if x != '']
+        escapedParams = [x.replace('/', '|') for x in nonEmptyParams]
+        if len(escapedParams) > 0:
+            topicName += '/' + '/'.join(escapedParams)
+        return Topic(topicName)
 
     @staticmethod
     def _find_wildcard(topic:str) -> Tuple[int, int]:

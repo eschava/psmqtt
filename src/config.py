@@ -52,6 +52,12 @@ class Config:
         if "publish_topic_prefix" not in self.config["mqtt"]:
             hn = socket.gethostname()
             self.config["mqtt"]["publish_topic_prefix"] = f"psmqtt/{hn}/"
+        else:
+            # make sure the publish_topic_prefix ALWAYS ends with a slash,
+            # to ensure separation from the topic that will be appended to it
+            if self.config["mqtt"]["publish_topic_prefix"][-1] != '/':
+                self.config["mqtt"]["publish_topic_prefix"] += '/'
+
         if "request_topic" not in self.config["mqtt"]:
             self.config["mqtt"]["request_topic"] = 'request'
 
@@ -120,5 +126,5 @@ def load_config() -> Config:
         return Config(psmqtt_conf_path, psmqtt_conf_schema_path)
 
     except Exception as e:
-        print(f"Cannot load configuration from file {psmqtt_conf_path}: {e}")
+        logging.error(f"Cannot load configuration from file {psmqtt_conf_path}: {e}. Aborting.")
         sys.exit(2)
