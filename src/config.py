@@ -91,13 +91,6 @@ class Config:
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(validated_schedule)} validated schedules.")
         return
 
-    # def get(self, key:str, default:Any = None) -> Any:
-    #     '''
-    #     Get config parameter
-    #     '''
-    #     return self.config.get(key, default)
-
-
 def load_config() -> Config:
     '''
     Load logging and app config, returns the latter.

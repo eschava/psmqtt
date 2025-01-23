@@ -54,7 +54,7 @@ schedule:
   - cron: "every 1 second"
     tasks:
       # each task is defined by
-      # * the "task" name (see PSMQTT for full list of available tasks);
+      # * the (handler) name (see PSMQTT docs for full list of available task handlers);
       # * optionally the task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
       # * optionally the MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
       # * optionally a formatter expression, which is a Jinja2 expression
@@ -67,11 +67,11 @@ schedule:
       - task: virtual_memory
         params: [ percent ]
       - task: sensors_temperatures
-        params: [ k10temp, 0 ] # use "coretemp" sensor for CPU core 0
+        params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
       - task: smart
         params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
       - task: smart
-        params: [ /dev/sda, "*" ] # report all SMART attributes of "/dev/sda"; asterisks need quoting
+        params: [ /dev/sda, "*" ] # report all SMART attributes of "/dev/sda"; note that asterisks need quoting
         topic: "/sda/*"
 
       # task requesting to publish virtual_memory percentage into a topic named "foobar"

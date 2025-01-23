@@ -61,6 +61,12 @@ class TopicTest(unittest.TestCase):
                 "input_task": {"task": "slashed_task", "params": ["param1", "/", "param/2", ""]},
                 "expected_topic_name": "prefix/slashed_task/param1/|/param|2"
             },
+            # with integer params:
+            {
+                "prefix": "prefix/",
+                "input_task": {"task": "integer_task", "params": ["param1", 123, "param2"]},
+                "expected_topic_name": "prefix/integer_task/param1/123/param2"
+            },
             # empty prefix:
             {
                 "prefix": "",

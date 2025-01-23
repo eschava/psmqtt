@@ -11,7 +11,13 @@ class Topic:
         # create the MQTT topic by concatenating the task name and its parameters with the MQTT topic-level separator '/'
         topicName = topic_prefix + task["task"]
         nonEmptyParams = [x for x in task["params"] if x != '']
-        escapedParams = [x.replace('/', '|') for x in nonEmptyParams]
+
+        escapedParams = []
+        for x in nonEmptyParams:
+            if isinstance(x,str):
+                escapedParams.append(x.replace('/', '|'))
+            elif isinstance(x,int):
+                escapedParams.append(str(x))
         if len(escapedParams) > 0:
             topicName += '/' + '/'.join(escapedParams)
         return Topic(topicName)

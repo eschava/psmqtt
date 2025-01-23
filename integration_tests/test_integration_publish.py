@@ -19,6 +19,7 @@ def setup(request):
     """
     broker.start()
     print("Broker successfully started")
+    ##time.sleep(10)
 
     def remove_container():
         broker.stop()

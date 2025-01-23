@@ -15,14 +15,50 @@ mqtt:
   qos: 0
   retain: false
   request_topic: "psmqtt/request/"
+  # use default auto-computed topic prefix which will include the hostname == docker container ID;
+  # this will make sure that the results of the tests are isolated one from the other
+  # in case we want to run multiple integration tests in parallel
   #publish_topic_prefix: 
 
 schedule:
   - cron: "every 1 second"
     tasks:
+
+      # TEST cpu_times handler
+      - task: cpu_times
+        params: [ iowait ]
+      - task: cpu_times
+        params: [ "*" ]
+        topic: "cpu_test/*"
+
+      # TEST cpu_percent handler
       - task: cpu_percent
+      - task: cpu_percent
+        params: [ 0 ]
+      - task: cpu_percent
+        params: [ "*" ]
+        topic: "cpu_test/*"
+
+      # TEST cpu_times_percent
+      - task: cpu_times_percent
+        params: [ iowait ]
+      - task: cpu_times_percent
+        params: [ iowait, "*" ]
+
+      # TEST cpu_stats
+      - task: cpu_stats
+        params: [ "*" ]
+        topic: "cpu_stats_test/*"
+      - task: cpu_stats
+        params: [ "soft_interrupts" ]
+
+      # TEST virtual_memory
       - task: virtual_memory
         params: [ percent ]
+
+      # TODO
+
+
   - cron: "every 3 seconds"
     tasks:
       - task: disk_usage
