@@ -2,13 +2,11 @@ import os
 import logging
 import logging.config
 import sys
-from typing import Any, Dict
 import yaml
 import json
 import jsonschema
-from pathlib import Path
 import socket
-
+from .handlers import get_supported_handlers
 
 class Config:
     '''
@@ -18,7 +16,8 @@ class Config:
     def __init__(self, filename: str, schema_filename: str):
         '''
         filename is a fully qualified path to the YAML config file.
-        The YAML file is validated 
+        The YAML file is validated against the schema file provided as argument,
+        and optional configuration parameters are populated with their default values.
         '''
 
         with open(schema_filename) as f:
@@ -29,15 +28,14 @@ class Config:
                 self.config = yaml.safe_load(f)
             except yaml.YAMLError as e:
                 raise ValueError(f"Error parsing YAML file '{filename}': {e}")
-        
+
         try:
             jsonschema.validate(instance=self.config, schema=self.schema)
         except jsonschema.exceptions.ValidationError as e:
             raise ValueError(f"Configuration file '{filename}' does not conform to schema: {e}")
 
-        print(f"Configuration file '{filename}' successfully loaded.")
 
-        # add default values if they're missing:
+        # add default values for optional configuration parameters, if they're missing:
 
         # mqtt.broker object
         if 'port' not in self.config["mqtt"]["broker"]:
@@ -47,7 +45,7 @@ class Config:
         if 'password' not in self.config["mqtt"]["broker"]:
             self.config['mqtt']["broker"]["password"] = None
 
-        # other "mqtt" keys
+        # other optional "mqtt" keys
         if "clientid" not in self.config["mqtt"]:
             self.config["mqtt"]["clientid"] = 'psmqtt-%s' % os.getpid()
         if "qos" not in self.config["mqtt"]:
@@ -58,6 +56,36 @@ class Config:
         if "request_topic" not in self.config["mqtt"]:
             self.config["mqtt"]["request_topic"] = 'request'
 
+
+        # provide defaults for the "schedule" key
+        if not isinstance(self.config["schedule"], list):
+            raise ValueError("Invalid 'schedule' key in configuration file: must be a list")
+        
+
+        available_handlers_names = get_supported_handlers()
+
+        validated_schedule = []
+        for s in self.config["schedule"]:
+            # "cron" & "tasks" fields presence is already ensured by the JSON schema
+            validated_tasks = []
+            for t in s["tasks"]:
+                # more validation on "task" name
+                if t["task"] not in available_handlers_names:
+                    raise ValueError(f"Invalid task '{t['task']}' in configuration file. Supported tasks are: {available_handlers_names}")
+                # provide defaults for "params" and "formatter" fields
+                if "params" not in t:
+                    t["params"] = []
+                if "formatter" not in t:
+                    t["formatter"] = None
+                if "topic" not in t:
+                    t["topic"] = None
+                validated_tasks.append(t)
+            
+            validated_schedule.append({"cron": s["cron"], "tasks": validated_tasks})
+
+        self.config["schedule"] = validated_schedule
+     
+        logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(validated_schedule)} validated schedules.")
         return
 
     # def get(self, key:str, default:Any = None) -> Any:

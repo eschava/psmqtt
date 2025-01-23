@@ -32,7 +32,7 @@ class Topic:
 
     def get_subtopic(self, param:str) -> str:
         if self.wildcard_index < 0:
-            raise Exception("Topic " + self.topic + " have no wildcard")
+            raise Exception(f"Topic {self.topic} has no wildcard")
         return self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
 
     def get_topic(self) -> str:
