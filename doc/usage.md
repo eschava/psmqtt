@@ -38,129 +38,136 @@ flowchart TD
 
 The configuration file defines:
 * periodicity of each PSMQTT action;
-* which "sensor" has to be queried () both the PSMQTT internal scheduler,
+* which "sensor" has to be queried; PSMQTT uses [psutil](https://github.com/giampaolo/psutil) 
+and [pySMART](https://github.com/truenas/py-SMART) libraries to sense data from the 
+HW of the device where PSMQTT runs (CPU, memory, temperature and fan sensors, SMART harddrive data,
+proces information, etc);
+* how each sensor data is formatted into text
+* which MQTT broker will receive all the outputs
+
+The following section provides more details about the config file syntax.
+
+## Configuration file
+
+The PSMQTT configuration file is a [YAML file](https://en.wikipedia.org/wiki/YAML).
+
+The PSMQTT configuration file should be located in the same 
+directory containing `psmqtt.py`; alternatevely you can specify the location of the
+config file using the **PSMQTTCONFIG** environment variable 
+(e.g. setting **PSMQTTCONFIG=~/my-config-psmqtt.yaml**).
+
+Please check the comments in the [default psmqtt.yaml](../psmqtt.yaml) as
+documentation for most of the entries.
+
+This paragraph will focus on the format of each "scheduling expression",
+whose general format is:
+
+```
+schedule:
+  - cron: <human-friendly CRON expression>
+    tasks:
+      - task: <task name>
+        params: [ <param1>, <param2>, <param3>, ... ]
+        formatter: <formatting rule>
+        topic: <MQTT topic>
+```
+
+Each of the following section describes in details the parameters:
+
+1. [human-friendly CRON expression](#schedule)
+2. [task name and parameters](#tasks)
+3. [formatting rules](#formatting)
+4. [MQTT topic](#mqtt-topic)
 
 
-## General information about tasks and MQTT topics
+### Schedule
 
-Every utilization task has its own special name. It always starts with
-task name that could be followed with unique parameter name or/and
-device number/name.
-
-E.g. task to get percent of CPU used by user apps use name
-**cpu_times_percent/user**. All possible tasks are described below.
-
-Results for task TASK are pushed to the MQTT topic
-**psmqtt/COMPUTER_NAME/TASK** (prefix \"psmqtt/COMPUTER_NAME/\" is
-configurable)
-
-In case of task execution error message is sent to the topic
-**psmqtt/COMPUTER_NAME/error/TASK**
-
-Very often it could be useful to provide several parameters from the
-same task using one request. In such case next formats are used:
-
--   TASK/\* - to get all possible parameters (MQTT topic per parameter)
--   or TASK/\*; - to get all possible parameters in one topic (combined
-    to JSON string)
-
-Examples:
-
-    Task cpu_times_percent/* provides
-    psmqtt/COMPUTER_NAME/cpu_times_percent/user 12.0
-    psmqtt/COMPUTER_NAME/cpu_times_percent/nice  1.0
-    psmqtt/COMPUTER_NAME/cpu_times_percent/system 5.0
-    etc
-
-    Task cpu_times_percent/*; provides
-    psmqtt/COMPUTER_NAME/cpu_times_percent/*; {"user": 12.0, "nice": 1.0, "system": 5.0, ...}
-
-## Formatting output
-
-Output of task could be formatted using
-[Jinja2](http://jinja.pocoo.org/) templates. Append template to the task
-after one more \"/\" separator.
-
-E.g.:   
-
-    cpu_times_percent/user/{{x}}%
-
-To append % symbol after CPU usage.
-
-For task providing many parameters (having \*) all parameters are
-available by name if they are named or by index as x\[1\] if they are
-numbered.
-
-NOTE: After formatting tasks providing many parametes are combined to
-single one.
-
-Unnamed parameters are available as x.
-
-All additional filters are defined at the filters.py file. You also can
-add custom filters there.
-
-Next filters are implemented now:
-
-    KB,MB,GB - to format value in bytes as KBytes, MBytes or GBytes.
-    uptime - to format boot_time as uptime string representation.
-
-Examples:
-
-    virtual_memory/*/{{(100*free/total)|int}}% - free virtual memory in %
-    boot_time/{{x|uptime}} - uptime
-    cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processors total
-    virtual_memory/free/{{x|MB}} - Free RAM in MB
-
-## Configuration
-
-All configuration is present in **psmqtt.conf** file in the app\'s
-directory or any other file referenced by **PSMQTTCONFIG** environment
-variable.
-
-The configuration file is parsed using Python interpreter and contains
-constants for MQTT broker connection and tasks that have to be executed
-periodically (schedule).
-
-There are two ways how to force sending some system state parameter over
-MQTT topic
-
-1.  Schedule
-2.  MQTT request
-
-## Schedule
-
-**schedule** parameter in **psmqtt.conf** is a Python map having
-human-readable period as a key and task name (or list of task names) as
-a value.
+The `<human-friendly CRON expression>` is a string encoding a recurrent rule, like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
 
 You can check examples of recurring period definitions
 [here](https://github.com/kvh/recurrent).
 
-Also value for scheduled task could be specified as Python dict
-({\"key\": \"value\"} notation) to send result to the topic different to
-the task name.
+**NOTE**: Please note that the cron expressions should be
+unique and if there are several schedules with the same period only
+last one will be used. 
 
-E.g. {\"boot_time/{{x\|uptime}}\": \"uptime\"} to have boot time posted
-to the psmqtt/COMPUTER_NAME/uptime topic.
+### Tasks
 
-**NOTE**: Please note that keys in Python dict (**schedule**) should be
-unique and if there are several schedules with the same period - only
-last one will be used. To avoid such issue please use period mapped to
-the list (or dict) of tasks.
+PSMQTT supports a large number of "tasks".
+A "task" is actually the combination of
+* `<task-name>`: the specification of which sensor should be read; this is just a string;
+* parameter list `<param1>`,  `<param2>`, ...,  `<paramN>`: these are either strings or integers represented as a YAML list (the preferred syntax is to use a comma-separated list enclosed by square brackets); such parameters act as additional selectors/filters for that sensor;
 
-## MQTT request
+Each `<task-name>` provides a different meaning for `<param1>`, `<param2>`, etc.
+Each `<task-name>` supports either zero, one, two or more parameters.
 
-It\'s better to describe how to use it using example. To get information
-for task \"cpu_percent\" with MQTT prefix \"psmqtt/COMPUTER_NAME/\" you
-need to send any string on topic:
+The results for each task are pushed to an MQTT topic.
+As an example:
 
-    psmqtt/COMPUTER_NAME/request/cpu_percent
+```
+schedule:
+  - cron: every 10sec
+    tasks:
+      - task: cpu_times_percent
+        params: [ system ]
+```
 
-and result will be pushed on the topic:
+configures PSMQTT to publish on the MQTT topic **psmqtt/COMPUTER_NAME/cpu_times_percent/system**
+the value of the `system` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
 
-    psmqtt/COMPUTER_NAME/cpu_percent
+Most tasks support wildcard `*` parameters which will cause the task to produce multiple
+outputs; in such case the MQTT topic associated with the task should actually be 
+an MQTT topic _prefix_ so that each task output will be published on a different topic.
+As an example:
 
-## Tasks
+```
+schedule:
+  - cron: every 10sec
+    tasks:
+      - task: cpu_times_percent
+        params: [ "*" ]
+        topic: "cpu/*"
+```
+
+configures PSMQTT to publish on 10 MQTT topics:
+
+* **psmqtt/COMPUTER_NAME/cpu/user** the value of the `user` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
+* **psmqtt/COMPUTER_NAME/cpu/nice** the value of the `nice` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
+* **psmqtt/COMPUTER_NAME/cpu/system** the value of the `system` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
+...
+
+Most tasks support also the wildcard `*;` parameter to get all possible fields of the psutil or pySMART output in one single topic, encoding them as a JSON string; in other words a single MQTT message will be published
+on a single MQTT topic with a message payload containing a JSON string.
+As an example:
+
+```
+schedule:
+  - cron: every 10sec
+    tasks:
+      - task: cpu_times_percent
+        params: [ "*:" ]
+        topic: "cpu"
+```
+
+configures PSMQTT to publish on the MQTT topic **psmqtt/COMPUTER_NAME/cpu**
+the JSON encoding of what is returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent), e.g. `{"user": 12.0, "nice": 1.0, "system": 5.0, ...}`.
+
+In case of task execution error, the error message is sent to a topic named
+**psmqtt/COMPUTER_NAME/error/TASK**. Please check [some MQTT documentation](https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/) to understand the role of the `/` MQTT
+topic level separator.
+
+The following table documents all supported `<task-name>`s and their parameters.
+
+* Task name: `cpu_times`
+  * Number of supported parameters: 1
+  * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `user` / `nice` / `system` / etc
+  * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
+
+* Task name: `cpu_percent`
+  * Number of supported parameters: 1
+  * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
+  * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
+
 
 CPU :
 
@@ -325,7 +332,7 @@ Processes :
             - ** - all process properties and sub-properties. Topic per property
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
-## Useful Tasks
+#### Useful Tasks
 
 These are 'tasks' I found most relevant and useful for tracking my
 server(s) health and performance:
@@ -346,3 +353,60 @@ Task|Description
 `processes/top_memory/exe`|Executable file of top process consuming memory
 `sensors_fans/dell_smm/0`|Fan seed
 `sensors_battery/percent`|Battery charge
+
+### Formatting
+
+Output of task could be formatted using
+[Jinja2](http://jinja.pocoo.org/) templates. Append template to the task
+after one more \"/\" separator.
+
+E.g.:   
+
+    cpu_times_percent/user/{{x}}%
+
+To append % symbol after CPU usage.
+
+For task providing many parameters (having \*) all parameters are
+available by name if they are named or by index as x\[1\] if they are
+numbered.
+
+NOTE: After formatting tasks providing many parametes are combined to
+single one.
+
+Unnamed parameters are available as x.
+
+All additional filters are defined at the filters.py file. You also can
+add custom filters there.
+
+Next filters are implemented now:
+
+    KB,MB,GB - to format value in bytes as KBytes, MBytes or GBytes.
+    uptime - to format boot_time as uptime string representation.
+
+Examples:
+
+    virtual_memory/*/{{(100*free/total)|int}}% - free virtual memory in %
+    boot_time/{{x|uptime}} - uptime
+    cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processors total
+    virtual_memory/free/{{x|MB}} - Free RAM in MB
+
+
+### MQTT Topic
+
+The `<MQTT topic>` specification in each task definition is optional.
+
+TO BE WRITTEN
+
+
+
+## MQTT request
+
+It\'s better to describe how to use it using example. To get information
+for task \"cpu_percent\" with MQTT prefix \"psmqtt/COMPUTER_NAME/\" you
+need to send any string on topic:
+
+    psmqtt/COMPUTER_NAME/request/cpu_percent
+
+and result will be pushed on the topic:
+
+    psmqtt/COMPUTER_NAME/cpu_percent
