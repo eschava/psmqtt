@@ -113,10 +113,10 @@ schedule:
 ```
 
 configures PSMQTT to publish on the MQTT topic **psmqtt/COMPUTER_NAME/cpu_times_percent/system**
-the value of the `system` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
+the value of the `system` field returned by the psutil [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) function.
 
-Most tasks support wildcard `*` parameters which will cause the task to produce multiple
-outputs; in such case the MQTT topic associated with the task should actually be 
+Most tasks support wildcard `*` parameters which will cause the task to produce **multiple outputs**; 
+in such case the MQTT topic associated with the task should actually be 
 an MQTT topic _prefix_ so that each task output will be published on a different topic.
 As an example:
 
@@ -131,10 +131,12 @@ schedule:
 
 configures PSMQTT to publish on 10 MQTT topics:
 
-* **psmqtt/COMPUTER_NAME/cpu/user** the value of the `user` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
-* **psmqtt/COMPUTER_NAME/cpu/nice** the value of the `nice` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
-* **psmqtt/COMPUTER_NAME/cpu/system** the value of the `system` field returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent).
-...
+* **psmqtt/COMPUTER_NAME/cpu/user** the value of the `user` field returned by the psutil [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) function.
+* **psmqtt/COMPUTER_NAME/cpu/nice** the value of the `nice` field returned by the psutil [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) function.
+* **psmqtt/COMPUTER_NAME/cpu/system** the value of the `system` field returned by the psutil [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) function.
+
+... etc etc ...
+
 
 Most tasks support also the wildcard `*;` parameter to get all possible fields of the psutil or pySMART output in one single topic, encoding them as a JSON string; in other words a single MQTT message will be published
 on a single MQTT topic with a message payload containing a JSON string.
@@ -150,7 +152,7 @@ schedule:
 ```
 
 configures PSMQTT to publish on the MQTT topic **psmqtt/COMPUTER_NAME/cpu**
-the JSON encoding of what is returned by the [psutil cpu_times_percent function](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent), e.g. `{"user": 12.0, "nice": 1.0, "system": 5.0, ...}`.
+the JSON encoding of what is returned by the psutil [cpu_times_percent](https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent) function, e.g. `{"user": 12.0, "nice": 1.0, "system": 5.0, ...}`.
 
 In case of task execution error, the error message is sent to a topic named
 **psmqtt/COMPUTER_NAME/error/TASK**. Please check [some MQTT documentation](https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/) to understand the role of the `/` MQTT
