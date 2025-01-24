@@ -161,7 +161,7 @@ topic level separator.
 
 Here follows the reference documentation for all supported tasks and their parameters:
 
-* Category: CPU
+* **Category: CPU**
   * Task name: `cpu_times`
     * Number of supported parameters: 1
     * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `user` / `nice` / `system` / etc
@@ -170,7 +170,7 @@ Here follows the reference documentation for all supported tasks and their param
     * Number of supported parameters: 1
     * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
-* Category: Memory
+* **Category: Memory**
   * Task name: `virtual_memory`
     * Number of supported parameters: 1
     * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc
