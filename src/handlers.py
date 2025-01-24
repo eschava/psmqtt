@@ -176,7 +176,7 @@ class IndexTupleCommandHandler(MethodCommandHandler):
             index = index_str
         elif index_str.isdigit():
             index = int(index_str)
-        elif index_str != '*' and index_str != '*;' and index_str != '':
+        elif index_str != '*' and index_str != '*;':
             raise Exception(f"Element '{index_str}' in '{params}' is not supported")
 
         if index < 0 and all_params:

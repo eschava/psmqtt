@@ -101,17 +101,19 @@ schedule:
         params: [ "*", "eth0" ]   # inside the docker for integration test only "eth0" is avail
         topic: "net_io_counters_details_single_itf/*"
 
+      # FIXME: how to test this in CI ? we don't know which temp sensor will be avail on Github agents
       # TEST sensors_temperatures
-      - task: sensors_temperatures
-        params: [ amdgpu, edge ]
-      - task: sensors_temperatures
-        params: [ amdgpu, "*" ]
-        topic: "sensors_temperatures_amdgpu_details/*"
+      #- task: sensors_temperatures
+      #  params: [ amdgpu, edge ]
+      #- task: sensors_temperatures
+      #  params: [ amdgpu, "*" ]
+      #  topic: "sensors_temperatures_amdgpu_details/*"
 
+      # FIXME: how to test this in CI ? we don't know which fan sensor will be avail on Github agents
       # TEST sensors_fans
-      - task: sensors_fans
-        params: [ amdgpu ]
-        topic: "sensors_fans_amdgpu/*"
+      #- task: sensors_fans
+      #  params: [ amdgpu ]
+      #  topic: "sensors_fans_amdgpu/*"
       
       # TEST sensors_battery
       - task: sensors_battery
@@ -119,7 +121,7 @@ schedule:
       
       # TEST users
       - task: users
-        params: [ "name" ]
+        params: [ "name", "*" ]
         topic: "connected_users_names/*"
 
       # TEST boot_time
