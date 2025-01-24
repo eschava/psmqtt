@@ -71,6 +71,9 @@ def run() -> int:
     '''
     Main loop
     '''
+
+    # FIXME: add a basic CLI interface with --help support at least
+
     #
     # read initial config files - this may exit(2)
     #

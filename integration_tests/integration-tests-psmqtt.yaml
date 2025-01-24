@@ -29,34 +29,100 @@ schedule:
         params: [ iowait ]
       - task: cpu_times
         params: [ "*" ]
-        topic: "cpu_test/*"
+        topic: "cpu_times_details/*"
 
       # TEST cpu_percent handler
       - task: cpu_percent
       - task: cpu_percent
         params: [ 0 ]
+        topic: "cpu_percent_core0_details/*"
       - task: cpu_percent
         params: [ "*" ]
-        topic: "cpu_test/*"
+        topic: "cpu_percent_test/*"
 
       # TEST cpu_times_percent
       - task: cpu_times_percent
-        params: [ iowait ]
+        params: [ softirq ]
       - task: cpu_times_percent
         params: [ iowait, "*" ]
+        topic: "cpu_times_iowait_details/*"
 
       # TEST cpu_stats
       - task: cpu_stats
         params: [ "*" ]
-        topic: "cpu_stats_test/*"
       - task: cpu_stats
         params: [ "soft_interrupts" ]
+        topic: "cpu_stats_only_softirq/*"
 
       # TEST virtual_memory
       - task: virtual_memory
         params: [ percent ]
 
-      # TODO
+      # TEST swap_memory
+      - task: swap_memory
+        params: [ "*" ]
+
+      # TEST disk_partitions
+      - task: disk_partitions
+        params: [ "*" ]
+
+      # TEST disk_usage
+      - task: disk_usage
+        params: [ "*", "/dev/sda" ]
+
+      # TEST disk_io_counters
+      - task: disk_io_counters
+        params: [ "*", 0 ]
+
+      # TEST smart
+      - task: smart
+        params: [ "/dev/nvme0", "*" ]
+      - task: smart
+        params: [ "/dev/nvme0", "temperature" ]
+        topic: "smart_data_temp_only"
+      
+      # TEST net_io_counters
+      - task: net_io_counters
+        params: [ "*" ]
+      - task: net_io_counters
+        params: [ "*", "enp3s0" ]
+        topic: "net_io_counters_details_single_itf/*"
+
+      # TEST sensors_temperatures
+      - task: sensors_temperatures
+        params: [ amdgpu, edge ]
+      - task: sensors_temperatures
+        params: [ amdgpu, "*" ]
+        topic: "sensors_temperatures_amdgpu_details/*"
+
+      # TEST sensors_fans
+      - task: sensors_fans
+        params: [ amdgpu ]
+      
+      # TEST sensors_battery
+      - task: sensors_battery
+        params: [ "*" ]
+      
+      # TEST users
+      - task: users
+        params: [ "root" ]
+
+      # TEST boot_time
+      - task: boot_time
+
+      # TEST pids
+      - task: pids
+        params: [ "*" ]
+      - task: pids
+        params: [ "count" ]
+        topic: "pids_count"
+
+      # TEST processes
+      - task: processes
+        params: [ "1", "cpu_times", "*" ]
+      - task: processes
+        params: [ "top_cpu" ]
+        topic: "process_with_top_cpu_usage"
 
 
   - cron: "every 3 seconds"

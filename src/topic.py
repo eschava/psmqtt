@@ -20,7 +20,9 @@ class Topic:
                 escapedParams.append(str(x))
         if len(escapedParams) > 0:
             topicName += '/' + '/'.join(escapedParams)
-        return Topic(topicName)
+
+        # ensure no empty topic-level separators are present:
+        return Topic(topicName.replace("//", "/"))
 
     @staticmethod
     def _find_wildcard(topic:str) -> Tuple[int, int]:
@@ -49,7 +51,9 @@ class Topic:
     def get_subtopic(self, param:str) -> str:
         if self.wildcard_index < 0:
             raise Exception(f"Topic {self.topic} has no wildcard")
-        return self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
+        subtopic = self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
+        # ensure no empty topic-level separators are present:
+        return subtopic.replace("//", "/")
 
     def get_topic(self) -> str:
         return self.topic
