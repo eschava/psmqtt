@@ -138,7 +138,8 @@ configures PSMQTT to publish on 10 MQTT topics:
 ... etc etc ...
 
 
-Most tasks support also the wildcard `*;` parameter to get all possible fields of the psutil or pySMART output in one single topic, encoding them as a JSON string; in other words a single MQTT message will be published
+Most tasks support also the wildcard `*;` parameter to get all possible fields of the psutil or pySMART output in one single topic, 
+encoding them as a **JSON string**; in other words a single MQTT message will be published
 on a single MQTT topic with a message payload containing a JSON string.
 As an example:
 
@@ -158,17 +159,22 @@ In case of task execution error, the error message is sent to a topic named
 **psmqtt/COMPUTER_NAME/error/TASK**. Please check [some MQTT documentation](https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/) to understand the role of the `/` MQTT
 topic level separator.
 
-The following table documents all supported `<task-name>`s and their parameters.
+Here follows the reference documentation for all supported tasks and their parameters:
 
-* Task name: `cpu_times`
-  * Number of supported parameters: 1
-  * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `user` / `nice` / `system` / etc
-  * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
-
-* Task name: `cpu_percent`
-  * Number of supported parameters: 1
-  * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
-  * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
+* Category: CPU
+  * Task name: `cpu_times`
+    * Number of supported parameters: 1
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `user` / `nice` / `system` / etc
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
+  * Task name: `cpu_percent`
+    * Number of supported parameters: 1
+    * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
+* Category: Memory
+  * Task name: `virtual_memory`
+    * Number of supported parameters: 1
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
 
 
 CPU :
