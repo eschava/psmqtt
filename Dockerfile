@@ -4,7 +4,8 @@
 
 FROM public.ecr.aws/docker/library/python:3.13-alpine AS builder
 
-RUN apk add build-base linux-headers
+# NOTE: the jsonschema Python library requires "rpds" library which requires Rust & cargo to build
+RUN apk add build-base linux-headers rust cargo
 
 WORKDIR /build
 COPY ./requirements.txt .
