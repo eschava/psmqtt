@@ -56,7 +56,8 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
     taskIdx = 0
     for task in tasks:
         assert isinstance(task, dict)
-        run_task(f"schedule{scheduleIdx}.task{taskIdx}.{task['task']}", task)
+        task_friendly_name = f"schedule{scheduleIdx}.task{taskIdx}.{task['task']}"
+        run_task(task_friendly_name, task)
         taskIdx += 1
 
     # need reparse rule (see #10)
@@ -66,6 +67,18 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
     # add next timer task
     s.enter(delay, 1, on_timer, (s, parsed_rrule, scheduleIdx, tasks))
     return
+
+def on_log_timer(s: sched.scheduler, log_period_sec: int) -> None:
+    '''
+    Periodically prints the status of psmqtt
+    '''
+    from src.task import num_errors
+    logging.info(f"psmqtt status: {num_errors} errors while capturing sensor data")
+
+    # add next timer task
+    s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec))
+    return
+
 
 def run() -> int:
     '''
@@ -137,6 +150,15 @@ def run() -> int:
         # include this in our scheduler:
         s.enter(delay_sec, 1, on_timer, (s, parsed_rrule, i, sch["tasks"]))
         i += 1
+
+    # add periodic log
+    try:
+        log_period_sec = int(cf.config["logging"]["report_status_period_sec"])
+    except ValueError:
+        logging.error("Invalid expression for logging.report_status_every. Please fix the syntax in the configuration file. Aborting.")
+        return 5
+
+    s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec))
 
     # start a secondary thread running the scheduler
     TimerThread(s).start()

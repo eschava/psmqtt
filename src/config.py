@@ -13,7 +13,11 @@ class Config:
     Config class validates and reads the psmqtt YAML configuration file and reports to the
     rest of the application the data as a dictionary.
     '''
-    def __init__(self, filename: str, schema_filename: str):
+    def __init__(self):
+        self.config = None
+        self.schema = None
+
+    def load(self, filename: str, schema_filename: str):
         '''
         filename is a fully qualified path to the YAML config file.
         The YAML file is validated against the schema file provided as argument,
@@ -35,6 +39,19 @@ class Config:
             raise ValueError(f"Configuration file '{filename}' does not conform to schema: {e}")
 
         # add default values for optional configuration parameters, if they're missing:
+        self._fill_defaults()
+        logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedules'])} validated schedules.")
+        return
+
+    def _fill_defaults(self):
+
+        # logging
+        if "logging" not in self.config:
+            self.config["logging"] = {"level": "ERROR", "report_status_period_sec": 3600}
+        if "level" not in self.config["logging"]:
+            self.config["logging"]["level"] = "ERROR"
+        if "report_status_period_sec" not in self.config["logging"]:
+            self.config["logging"]["report_status_period_sec"] = 3600
 
         # mqtt.broker object
         if 'port' not in self.config["mqtt"]["broker"]:
@@ -88,8 +105,6 @@ class Config:
 
         self.config["schedule"] = validated_schedule
 
-        logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(validated_schedule)} validated schedules.")
-        return
 
 def load_config() -> Config:
     '''
@@ -116,7 +131,12 @@ def load_config() -> Config:
             reccurrent_logger.addHandler(logging.NullHandler())
 
         logging.debug("Loading app config '%s' and its schema '%s'", psmqtt_conf_path, psmqtt_conf_schema_path)
-        return Config(psmqtt_conf_path, psmqtt_conf_schema_path)
+
+        # Config.load() will raise exceptions eventually:
+        cfg = Config()
+        cfg.load(psmqtt_conf_path, psmqtt_conf_schema_path)
+
+        return cfg
 
     except Exception as e:
         logging.error(f"Cannot load configuration from file {psmqtt_conf_path}: {e}. Aborting.")

@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 from .handlers import get_value
 from .topic import Topic
 
+# FIXME: there's no real need of storing this as global variable it seems
 theClient: Optional["MqttClient"] = None
 
 class MqttClient:
@@ -126,7 +127,11 @@ class MqttClient:
         logging.info('starting MQTT client loop')
         self.mqttc.loop_forever()
 
+
 # FIXME: introduce a Task class and move run_task() to it
+# FIXME: introduce a Task class and move num_errors into it
+num_errors = 0
+
 
 def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
     '''
@@ -134,6 +139,8 @@ def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
     '''
     mqttc = theClient
     assert mqttc is not None
+
+    global num_errors
 
     def payload_as_string(v:Any) -> str:
         if isinstance(v, dict):
@@ -184,4 +191,5 @@ def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
     except Exception as ex:
         mqttc_publish(topic.get_error_topic(), str(ex))
         logging.exception(f"run_task caught: {task} : {ex}")
+        num_errors += 1
     return
