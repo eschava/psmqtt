@@ -121,7 +121,9 @@ schedule:
       - task: processes
         params: [ "1", "cpu_times", "*" ]
       - task: processes
-        params: [ "top_cpu" ]
+        params: [ "*", "exe" ]
+      - task: processes
+        params: [ "top_cpu", "cmdline", "0" ]
         topic: "process_with_top_cpu_usage"
 
 

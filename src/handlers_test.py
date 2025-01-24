@@ -322,36 +322,35 @@ class TestHandlers(unittest.TestCase):
                 self.assertIsInstance(t, tuple)
         return
 
-    # FIXME REENABLE
-    # def test_ProcessesCommandHandler(self) -> None:
-    #     handler = ProcessesCommandHandler()
-    #     processes = handler.handle(['*','name'])
-    #     self.assertIsInstance(processes, dict)
-    #     assert isinstance(processes, dict)
-    #     self.assertGreater(len(processes), 3)
-    #     last_pid = 0
-    #     last_name = ''
-    #     for k,v in processes.items():
-    #         if not last_name:
-    #             assert isinstance(k, int)
-    #             last_pid = k
-    #             last_name = v
-    #         assert isinstance(k, int)
-    #         assert isinstance(v, str)
-    #         assert isinstance(k, int)
+    def test_ProcessesCommandHandler(self) -> None:
+        handler = ProcessesCommandHandler()
+        processes = handler.handle(['*','name'])
+        self.assertIsInstance(processes, dict)
+        assert isinstance(processes, dict)
+        self.assertGreater(len(processes), 3)
+        last_pid = 0
+        last_name = ''
+        for k,v in processes.items():
+            if not last_name:
+                assert isinstance(k, int)
+                last_pid = k
+                last_name = v
+            assert isinstance(k, int)
+            assert isinstance(v, str)
+            assert isinstance(k, int)
 
-    #     res = handler.handle([f'{last_pid}','name'])
-    #     self.assertEqual(res, last_name)
+        res = handler.handle([f'{last_pid}','name'])
+        self.assertEqual(res, last_name)
 
-    #     processes = handler.handle(['top_cpu','name'])
-    #     self.assertIsInstance(processes, str)
+        processes = handler.handle(['top_cpu','name'])
+        self.assertIsInstance(processes, str)
 
-    #     processes = handler.handle(['top_memory','exe'])
-    #     self.assertIsInstance(processes, str)
+        processes = handler.handle(['top_memory','exe'])
+        self.assertIsInstance(processes, str)
 
-    #     pid = handler.handle([f'name[{last_name}]','pid'])
-    #     self.assertEqual(pid, last_pid)
-    #     return
+        pid = handler.handle([f'name[{last_name}]','pid'])
+        self.assertEqual(pid, last_pid)
+        return
 
     def test_get_value(self) -> None:
         val = get_value('cpu_percent', [], None)

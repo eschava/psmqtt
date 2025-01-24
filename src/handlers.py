@@ -511,38 +511,41 @@ class ProcessesCommandHandler(CommandHandler):
     def handle(self, params:list[str]) -> Payload:
         assert isinstance(params, list)
 
-        if len(params) != 2:
-            raise Exception(f"Exactly 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
-        process = params[0]
-        param = params[1]
+        if len(params) != 2 and len(params) != 3:
+            raise Exception(f"Exactly 2 or 3 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+        process_id = params[0]
+        property = params[1]
+        remaining_params = [params[2]] if len(params) == 3 else []
 
-        if process in ('*', '*;'):
-            if param == '*':
-                raise Exception(f"Parameter name in '{self.name}' should be specified")
-            result = {p.pid: self.get_process_value(p, param, params)
-                for p in psutil.process_iter()}
-            return string_from_dict_optionally(result, process.endswith(';'))
-        elif process.isdigit():
-            pid = int(process)
-        elif self.top_cpu_regexp.match(process):
-            pid = self.find_process(process, lambda p: p.cpu_percent(), True)
-        elif self.top_memory_regexp.match(process):
-            pid = self.find_process(process, lambda p: p.memory_percent(), True)
-        elif self.pid_file_regexp.match(process):
-            m = self.pid_file_regexp.match(process)
+        if process_id in ('*', '*;'):
+            if property == '*':
+                raise Exception(f"The process property in '{self.name}' should be specified")
+            result = {p.pid: self.get_process_value(p, property, remaining_params) for p in psutil.process_iter()}
+            return string_from_dict_optionally(result, process_id.endswith(';'))
+        elif isinstance(process_id, int):
+            pid = process_id
+        elif process_id.isdigit():
+            pid = int(process_id)
+        elif self.top_cpu_regexp.match(process_id):
+            pid = self.find_process(process_id, lambda p: p.cpu_percent(), True)
+        elif self.top_memory_regexp.match(process_id):
+            pid = self.find_process(process_id, lambda p: p.memory_percent(), True)
+        elif self.pid_file_regexp.match(process_id):
+            m = self.pid_file_regexp.match(process_id)
             assert m is not None
             pid = self.get_pid_from_file(m.group(1).replace('|', '/'))
-        elif self.name_pattern_regexp.match(process):
-            m = self.name_pattern_regexp.match(process)
+        elif self.name_pattern_regexp.match(process_id):
+            m = self.name_pattern_regexp.match(process_id)
             assert m is not None
             pid = self.get_find_process(m.group(1))
         else:
-            raise Exception("Process in '" + params + "' should be selected")
+            raise Exception("Process in '{self.name}' should be selected")
 
         if pid < 0:
-            raise Exception("Process " + process + " not found")
-        return self.get_process_value(
-            psutil.Process(pid), param, params)
+            raise Exception(f"Process {process_id} not found")
+
+        # we have a PID and property to fetch:
+        return self.get_process_value(psutil.Process(pid), property, remaining_params)
 
     def find_process(self, request:str, cmp_func:Callable[..., float],
             reverse:bool) -> int:
@@ -570,14 +573,12 @@ class ProcessesCommandHandler(CommandHandler):
         raise Exception("Process matching '" + pattern + "' not found")
 
     @staticmethod
-    def get_process_value(process:psutil.Process, params:list[str],
-            all_params:list[str]) -> Any:
-        prop, param = split(params)
-        process_handler = process_handlers.get(prop, None)
+    def get_process_value(process:psutil.Process, property:str, remaining_params:list[str]) -> Any:
+        process_handler = process_handlers.get(property, None)
         if process_handler is None:
-            raise Exception(f"Parameter '{prop}' in '{all_params}' is not supported")
+            raise Exception(f"Property '{property}' in 'processes' task is not supported")
 
-        return process_handler.handle(param, process)
+        return process_handler.handle(remaining_params, process)
 
 
 class SmartCommandHandler(CommandHandler):
@@ -699,9 +700,9 @@ class ProcessMethodCommandHandler(ProcessCommandHandler):
             self.method = None  # method not defined
         return
 
-    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
         assert isinstance(params, list)
-        if params != '':
+        if params != []:
             raise Exception(f"Parameter '{params}' in '{self.name}' is not supported")
 
         return self.get_value(process)
@@ -709,6 +710,12 @@ class ProcessMethodCommandHandler(ProcessCommandHandler):
     def get_value(self, process:psutil.Process) -> Payload:
         if self.method is None:
             raise Exception(f"Not implemented: psutil.{self.name}")
+        # invoke the psutil method (e.g. "pid", "exe" etc) on the psutil.Process instance;
+        # e.g.
+        #     process = psutil.Process(1)
+        #     method = getattr(psutil.Process, "exe")
+        #     method(process)
+        #   >> '/usr/lib/systemd/systemd'
         return self.method(process)
 
 
