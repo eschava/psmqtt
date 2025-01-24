@@ -40,7 +40,7 @@ class Config:
 
         # add default values for optional configuration parameters, if they're missing:
         self._fill_defaults()
-        logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedules'])} validated schedules.")
+        logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
         return
 
     def _fill_defaults(self):
