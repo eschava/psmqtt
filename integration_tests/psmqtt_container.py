@@ -5,7 +5,7 @@ import os
 import shutil
 import tempfile
 from testcontainers.core.container import DockerContainer
-from testcontainers.mqtt import MosquittoContainer
+from integration_tests.mosquitto_container import MosquittoContainerEnhanced
 
 class PSMQTTContainer(DockerContainer):
     """
@@ -14,7 +14,7 @@ class PSMQTTContainer(DockerContainer):
 
     CONFIG_FILE = "integration-tests-psmqtt.yaml"
 
-    def __init__(self, broker: MosquittoContainer) -> None:
+    def __init__(self, broker: MosquittoContainerEnhanced) -> None:
         super().__init__(image="psmqtt:latest")
 
         # IMPORTANT: to link with the MQTT broker we want to use the IP address internal to the docker network,
@@ -22,14 +22,20 @@ class PSMQTTContainer(DockerContainer):
         #            docker container that has been started inside a docker network!
         broker_container = broker.get_wrapped_container()
         broker_ip = broker.get_docker_client().bridge_ip(broker_container.id)
-        broker_port = MosquittoContainer.MQTT_PORT
+        broker_port = MosquittoContainerEnhanced.MQTT_PORT
         print(f"Linking the {self.image} container with the MQTT broker at host:ip {broker_ip}:{broker_port}")
         config_file = self._prepare_config_file(broker_ip, broker_port)
 
         # bind-mount the generated, transient, config file to the standard location of config file within PSMQTT container
         self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.yaml", mode="ro")
 
-    def _prepare_config_file(self, broker_ip: str, broker_port: int):
+    def watch_for_internal_errors(self, broker: MosquittoContainerEnhanced) -> None:
+        # watch the psmqtt internal status topic
+        self.internal_mqtt_topics = {"num_errors": self.get_mqtt_topic_prefix() + "/psmqtt_status/num_errors"}
+        print(f"Watching for internal errors in the PSMQTT container on topic: {self.internal_mqtt_topics['num_errors']}")
+        broker.watch_topics(self.internal_mqtt_topics["num_errors"])
+
+    def _prepare_config_file(self, broker_ip: str, broker_port: int) -> str:
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
         original_cfgfile = os.path.join(TEST_DIR, self.CONFIG_FILE)
 
@@ -52,15 +58,25 @@ class PSMQTTContainer(DockerContainer):
         print(f"Prepared configuration file '{temp_cfgfile}' for use in integration tests")
         return temp_cfgfile
 
-    def is_running(self):
+    def is_running(self) -> bool:
         self.get_wrapped_container().reload()  # force refresh of container status
         # status = self.get_wrapped_container().attrs["State"]['Status']
         status = self.get_wrapped_container().status  # same as above
         return status == "running"
 
-    def get_short_id(self):
+    def get_short_id(self) -> str:
         # the docker container ID is a long string, the "short ID" is just the first 12 characters
         return self.get_wrapped_container().id[:12]
+
+    def get_mqtt_topic_prefix(self) -> str:
+        return f"psmqtt/{self.get_short_id()}"
+
+    def get_num_internal_errors(self, broker: MosquittoContainerEnhanced) -> int:
+        last_value = broker.get_last_payload_received_in_watched_topic(self.internal_mqtt_topics["num_errors"])
+        try:
+            return int(last_value)
+        except ValueError:
+            return -1
 
     def print_logs(self) -> str:
         print("** psmqtt LOGS [STDOUT]:")

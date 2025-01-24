@@ -4,8 +4,7 @@
 
 FROM public.ecr.aws/docker/library/python:3.13-alpine AS builder
 
-# NOTE: the jsonschema Python library requires "rpds" library which requires Rust & cargo to build
-RUN apk add build-base linux-headers rust cargo
+RUN apk add build-base linux-headers 
 
 WORKDIR /build
 COPY ./requirements.txt .
@@ -63,7 +62,7 @@ USER ${USERNAME}
 
 # set conf path
 ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.yaml"
-ENV PSMQTTCONFIGSCHEMA="/opt/psmqtt/schema/psmqtt.conf.schema.json"
+ENV PSMQTTCONFIGSCHEMA="/opt/psmqtt/schema/psmqtt.schema.yaml"
 
 # add deps to PYTHONPATH
 ENV PYTHONPATH="/opt/psmqtt/deps"

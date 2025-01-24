@@ -119,6 +119,11 @@ class MqttClient:
             logging.warn('Unknown topic: ' + msg.topic)
         return
 
+    def publish(self, topic:str, payload:str) -> None:
+        logging.info("MqttClient.publish('%s', '%s')", topic, payload)
+        self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
+        return
+
     def loop_forever(self) -> None:
         '''
         This function calls the network loop functions for you in an infinite blocking loop.
@@ -154,13 +159,6 @@ def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
         #else:
         return json.dumps(v)
 
-    def mqttc_publish(topic:str, payload:str) -> None:
-        assert mqttc is not None
-        assert mqttc.mqttc is not None
-        logging.info("mqttc.publish('%s', '%s')", topic, payload)
-        mqttc.mqttc.publish(topic, payload, qos=mqttc.qos, retain=mqttc.retain)
-        return
-
     if task["topic"] is None:
         topic = Topic.from_task(mqttc.topic_prefix, task)
     else:
@@ -178,18 +176,18 @@ def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
         if isinstance(payload, list):
             for i, v in enumerate(payload):
                 subtopic = topic.get_subtopic(str(i))
-                mqttc_publish(subtopic, payload_as_string(v))
+                mqttc.publish(subtopic, payload_as_string(v))
 
         elif isinstance(payload, dict):
             for key in payload:
                 subtopic = topic.get_subtopic(str(key))
                 v = payload[key]
-                mqttc_publish(subtopic, payload_as_string(v))
+                mqttc.publish(subtopic, payload_as_string(v))
         else:
-            mqttc_publish(topic.get_topic(), payload_as_string(payload))
+            mqttc.publish(topic.get_topic(), payload_as_string(payload))
 
     except Exception as ex:
-        mqttc_publish(topic.get_error_topic(), str(ex))
+        mqttc.publish(topic.get_error_topic(), str(ex))
         logging.exception(f"run_task caught: {task} : {ex}")
         num_errors += 1
     return

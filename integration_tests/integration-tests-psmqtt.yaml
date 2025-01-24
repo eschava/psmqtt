@@ -4,6 +4,7 @@
 
 logging:
   level: DEBUG
+  report_status_period_sec: 1
 
 mqtt:
   broker:

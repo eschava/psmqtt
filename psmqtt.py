@@ -68,15 +68,19 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
     s.enter(delay, 1, on_timer, (s, parsed_rrule, scheduleIdx, tasks))
     return
 
-def on_log_timer(s: sched.scheduler, log_period_sec: int) -> None:
+def on_log_timer(s: sched.scheduler, log_period_sec: int, mqttc) -> None:
     '''
     Periodically prints the status of psmqtt
     '''
     from src.task import num_errors
-    logging.info(f"psmqtt status: {num_errors} errors while capturing sensor data")
+
+    # publish also on MQTT
+    status_topic = mqttc.topic_prefix + "psmqtt_status"
+    mqttc.mqttc.publish(status_topic + "/num_errors", num_errors)
+    logging.info(f"psmqtt status: {num_errors} errors while capturing sensor data; published status into on topic {status_topic}")
 
     # add next timer task
-    s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec))
+    s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec, mqttc))
     return
 
 
@@ -158,7 +162,9 @@ def run() -> int:
         logging.error("Invalid expression for logging.report_status_every. Please fix the syntax in the configuration file. Aborting.")
         return 5
 
-    s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec))
+    if log_period_sec > 0:
+        s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec, mqttc))
+    #else: logging of the status has been disabled
 
     # start a secondary thread running the scheduler
     TimerThread(s).start()

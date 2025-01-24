@@ -56,6 +56,7 @@ def test_mqtt_reconnection():
                     container.print_logs()
                     assert False
 
+            # FIXME: check psmqtt has restarted publishing data into the broker
             print("Looks like PSMQTT container is still up and running... proceeding")
 
         print("Test passed. Container logs should indicate several attempts to reconnect:")

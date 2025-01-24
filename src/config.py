@@ -3,8 +3,9 @@ import logging
 import logging.config
 import sys
 import yaml
-import json
-import jsonschema
+import yamale
+from yamale import YamaleError
+
 import socket
 from .handlers import get_supported_handlers
 
@@ -24,19 +25,24 @@ class Config:
         and optional configuration parameters are populated with their default values.
         '''
 
-        with open(schema_filename) as f:
-            self.schema = json.load(f)
-
-        with open(filename, 'r') as f:
-            try:
-                self.config = yaml.safe_load(f)
-            except yaml.YAMLError as e:
-                raise ValueError(f"Error parsing YAML file '{filename}': {e}")
+        try:
+            tuple_list = yamale.make_data(filename)
+        except yaml.YAMLError as e:
+            raise ValueError(f"Error parsing YAML file '{filename}': {e}")
+        if len(tuple_list) != 1:
+            raise ValueError(f"Error parsing YAML file '{filename}': expected a single document, got {len(tuple_list)}")
 
         try:
-            jsonschema.validate(instance=self.config, schema=self.schema)
-        except jsonschema.exceptions.ValidationError as e:
+            schema = yamale.make_schema(schema_filename)  # Assuming self.schema_path holds the path to the YAML schema
+            yamale.validate(schema, tuple_list)
+        except YamaleError as e:
             raise ValueError(f"Configuration file '{filename}' does not conform to schema: {e}")
+
+        # extract just the validated dictionary and store it in self.config
+        the_tuple = tuple_list[0]
+        if len(the_tuple) != 2:
+            raise ValueError(f"Error parsing YAML file '{filename}': invalid format from yamala library")
+        self.config = the_tuple[0]
 
         # add default values for optional configuration parameters, if they're missing:
         self._fill_defaults()
@@ -44,7 +50,6 @@ class Config:
         return
 
     def _fill_defaults(self):
-
         # logging
         if "logging" not in self.config:
             self.config["logging"] = {"level": "ERROR", "report_status_period_sec": 3600}
@@ -118,7 +123,7 @@ def load_config() -> Config:
     psmqtt_conf_path = os.getenv(
         'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
     psmqtt_conf_schema_path = os.getenv(
-        'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.conf.schema.json'))
+        'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
 
     try:
         # read initial config files
