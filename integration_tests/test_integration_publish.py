@@ -50,8 +50,8 @@ def test_basic_publish():
             container.print_logs()
             assert False
 
-        container.watch_for_internal_errors(broker)
         broker.watch_topics([t["topic_name"] for t in topics_under_test])
+        container.watch_for_internal_errors(broker)
 
         # the integration test config contains a configuration to print the boot_time every 5sec,
         # so wait a bit more to reduce test flakyness:
@@ -59,7 +59,7 @@ def test_basic_publish():
         container.print_logs()
 
         # check there were no internal psmqtt errors
-        #assert container.get_num_internal_errors(broker) == 0
+        assert container.get_num_internal_errors(broker) == 0
 
         for t in topics_under_test:
             tname = t["topic_name"]

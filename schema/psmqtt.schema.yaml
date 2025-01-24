@@ -1,4 +1,4 @@
-# psmqtt.yaml schema
+# psmqtt.yaml schema for the Yamala Python library
 
 logging: include('logging')
 
@@ -13,11 +13,11 @@ logging:
 ---
 mqtt:
   broker: include('broker')
-  clientid: str()
-  clean_session: bool()
-  qos: int()
-  retain: bool()
-  request_topic: str()
+  clientid: str(required=False)
+  clean_session: bool(required=False)
+  qos: int(required=False)
+  retain: bool(required=False)
+  request_topic: str(required=False)
   publish_topic_prefix: str(required=False)
 ---
 broker:
@@ -32,6 +32,6 @@ cron_tasks:
 ---
 task_def:
   task: str()
-  params: list(int(), str(),required=False)
+  params: list(int(),str(),required=False)
   topic: str(required=False)
   formatter: str(required=False)
