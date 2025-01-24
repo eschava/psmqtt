@@ -74,13 +74,13 @@ schedule:
 
 Each of the following section describes in details the parameters:
 
-1. [human-friendly CRON expression](#schedule)
-2. [task name and parameters](#tasks)
-3. [formatting rules](#formatting)
-4. [MQTT topic](#mqtt-topic)
+1. `<human-friendly CRON expression>`: [CRON expression](#cron-expression)
+2. `<task name>` and `<param1>`, `<param2>`, `<param3>`, ...: [Tasks](#tasks)
+3. `<formatting rule>`: [Formatting](#formatting)
+4. `<MQTT topic>`: [MQTT Topic](#mqtt-topic)
 
 
-### Schedule
+### CRON expression
 
 The `<human-friendly CRON expression>` is a string encoding a recurrent rule, like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
 
