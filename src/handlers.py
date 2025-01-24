@@ -104,6 +104,8 @@ class IndexCommandHandler(MethodCommandHandler):
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
+        elif isinstance(param, int):
+            return arr[param]
         elif param.isdigit():
             return arr[int(param)]
         raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
@@ -119,6 +121,10 @@ class TupleCommandHandler(MethodCommandHandler):
         assert isinstance(params, list)
 
         tup = self.get_value()
+        if tup is None:
+            # this might happen when psutil didn't find ANY hardware support;
+            # e.g. on a computer that has no battery, the psutil.sensors_battery() returns None
+            return "None"
         assert isinstance(tup, tuple)
 
         if len(params) != 1:
@@ -144,6 +150,11 @@ class IndexTupleCommandHandler(MethodCommandHandler):
     '''
 
     def handle(self, params: list[str]) -> Payload:
+        '''
+        This handler accepts 1 or 2 parameters.
+        The first parameter must be either:
+        * is the index of the element in the list of named tuples.
+        '''
         assert isinstance(params, list)
 
         if len(params) == 0:
@@ -155,21 +166,26 @@ class IndexTupleCommandHandler(MethodCommandHandler):
         all_params = param == '*' or param == '*;'
         index = -1
 
-        if param.isdigit():
+        if isinstance(param, int):
+            all_params = True
+            index = param
+        elif param.isdigit():
             all_params = True
             index = int(param)
+        elif isinstance(index_str, int):
+            index = index_str
         elif index_str.isdigit():
             index = int(index_str)
-        elif index_str != '*' and index_str != '*;':
+        elif index_str != '*' and index_str != '*;' and index_str != '':
             raise Exception(f"Element '{index_str}' in '{params}' is not supported")
 
         if index < 0 and all_params:
-            raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
+            raise Exception(f"Cannot list all elements and parameters into the same '{self.name}' request")
 
         result = self.get_value()
         assert isinstance(result, list)
         if index < 0:
-            return list_from_array_of_namedtupes(result, param, params, index_str.endswith(';'))
+            return list_from_array_of_namedtuples(result, param, self.name, index_str.endswith(';'))
         else:  # index selected
             try:
                 elt = result[index]
@@ -213,6 +229,9 @@ class IndexOrTotalCommandHandler(CommandHandler):
         elif param == 'count':
             total = False
             count = True
+        elif isinstance(param, int):
+            total = False
+            index = param
         elif param.isdigit():
             total = False
             index = int(param)
@@ -269,6 +288,9 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
         elif index_str == '*;':
             total = False
             index_join = True
+        elif isinstance(index_str, int):
+            total = False
+            index = index_str
         elif index_str.isdigit():
             total = False
             index = int(index_str)
@@ -279,7 +301,8 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
             raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
 
         result = self.get_value(total)
-        assert isinstance(result, tuple) or isinstance(result, list)
+        if not isinstance(result, tuple) and not isinstance(result, list):
+            raise Exception(f"Unexpected type from psutil.{self.name} with total={total}: {type(result)}; {isinstance(result, tuple)}; {isinstance(result, list)};")
         #assert hasattr(result, '_asdict')
         #assert hasattr(result, '_fields')
         if index < 0:
@@ -288,7 +311,7 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
                 assert hasattr(result, '_asdict')
                 return string_from_dict_optionally(result._asdict(), params_join)
             elif not total:
-                return list_from_array_of_namedtupes(result, param, params, index_join)
+                return list_from_array_of_namedtuples(result, param, self.name, index_join)
             assert isinstance(result, tuple)
             assert hasattr(result, '_fields')
             if param in result._fields:
@@ -368,6 +391,59 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     # noinspection PyMethodMayBeStatic
     def get_value(self, total:bool) -> Union[Dict[str, NamedTuple], NamedTuple]:
         raise Exception("Not implemented")
+
+
+class DiskCountersIO(MethodCommandHandler):
+    '''
+    used by, e.g. cpu_times_percent
+    '''
+    def __init__(self, name:str):
+        super().__init__(name)
+
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        disk = params[0]
+        counter = params[1] if len(params) == 2 else ''
+
+        all_params = counter == '*' or counter == '*;'
+        params_join = counter.endswith(';')
+
+        total = False
+        #index_join = False
+        if disk == '*':
+            total = True
+        elif disk == '*;':
+            total = True
+            #index_join = True
+
+        result = self.get_value(total, disk)
+        #if not isinstance(result, tuple):
+        #    raise Exception(f"Expected a tuple, got: {type(result)}")
+
+        if all_params:  # not total
+            assert isinstance(result, tuple)
+            assert hasattr(result, '_asdict')
+            return string_from_dict_optionally(result._asdict(), params_join)
+
+        assert isinstance(result, tuple)
+        assert hasattr(result, '_fields')
+        if counter in result._fields:
+            return getattr(result, counter)
+        raise Exception(f"Element '{counter}' in '{self.name}' is not supported")
+
+    def get_value(self, total:bool, disk:str) -> NamedTuple:
+        result = psutil.disk_io_counters(perdisk=not total)
+        # result is a namedtuple when perdisk=False or a dict when perdisk=True
+        if total:
+            return result
+        else:
+            # the dictionary is indexed by just the device name e.g. "sda" and contains a tuple
+            return result[disk.replace("/dev/", "")]
+
 
 class DiskUsageCommandHandler(MethodCommandHandler):
 
@@ -461,11 +537,11 @@ class SensorsFansCommandHandler(MethodCommandHandler):
     def handle(self, params:list[str]) -> Payload:
         assert isinstance(params, list)
 
-        if len(params) != 2 and len(params) != 3:
-            raise Exception(f"Exactly 2 or 3 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+        if len(params) < 1 or len(params) > 3:
+            raise Exception(f"Exactly 1, 2 or 3 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
 
         source = params[0]
-        label = params[1]
+        label = params[1] if len(params) >= 2 else ''
         param = params[2] if len(params) == 3 else ''
 
         tup = self.get_value()
@@ -651,15 +727,7 @@ handlers = {
     'swap_memory': TupleCommandHandler('swap_memory'),
     'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
     'disk_usage': DiskUsageCommandHandler(),
-
-    'disk_io_counters': type(
-        "DiskIOCountersCommandHandler",
-        (IndexOrTotalTupleCommandHandler, object),
-        {
-            "get_value": lambda self, total:
-                psutil.disk_io_counters(perdisk=not total)
-        })('disk_io_counters'),
-
+    'disk_io_counters': DiskCountersIO('disk_io_counters'),
     'net_io_counters': type(
         "NetIOCountersCommandHandler",
         (NameOrTotalTupleCommandHandler, object),
@@ -787,6 +855,8 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
+        elif isinstance(param, int):
+            return arr[param]
         elif param.isdigit():
             return arr[int(param)]
         #else:
@@ -844,20 +914,20 @@ process_handlers = {
 }
 
 
-def list_from_array_of_namedtupes(
-        array_of_namedtupes: Union[List[Any], NamedTuple], key, func,
+def list_from_array_of_namedtuples(
+        array_of_namedtupes: Union[List[Any], NamedTuple], key:str, func:str,
         join:bool = False) -> Union[List[Any], str]:
     result = list()
     for tup in array_of_namedtupes:
         if key in tup._fields:
             result.append(getattr(tup, key))
         else:
-            raise Exception("Element '" + key + "' in '" + func + "' is not supported")
+            raise Exception(f"Element '{key}' in '{func}' is not supported")
     return string_from_list_optionally(result, join)
 
 
 def dict_from_dict_of_namedtupes(dict_of_namedtupes:Dict[str, NamedTuple],
-        key:str, func, join=False) -> Union[Dict[str, Any], str]:
+        key:str, func:str, join=False) -> Union[Dict[str, Any], str]:
     result = dict()
     for name, tup in dict_of_namedtupes.items():
         if key in tup._fields:
