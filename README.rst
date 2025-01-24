@@ -13,9 +13,9 @@ metrics (CPU, memory, disks, network, S.M.A.R.T. disk data) to an MQTT broker.
 * `recurrent <https://github.com/kvh/recurrent>` to describe reporting schedule.
 * `jinja2 <https://github.com/alex-foundation/jinja2>` to format the data.
 
-=====================
-Installation with pip
-=====================
+========================
+Installation from source
+========================
 
 Clone this repository and then install the required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
 

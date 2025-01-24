@@ -1,5 +1,46 @@
 # PSMQTT Usage
 
+## PSMQTT Architecture
+
+The PSMQTT architecture can be described as:
+
+```mermaid
+flowchart TD
+%% Nodes
+    OS([Linux/Windows/Mac OS HW interfaces]) 
+    SMART([Hard drive SMART data])
+    CFG[(PSMQTT<br/>config.yaml)]
+    CLK((Clock))
+    MQTT([MQTT Broker])
+    psmqttTASK(PSMQTT task handler)
+    psmqttSCHED(PSMQTT scheduler)
+    psmqttFMT(PSMQTT formatter)
+
+%% Edge connections between nodes
+    OS -->|pySMART| psmqttTASK
+    SMART -->|psutil| psmqttTASK
+    CFG --> psmqttSCHED
+    CFG --> psmqttTASK
+    CLK --> psmqttSCHED
+
+    psmqttSCHED-->psmqttTASK
+    psmqttTASK-->psmqttFMT
+
+    psmqttFMT-->MQTT
+
+%% Individual node styling. 
+    style OS color:#FFFFFF, fill:#AA00FF, stroke:#AA00FF
+    style SMART color:#FFFFFF, stroke:#00C853, fill:#00C853
+    style CLK color:#FFFFFF, stroke:#2962FF, fill:#2962FF
+    style CFG color:#FFFFFF, stroke:#2962FF, fill:#959595
+    style MQTT color:#FFFFFF, stroke:#2962FF, fill:#2962FF
+```
+
+The configuration file defines:
+* periodicity of each PSMQTT action;
+* which "sensor" has to be queried () both the PSMQTT internal scheduler,
+
+
 ## General information about tasks and MQTT topics
 
 Every utilization task has its own special name. It always starts with
