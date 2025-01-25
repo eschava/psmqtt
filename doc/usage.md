@@ -9,7 +9,6 @@ flowchart TD
 %% Nodes
     OS([Linux/Windows/Mac OS HW interfaces]) 
     SMART([Hard drive SMART data])
-    CFG[(PSMQTT<br/>config.yaml)]
     CLK((Clock))
     MQTT([MQTT Broker])
     psmqttTASK(PSMQTT task handler)
@@ -19,8 +18,6 @@ flowchart TD
 %% Edge connections between nodes
     OS -->|pySMART| psmqttTASK
     SMART -->|psutil| psmqttTASK
-    CFG --> psmqttSCHED
-    CFG --> psmqttTASK
     CLK --> psmqttSCHED
 
     psmqttSCHED-->psmqttTASK
@@ -36,14 +33,14 @@ flowchart TD
     style MQTT color:#FFFFFF, stroke:#2962FF, fill:#2962FF
 ```
 
-The configuration file defines:
+The PSMQTT configuration file defines:
 * periodicity of each PSMQTT action;
 * which "sensor" has to be queried; PSMQTT uses [psutil](https://github.com/giampaolo/psutil) 
 and [pySMART](https://github.com/truenas/py-SMART) libraries to sense data from the 
 HW of the device where PSMQTT runs (CPU, memory, temperature and fan sensors, SMART harddrive data,
 proces information, etc);
-* how each sensor data is formatted into text
-* which MQTT broker will receive all the outputs
+* how each sensor data is formatted into text;
+* to which MQTT broker all the outputs will be published.
 
 The following section provides more details about the config file syntax.
 
@@ -82,13 +79,13 @@ Each of the following section describes in details the parameters:
 
 ### CRON expression
 
-The `<human-friendly CRON expression>` is a string encoding a recurrent rule, like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
+The `<human-friendly CRON expression>` is a string encoding a recurrent rule, 
+like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
 
 You can check examples of recurring period definitions
 [here](https://github.com/kvh/recurrent).
 
-**NOTE**: Please note that the cron expressions should be
-unique and if there are several schedules with the same period only
+**NOTE**: cron expressions should be unique and if there are several schedules with the same period only
 last one will be used. 
 
 ### Tasks
@@ -162,14 +159,27 @@ topic level separator.
 Here follows the reference documentation for all supported tasks and their parameters:
 
 * **Category: CPU**
-  * Task name: `cpu_times`
-    * Number of supported parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `user` / `nice` / `system` / etc
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
   * Task name: `cpu_percent`
+    * Short description: CPU total usage in percentage
     * Number of supported parameters: 1
     * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
+  * Task name: `cpu_times`
+    * Short description: CPU times information
+    * Number of supported parameters: 1
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc
+      Full list of available fields in the external docs.
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
+  * Task name: `cpu_times_percent`
+    * Short description: CPU times in percentage
+    * Number of supported parameters: 1 or 2
+    * `<param1>`: The wildcard `*` or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
+      Full list of available fields in the external docs.
+    * `<param2>`: The wildcard `*` or `*;` to select all CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU.
+      Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
+
+
 * **Category: Memory**
   * Task name: `virtual_memory`
     * Number of supported parameters: 1

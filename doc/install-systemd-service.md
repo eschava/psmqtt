@@ -5,7 +5,10 @@ It is possible to:
 * install the required Python packages into the system-wide site packages and
 * run `psmqtt.py` as a service upon system boot.
 
-## Current Ubuntu flavors
+This step-by-step guide should work on most SystemD-enabled Linux distributions including:
+* Ubuntu and its flavors
+* Fedora and RedHat
+* many others
 
 Make a copy of `psmqtt` directory e.g., to `/opt/psmqtt`, for use by a service:
 
