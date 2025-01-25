@@ -93,20 +93,22 @@ like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm an
 You can check examples of recurring period definitions
 [here](https://github.com/kvh/recurrent).
 
-**NOTE**: cron expressions should be unique and if there are several schedules with the same period only
-last one will be used. 
+Note that cron expressions should be unique; if there are several schedules with the same period only
+last one will be used.
 
 ### Tasks
 
 PSMQTT supports a large number of "tasks".
-A "task" is actually the combination of
+A "task" is the combination of
 * `<task-name>`: the specification of which sensor should be read; this is just a string;
-* parameter list `<param1>`,  `<param2>`, ...,  `<paramN>`: these are either strings or integers represented as a YAML list (the preferred syntax is to use a comma-separated list enclosed by square brackets); such parameters act as additional selectors/filters for that sensor;
+* parameter list `<param1>`,  `<param2>`, ...,  `<paramN>`: these are either strings or integers 
+  represented as a YAML list (the preferred syntax is to use a comma-separated list enclosed by 
+  square brackets); such parameters act as additional selectors/filters for the sensor;
 
-Each `<task-name>` provides a different meaning for `<param1>`, `<param2>`, etc.
-Each `<task-name>` supports either zero, one, two or more parameters.
+The meaning for `<param1>`, `<param2>` is task-dependent.
+Also the number of required paraterms is task-dependent.
 
-The results for each task are pushed to an MQTT topic.
+The result of each task are pushed to an MQTT topic.
 As an example:
 
 ```
@@ -153,7 +155,7 @@ schedule:
   - cron: every 10sec
     tasks:
       - task: cpu_times_percent
-        params: [ "*:" ]
+        params: [ "*;" ]
         topic: "cpu"
 ```
 
