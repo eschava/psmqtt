@@ -54,8 +54,17 @@ config file using the **PSMQTTCONFIG** environment variable
 
 Please check the comments in the [default psmqtt.yaml](../psmqtt.yaml) as
 documentation for most of the entries.
+Typically you will need to edit are those associated
+with the MQTT broker:
 
-This paragraph will focus on the format of each "scheduling expression",
+```
+mqtt:
+  broker:
+    host: <put here the IP address of your MQTT broker>
+    port: <port where your MQTT broker listens, typically 1883>
+```
+
+The rest of this document will focus on the format of each "scheduling expression",
 whose general format is:
 
 ```
@@ -410,19 +419,65 @@ Examples:
 ### MQTT Topic
 
 The `<MQTT topic>` specification in each task definition is optional.
+If it is not specified, psmqtt will generate automatically an output MQTT topic 
+in the form **psmqtt/COMPUTER_NAME/<task-name>**.
 
-TO BE WRITTEN
+To customize the prefix **psmqtt/COMPUTER_NAME** you can use the `mqtt.publish_topic_prefix`
+key in the configuraton file. E.g.:
+
+```
+mqtt:
+  publish_topic_prefix: my-prefix
+```
+
+configures psmqtt to emit all outputs at **my-prefix/<task-name>**.
+
+It's important to note that when the task emits more than one output due to the use of the
+wildcard `*` character then the MQTT topic must be specified and must include the 
+wildcard `*` character itself.
+An example the task
+
+```
+schedule:
+  - cron: every 10sec
+    tasks:
+      - task: cpu_times_percent
+        params: [ "*" ]
+        topic: "cpu/*"
+```
+
+is producing 10 percentage outputs on a Linux system; one for each of `user`, `nice`, `system`,
+`idle`, `iowait`, `irq`, `softirq`, `steal`, `guest` and `guest_nice` fields emitted by psutil.
+These 10 outputs must be published on 10 different MQTT topics.
+The use of `cpu/*` configures psmqtt to produce as output topics:
+* **psmqtt/COMPUTER_NAME/cpu/user**
+* **psmqtt/COMPUTER_NAME/cpu/nice**
+* **psmqtt/COMPUTER_NAME/cpu/system**
+* **psmqtt/COMPUTER_NAME/cpu/idle**
+* **psmqtt/COMPUTER_NAME/cpu/iowait**
+* **psmqtt/COMPUTER_NAME/cpu/irq**
+* **psmqtt/COMPUTER_NAME/cpu/softirq**
+* **psmqtt/COMPUTER_NAME/cpu/steal**
+* **psmqtt/COMPUTER_NAME/cpu/guest**
+* **psmqtt/COMPUTER_NAME/cpu/guest_nice**
+
+If the wildcard `*` character is used in the task parameters but the MQTT topic is not specified
+or does not contain the wildcard `*` character itself, then an error will be produced in psmqtt logs.
 
 
+## Sending MQTT requests
 
-## MQTT request
+The [psmqtt.yaml](../psmqtt.yaml) file supports a configuration named "request_topic":
 
-It\'s better to describe how to use it using example. To get information
-for task \"cpu_percent\" with MQTT prefix \"psmqtt/COMPUTER_NAME/\" you
-need to send any string on topic:
+```
+mqtt:
+  request_topic: request
+```
 
-    psmqtt/COMPUTER_NAME/request/cpu_percent
+This configuration allows you to specify an MQTT topic that will be **subscribed** 
+by psmqtt and used as **input** trigger for emitting measurements.
+This is an alternative way to use psmqtt compared to the use of cron expressions.
 
-and result will be pushed on the topic:
-
-    psmqtt/COMPUTER_NAME/cpu_percent
+E.g. to get information for the task `cpu_percent` with MQTT prefix `psmqtt/COMPUTER_NAME` you
+need to send any string on the topic **psmqtt/COMPUTER_NAME/request/cpu_percent**.
+The result will be pushed on the topic **psmqtt/COMPUTER_NAME/cpu_percent**.
