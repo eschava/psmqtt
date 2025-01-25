@@ -2,12 +2,13 @@
 
 It is possible to:
 
-* install the required packages into the site packages and
+* install the required Python packages into the system-wide site packages and
 * run `psmqtt.py` as a service upon system boot.
 
 ## Current Ubuntu flavors
 
 Make a copy of `psmqtt` directory e.g., to `/opt/psmqtt`, for use by a service:
+
 ```sh
 sudo cp -r ../psmqtt /opt
 ```
@@ -17,10 +18,10 @@ Modify the included `psmqtt.service`:
 * specify `WorkingDirectory=/opt/psmqtt`
 * adjust `ExecStart=/usr/bin/python3 /opt/psmqtt/psmqtt.py`
 
-Ensure that `psmqtt.conf` in `WorkingDirectory`:
+Ensure that `psmqtt.yaml` in `WorkingDirectory`:
 
 * points to your MQTT broker
-* schedule and tasks make sense
+* schedules and tasks make sense
 
 Then:
 
@@ -45,6 +46,6 @@ the packages into the site-packages.
 
 And then:
 
-```
+```sh
 sudo systemctl restart psmqtt
 ```
