@@ -29,7 +29,6 @@ flowchart TD
     style OS color:#FFFFFF, fill:#AA00FF, stroke:#AA00FF
     style SMART color:#FFFFFF, stroke:#00C853, fill:#00C853
     style CLK color:#FFFFFF, stroke:#2962FF, fill:#2962FF
-    style CFG color:#FFFFFF, stroke:#2962FF, fill:#959595
     style MQTT color:#FFFFFF, stroke:#2962FF, fill:#2962FF
 ```
 
@@ -167,7 +166,7 @@ Here follows the reference documentation for all supported tasks and their param
   * Task name: `cpu_times`
     * Short description: CPU times information
     * Number of supported parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
       Full list of available fields in the external docs.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
   * Task name: `cpu_times_percent`
@@ -178,44 +177,25 @@ Here follows the reference documentation for all supported tasks and their param
     * `<param2>`: The wildcard `*` or `*;` to select all CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
+  * Task name: `cpu_stats`
+    * Short description: CPU statistics
+    * Number of supported parameters: 1
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `ctx_switches` / `interrupts` / `soft_interrupts` / `syscalls`.
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats )
 
 
 * **Category: Memory**
   * Task name: `virtual_memory`
     * Number of supported parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc.
+      Full list of available fields in the external docs.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
+  * Task name: `swap_memory`
+    * Number of supported parameters: 1
+    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `used` / `free` / etc.
+      Full list of available fields in the external docs.
+    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.swap_memory )
 
-
-CPU :
-
-    cpu_times/* - CPU times information. Topic per parameter
-    cpu_times/*;  - CPU times information in one topic (JSON string)
-    cpu_times/{user/nice/system/idle/iowait/irq/softirq/steal/guest} - CPU times separate parameters
-    cpu_percent - CPU total usage in percent
-    cpu_percent/* - CPU usage in percent. Topic per CPU number
-    cpu_percent/*; - CPU usage in percent per CPU in one topic (JSON string)
-    cpu_percent/{0/1/2/etc} - CPU usage for single CPU
-    cpu_times_percent/* - CPU times in percent. Topic per parameter
-    cpu_times_percent/*;  - CPU times in percent in one topic (JSON string)
-    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest} - CPU times in percent separate parameters
-    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/* - CPU times in percent separate parameters. Topic per CPU number
-    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/*; - CPU times in percent separate parameters per CPU number in one topic (JSON string)
-    cpu_times_percent/{user/nice/system/idle/iowait/irq/softirq/steal/guest}/{0/1/2/etc} - CPU times in percent separate parameters for single CPU
-    cpu_times_percent/*/{0/1/2/etc} - CPU times in percent for single CPU. Topic per parameter
-    cpu_times_percent/*;/{0/1/2/etc} - CPU times in percent for single CPU in one topic (JSON string)
-    cpu_stats/* - CPU statistics. Topic per parameter
-    cpu_stats/*;  - CPU statistics in one topic (JSON string)
-    cpu_stats/{ctx_switches/interrupts/soft_interrupts/syscalls} - CPU statistics separate parameters
-
-Memory :
-
-    virtual_memory/* - Virtual memory. Topic per parameter
-    virtual_memory/*;  - Virtual memory in one topic (JSON string)
-    virtual_memory/{total/available/percent/used/free/active/inactive/buffers/cached} - Virtual memory separate parameters
-    swap_memory/* - Swap memory. Topic per parameter
-    swap_memory/*;  - Swap memory in one topic (JSON string)
-    swap_memory/{total/used/free/percent/sin/sout} - Swap memory separate parameters
 
 Disks :
 
