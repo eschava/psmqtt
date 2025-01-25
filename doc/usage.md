@@ -155,23 +155,23 @@ In case of task execution error, the error message is sent to a topic named
 **psmqtt/COMPUTER_NAME/error/TASK**. Please check [some MQTT documentation](https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/) to understand the role of the `/` MQTT
 topic level separator.
 
-Here follows the reference documentation for all supported tasks and their parameters:
+Here follows the reference documentation for all required tasks and their parameters:
 
 * **Category: CPU**
   * Task name: `cpu_percent`
     * Short description: CPU total usage in percentage
-    * Number of supported parameters: 1
+    * Number of required parameters: 1
     * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
   * Task name: `cpu_times`
     * Short description: CPU times information
-    * Number of supported parameters: 1
+    * Number of required parameters: 1
     * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
       Full list of available fields in the external docs.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
   * Task name: `cpu_times_percent`
     * Short description: CPU times in percentage
-    * Number of supported parameters: 1 or 2
+    * Number of required parameters: 1 or 2
     * `<param1>`: The wildcard `*` or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
       Full list of available fields in the external docs.
     * `<param2>`: The wildcard `*` or `*;` to select all CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU.
@@ -179,19 +179,21 @@ Here follows the reference documentation for all supported tasks and their param
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
   * Task name: `cpu_stats`
     * Short description: CPU statistics
-    * Number of supported parameters: 1
+    * Number of required parameters: 1
     * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `ctx_switches` / `interrupts` / `soft_interrupts` / `syscalls`.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats )
 
 
 * **Category: Memory**
   * Task name: `virtual_memory`
-    * Number of supported parameters: 1
+    * Short description: Virtual memory information
+    * Number of required parameters: 1
     * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc.
       Full list of available fields in the external docs.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
   * Task name: `swap_memory`
-    * Number of supported parameters: 1
+    * Short description: Swap memory information
+    * Number of required parameters: 1
     * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `used` / `free` / etc.
       Full list of available fields in the external docs.
     * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.swap_memory )
@@ -354,39 +356,55 @@ Task|Description
 
 ### Formatting
 
-Output of task could be formatted using
-[Jinja2](http://jinja.pocoo.org/) templates. Append template to the task
-after one more \"/\" separator.
+The output of each task can be formatted using
+[Jinja2](http://jinja.pocoo.org/) templates.
 
 E.g.:   
 
-    cpu_times_percent/user/{{x}}%
+```
+schedule:
+  - cron: every 10sec
+    tasks:
+      - task: cpu_times_percent
+        params: [ "user" ]
+        formatter: "{{x}}%"
+```
 
-To append % symbol after CPU usage.
+configures PSMQTT to append the `%` symbol after CPU usage.
 
-For task providing many parameters (having \*) all parameters are
-available by name if they are named or by index as x\[1\] if they are
-numbered.
+For task providing many outputs (using wildcard `*`) all outputs are
+available by name if they are named.
+Unnamed outputs are available as `x`.
+When the task produces multiple unnamed outputs they are available as `x[1]`, `x[2]`, etc if they are
+numbered. 
 
-NOTE: After formatting tasks providing many parametes are combined to
-single one.
+psmqtt provides some Jinja2 filters:
 
-Unnamed parameters are available as x.
-
-All additional filters are defined at the filters.py file. You also can
-add custom filters there.
-
-Next filters are implemented now:
-
-    KB,MB,GB - to format value in bytes as KBytes, MBytes or GBytes.
-    uptime - to format boot_time as uptime string representation.
+* `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
+* `uptime` to format `boot_time` as a human friendly uptime string representation.
 
 Examples:
 
-    virtual_memory/*/{{(100*free/total)|int}}% - free virtual memory in %
-    boot_time/{{x|uptime}} - uptime
-    cpu_times_percent/user/*/{{x[0]+x[1]}} - user CPU times for first and second processors total
-    virtual_memory/free/{{x|MB}} - Free RAM in MB
+```
+  - task: virtual_memory
+    params: [ "*" ]
+    # emit free virtual memory in %
+    formatter: "{{(100*free/total)|int}}%"
+
+  - task: virtual_memory
+    params: [ "free" ]
+    # emit free virtual memory in MB instead of bytes
+    formatter: "{{x|MB}}"
+
+  - task: cpu_times_percent
+    params: [ "user", "*" ]
+    # emit total CPU time spend in user mode for the first and second logical cores only
+    formatter: "{{x[0]+x[1]}}"
+
+  - task: boot_time
+    formatter: "{{x|uptime}}"
+
+```
 
 
 ### MQTT Topic
