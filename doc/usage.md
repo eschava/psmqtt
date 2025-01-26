@@ -16,8 +16,8 @@ flowchart TD
     psmqttFMT(PSMQTT formatter)
 
 %% Edge connections between nodes
-    OS -->|pySMART| psmqttTASK
-    SMART -->|psutil| psmqttTASK
+    OS -->|psutil| psmqttTASK
+    SMART -->|pySMART| psmqttTASK
     CLK --> psmqttSCHED
 
     psmqttSCHED-->psmqttTASK
