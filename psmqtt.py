@@ -9,46 +9,15 @@
 #
 from datetime import datetime
 from dateutil.rrule import rrulestr  # pip install python-dateutil
-import os
-#import sys
 import sched
 import socket
 import logging
 import sys
 from threading import Thread
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, List
 
 from src.config import load_config
-
-def run_tasks(tasks: Union[str, Dict[str, str],
-        List[Union[Dict[str, str], str]]]) -> None:
-    '''
-    tasks come from conf file, e.g.:
-        ["cpu_percent", "virtual_memory/percent"]
-        or
-        "disk_usage/percent/|"
-        or
-        {"boot_time/{{x|uptime}}": "uptime" }
-    '''
-    # delayed import to enable PYTHONPATH adjustment
-    from src.task import run_task
-
-    logging.debug("run_tasks(%s)", tasks)
-
-    if isinstance(tasks, dict):
-        for k in tasks:
-            run_task(k, tasks[k])
-    elif isinstance(tasks, list):
-        for task in tasks:
-            if isinstance(task, dict):
-                for k,t in task.items():
-                    run_task(k, t)
-            else:
-                run_task(task, task)
-    else:
-        run_task(tasks, tasks)
-    return
 
 class TimerThread(Thread):
 
@@ -61,35 +30,71 @@ class TimerThread(Thread):
         self.scheduler.run()
         return
 
-def on_timer(s:sched.scheduler, dt: str, tasks: Any) -> None:
-    logging.debug("on_timer(%s, %s, %s)", s, dt, tasks)
+def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: List[Any]) -> None:
+    '''
+    Takes a list of tasks to be run immediately.
+    The list must contain dictionary items, each having "task", "params", "topic" and "formatter" fields.
+    E.g.:
+        [
+          { "task: "cpu_percent",
+            "params": [],
+            "topic": None,
+            "formatter": None },
+          { "task": "virtual_memory",
+            "params": [ "percent" ],
+            "topic": "foobar",
+            "formatter": None }
+        ]
+    '''
 
-    run_tasks(tasks)
-    # add next timer task
-    now = datetime.now()
+    logging.debug("on_timer(%s, %s, %d, %s)", s, parsed_rrule, scheduleIdx, tasks)
+
+    # delayed import to enable PYTHONPATH adjustment
+    from src.task import run_task
+
+    assert isinstance(tasks, list)
+    taskIdx = 0
+    for task in tasks:
+        assert isinstance(task, dict)
+        task_friendly_name = f"schedule{scheduleIdx}.task{taskIdx}.{task['task']}"
+        run_task(task_friendly_name, task)
+        taskIdx += 1
+
     # need reparse rule (see #10)
-    delay = (rrulestr(dt).after(now) - now).total_seconds()
-    s.enter(delay, 1, on_timer, (s, dt, tasks))
+    now = datetime.now()
+    delay = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
+
+    # add next timer task
+    s.enter(delay, 1, on_timer, (s, parsed_rrule, scheduleIdx, tasks))
     return
 
-def run() -> None:
+def on_log_timer(s: sched.scheduler, log_period_sec: int, mqttc) -> None:
+    '''
+    Periodically prints the status of psmqtt
+    '''
+    from src.task import num_errors
+
+    # publish also on MQTT
+    status_topic = mqttc.topic_prefix + "psmqtt_status"
+    mqttc.mqttc.publish(status_topic + "/num_errors", num_errors)
+    logging.info(f"psmqtt status: {num_errors} errors while capturing sensor data; published status into on topic {status_topic}")
+
+    # add next timer task
+    s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec, mqttc))
+    return
+
+
+def run() -> int:
     '''
     Main loop
     '''
+
+    # FIXME: add a basic CLI interface with --help support at least
+
     #
     # read initial config files - this may exit(2)
     #
     cf = load_config()
-    pythonpath = cf.get('pythonpath', '')
-    if pythonpath:
-        logging.debug("Adding to PYTHONPATH: '%s'", pythonpath)
-        sys.path.append(pythonpath)
-
-    topic_prefix = cf.get(
-        'mqtt_topic_prefix', f'psmqtt/{socket.gethostname()}/')
-    request_topic = cf.get('mqtt_request_topic', 'request')
-    if request_topic != '':
-        request_topic = topic_prefix + request_topic + '/'
 
     # delayed import to enable PYTHONPATH adjustment
     from recurrent import RecurringEvent  # pip install recurrent
@@ -98,47 +103,76 @@ def run() -> None:
     # create MqttClient
     #
     mqttc = MqttClient(
-        cf.get('mqtt_clientid', 'psmqtt-%s' % os.getpid()),
-        cf.get('mqtt_clean_session', False),
-        topic_prefix,
-        request_topic,
-        cf.get('mqtt_qos', 0),
-        cf.get('mqtt_retain', False))
+        cf.config["mqtt"]["clientid"],
+        cf.config["mqtt"]["clean_session"],
+        cf.config["mqtt"]["publish_topic_prefix"],
+        cf.config["mqtt"]["request_topic"],
+        cf.config["mqtt"]["qos"],
+        cf.config["mqtt"]["retain"])
+
     #
     # connect MqttClient to broker
     #
-    mqttc.connect(
-        cf.get('mqtt_broker', 'localhost'),
-        int(cf.get('mqtt_port', '1883')),
-        cf.get('mqtt_username', ''),
-        cf.get('mqtt_password', None))
+    try:
+        mqttc.connect(
+            cf.config["mqtt"]["broker"]["host"],
+            cf.config["mqtt"]["broker"]["port"],
+            cf.config["mqtt"]["broker"]["username"],
+            cf.config["mqtt"]["broker"]["password"])
+    except ConnectionRefusedError as e:
+        logging.error(f"Cannot connect to MQTT broker: {e}. Aborting.")
+        # FIXME: we're currently bailing out here -- instead we should keep retrying the connection!
+        return 2
+
     #
     # parse schedule
     #
-    schedule = cf.get('schedule', {})
-    assert isinstance(schedule, dict)
+    schedule = cf.config["schedule"]
+    assert isinstance(schedule, list)
     if not schedule:
         logging.error("No schedule to execute, exiting")
-        return
+        return 3
 
     s = sched.scheduler(time.time, time.sleep)
     now = datetime.now()
-    for t, tasks in schedule.items():
-        logging.debug("Periodicity: '%s'", t)
-        logging.debug("Tasks: '%s'", tasks)
+    i = 0
+    for sch in schedule:
+        logging.debug(f"SCHEDULE#{i}: Periodicity: {sch['cron']}")
+        logging.debug(f"SCHEDULE#{i}: {len(sch['tasks'])} tasks: {sch['tasks']}")
+
+        # parse the cron expression
         r = RecurringEvent()
-        dt = r.parse(t)
+        parsed_rrule = r.parse(sch["cron"])
         if not r.is_recurring:
-            logging.error(t + " is not recurring time. Skipping")
-            continue
+            logging.error(f"Invalid cron expression '{sch["cron"]}'. Please fix the syntax in the configuration file. Aborting.")
+            return 4
 
-        delay = (rrulestr(dt).after(now) - now).total_seconds()
-        s.enter(delay, 1, on_timer, (s, dt, tasks))
+        # compute how many secs in the future this needs to run
+        assert isinstance(parsed_rrule, str)
+        delay_sec = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
 
+        # include this in our scheduler:
+        s.enter(delay_sec, 1, on_timer, (s, parsed_rrule, i, sch["tasks"]))
+        i += 1
+
+    # add periodic log
+    try:
+        log_period_sec = int(cf.config["logging"]["report_status_period_sec"])
+    except ValueError:
+        logging.error("Invalid expression for logging.report_status_every. Please fix the syntax in the configuration file. Aborting.")
+        return 5
+
+    if log_period_sec > 0:
+        s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec, mqttc))
+    #else: logging of the status has been disabled
+
+    # start a secondary thread running the scheduler
     TimerThread(s).start()
+
+    # block the main thread on the MQTT client loop
     while True:
         try:
-            mqttc.mqttc.loop_forever()
+            mqttc.loop_forever()
 
         except socket.error:
             logging.debug("socket.error caught, sleeping for 5 sec...")
@@ -147,8 +181,8 @@ def run() -> None:
         except KeyboardInterrupt:
             logging.debug("KeyboardInterrupt caught, exiting")
             break
-    return
+    return 0
 
 
 if __name__ == '__main__':
-    run()
+    sys.exit(run())

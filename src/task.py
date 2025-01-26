@@ -3,17 +3,19 @@ import json
 import logging
 import paho.mqtt.client as paho  # pip install paho-mqtt
 import time
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 
 from .handlers import get_value
 from .topic import Topic
 
+# FIXME: there's no real need of storing this as global variable it seems
 theClient: Optional["MqttClient"] = None
 
 class MqttClient:
     '''
     Wrapper around paho.Client
+    FIXME: move this class to its own file
     '''
 
     def __init__(self,
@@ -90,7 +92,7 @@ class MqttClient:
         if self.request_topic != '':
             topic = self.request_topic + '#'
             logging.debug(
-                "Connected to MQTT broker, subscribing to topic " + topic)
+                f"Connected to MQTT broker, subscribing to topic '{topic}'")
             mqttc.subscribe(topic, self.qos)
         self.connected = True
         return
@@ -100,7 +102,7 @@ class MqttClient:
         mqtt callback
         '''
         logging.debug("OOOOPS! psmqtt disconnects")
-        time.sleep(10)
+        time.sleep(10)  # FIXME: make this configurable
         return
 
     def on_message(self, mqttc: paho.Client, userdata: Any, msg: paho.MQTTMessage) -> None:
@@ -117,12 +119,33 @@ class MqttClient:
             logging.warn('Unknown topic: ' + msg.topic)
         return
 
-def run_task(task: str, topic_name: str) -> None:
-    '''
+    def publish(self, topic:str, payload:str) -> None:
+        logging.info("MqttClient.publish('%s', '%s')", topic, payload)
+        self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
+        return
 
+    def loop_forever(self) -> None:
+        '''
+        This function calls the network loop functions for you in an infinite blocking loop.
+        It handles reconnecting.
+         '''
+        logging.info('starting MQTT client loop')
+        self.mqttc.loop_forever()
+
+
+# FIXME: introduce a Task class and move run_task() to it
+# FIXME: introduce a Task class and move num_errors into it
+num_errors = 0
+
+
+def run_task(taskFriendlyId: str, task: Dict[str,str]) -> None:
     '''
-    self = theClient
-    assert self is not None
+    Runs a task, defined as a dictionary having "task", "params", "topic" and "formatter" fields.
+    '''
+    mqttc = theClient
+    assert mqttc is not None
+
+    global num_errors
 
     def payload_as_string(v:Any) -> str:
         if isinstance(v, dict):
@@ -136,40 +159,35 @@ def run_task(task: str, topic_name: str) -> None:
         #else:
         return json.dumps(v)
 
-    def mqttc_publish(topic:str, payload:str) -> None:
-        assert self is not None
-        assert self.mqttc is not None
-        logging.info("mqttc.publish('%s', '%s')", topic, payload)
-        self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
-        return
+    if task["topic"] is None:
+        topic = Topic.from_task(mqttc.topic_prefix, task)
+    else:
+        # use the specified MQTT topic name; just make sure that the MQTT topic prefix is present
+        topic = Topic(task["topic"] if task["topic"].startswith(mqttc.topic_prefix)
+                            else mqttc.topic_prefix + task["topic"])
+    logging.debug(f"run_task({taskFriendlyId}): mqtt topic is '{topic.get_topic()}'")
 
-    logging.debug("run_task(%s, %s)", task, topic_name)
-
-    if task.startswith(self.topic_prefix):
-        task = task[len(self.topic_prefix):]
-
-    topic = Topic(topic_name if topic_name.startswith(self.topic_prefix)
-                        else self.topic_prefix + topic_name)
     try:
-        payload = get_value(task)
+        payload = get_value(task["task"], task["params"], task["formatter"])
         is_seq = isinstance(payload, list) or isinstance(payload, dict)
         if is_seq and not topic.is_multitopic():
-            raise Exception("Result of task '" + task + "' has several values but topic doesn't contain '*' char")
+            raise Exception(f"Result of task '{taskFriendlyId}' has several values but topic doesn't contain '*' char")
 
         if isinstance(payload, list):
             for i, v in enumerate(payload):
                 subtopic = topic.get_subtopic(str(i))
-                mqttc_publish(subtopic, payload_as_string(v))
+                mqttc.publish(subtopic, payload_as_string(v))
 
         elif isinstance(payload, dict):
             for key in payload:
                 subtopic = topic.get_subtopic(str(key))
                 v = payload[key]
-                mqttc_publish(subtopic, payload_as_string(v))
+                mqttc.publish(subtopic, payload_as_string(v))
         else:
-            mqttc_publish(topic.get_topic(), payload_as_string(payload))
+            mqttc.publish(topic.get_topic(), payload_as_string(payload))
 
     except Exception as ex:
-        mqttc_publish(topic.get_error_topic(), str(ex))
+        mqttc.publish(topic.get_error_topic(), str(ex))
         logging.exception(f"run_task caught: {task} : {ex}")
+        num_errors += 1
     return

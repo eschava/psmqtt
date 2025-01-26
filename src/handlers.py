@@ -1,4 +1,3 @@
-#from collections import namedtuple
 import fnmatch
 import json
 import logging
@@ -19,6 +18,7 @@ from typing import (
 
 from .formatter import Formatter
 
+# all command handlers will return from their handle() function a Payload:
 Payload = Union[List[Any], Dict[str, Any], NamedTuple, str, float, int]
 
 class CommandHandler:
@@ -30,10 +30,11 @@ class CommandHandler:
         self.name = name
         return
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
         '''
         Will call self.get_value()
         '''
+        assert isinstance(params, list)
         raise Exception("Not implemented")
 
     def get_value(self) -> Payload:
@@ -54,10 +55,12 @@ class MethodCommandHandler(CommandHandler):
             logging.warning(f"psutil '{self.name}' not implemented")
         return
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
         '''
         Will call self.get_value()
         '''
+
+        assert isinstance(params, list)
         raise Exception("Not implemented")
 
     def get_value(self) -> Payload:
@@ -72,8 +75,9 @@ class ValueCommandHandler(MethodCommandHandler):
     handle invokes self.method and just returns its value.
     '''
 
-    def handle(self, params:str) -> Payload:
-        if params != '':
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+        if params != []:
             raise Exception(f"Parameter '{params}' in '{self.name}' is not supported")
 
         return self.get_value()
@@ -84,14 +88,24 @@ class IndexCommandHandler(MethodCommandHandler):
     list, e.g. pids
     '''
 
-    def handle(self, param:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
         arr = self.get_value()
         assert isinstance(arr, list)
 
+        if len(params) > 1:
+            raise Exception(f"Exactly 1 parameter is supported; found {len(params)} parameters instead: {params}")
+        if len(params) == 0:
+            raise Exception(f"Found 0 parameters, need exactly 1 in '{self.name}'")
+
+        param = params[0]
         if param == '*' or param == '*;':
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
+        elif isinstance(param, int):
+            return arr[param]
         elif param.isdigit():
             return arr[int(param)]
         raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
@@ -103,19 +117,30 @@ class TupleCommandHandler(MethodCommandHandler):
     tuple, e.g. cpu_times, cpu_stats, virtual_memory, swap_memory
     '''
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
         tup = self.get_value()
+        if tup is None:
+            # this might happen when psutil didn't find ANY hardware support;
+            # e.g. on a computer that has no battery, the psutil.sensors_battery() returns None
+            return "None"
         assert isinstance(tup, tuple)
 
-        if params == '*':
+        if len(params) != 1:
+            raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        # the parameter for this handler decides which tuple field we should select:
+        tuple_field = params[0]
+        if tuple_field == '*':
             return tup._asdict()
-        if params == '*;':
+        if tuple_field == '*;':
             return string_from_dict(tup._asdict())
-        elif params in tup._fields:
-            return getattr(tup, params)
-        elif params == '':
+        elif tuple_field in tup._fields:
+            return getattr(tup, tuple_field)
+        elif tuple_field == '':
             raise Exception(f"Parameter in '{self.name}' should be selected")
-        raise Exception(f"Parameter '{params}' in '{self.name}' is not supported")
+        raise Exception(f"Parameter '{tuple_field}' in '{self.name}' is not supported")
 
 
 class IndexTupleCommandHandler(MethodCommandHandler):
@@ -124,27 +149,43 @@ class IndexTupleCommandHandler(MethodCommandHandler):
     list of named tuples, e.g. disk_partitions, users
     '''
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
+        '''
+        This handler accepts 1 or 2 parameters.
+        The first parameter must be either:
+        * is the index of the element in the list of named tuples.
+        '''
+        assert isinstance(params, list)
 
-        param, index_str = split(params)
+        if len(params) == 0:
+            raise Exception(f"Found 0 parameters, need 1 or 2 in '{self.name}'")
+
+        param = params[0]
+        index_str = params[1] if len(params) >= 2 else ''
+
         all_params = param == '*' or param == '*;'
         index = -1
 
-        if param.isdigit():
+        if isinstance(param, int):
+            all_params = True
+            index = param
+        elif param.isdigit():
             all_params = True
             index = int(param)
+        elif isinstance(index_str, int):
+            index = index_str
         elif index_str.isdigit():
             index = int(index_str)
         elif index_str != '*' and index_str != '*;':
             raise Exception(f"Element '{index_str}' in '{params}' is not supported")
 
         if index < 0 and all_params:
-            raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
+            raise Exception(f"Cannot list all elements and parameters into the same '{self.name}' request")
 
         result = self.get_value()
         assert isinstance(result, list)
         if index < 0:
-            return list_from_array_of_namedtupes(result, param, params, index_str.endswith(';'))
+            return list_from_array_of_namedtuples(result, param, self.name, index_str.endswith(';'))
         else:  # index selected
             try:
                 elt = result[index]
@@ -153,9 +194,9 @@ class IndexTupleCommandHandler(MethodCommandHandler):
                 elif param in elt._fields:
                     return getattr(elt, param)
                 else:
-                    raise Exception("Parameter '" + param + "' in '" + params + "' is not supported")
+                    raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
             except IndexError:
-                raise Exception("Element #" + str(index) + " is not present")
+                raise Exception(f"Element #{index} is not present")
 
 class IndexOrTotalCommandHandler(CommandHandler):
     '''
@@ -166,25 +207,36 @@ class IndexOrTotalCommandHandler(CommandHandler):
         super().__init__(name)
         return
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
         total = True
         join = False
         count = False
         index = -1
-        if params == '*':
+        if len(params) != 0 and len(params) != 1:
+            raise Exception(f"Exactly 0 or 1 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        param = params[0] if len(params) == 1 else ''
+
+        if param == '*':
             total = False
-        elif params == '*;':
+        elif param == '*;':
             total = False
             join = True
-        elif params == 'count':
+        elif param == 'total':
+            total = True
+        elif param == 'count':
             total = False
             count = True
-        elif params.isdigit():
+        elif isinstance(param, int):
             total = False
-            index = int(params)
-        elif params != '':
-            raise Exception("Parameter '" + params + "' in '" + self.name + "' is not supported")
-
+            index = param
+        elif param.isdigit():
+            total = False
+            index = int(param)
+        elif param != '':
+            raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
         try:
             result = self.get_value(total)
             assert isinstance(result, list) or isinstance(result, float) or isinstance(result, int)
@@ -199,7 +251,7 @@ class IndexOrTotalCommandHandler(CommandHandler):
             else:
                 return result
         except IndexError:
-            raise Exception("Element #" + str(index) + " is not present")
+            raise Exception(f"Element #{index} is not present")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, total:bool) -> List[Any]:
@@ -216,8 +268,15 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
     def __init__(self, name:str):
         super().__init__(name)
 
-    def handle(self, params:str) -> Payload:
-        param, index_str = split(params)
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        param = params[0]
+        index_str = params[1] if len(params) == 2 else ''
+
         all_params = param == '*' or param == '*;'
         params_join = param.endswith(';')
 
@@ -229,17 +288,21 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
         elif index_str == '*;':
             total = False
             index_join = True
+        elif isinstance(index_str, int):
+            total = False
+            index = index_str
         elif index_str.isdigit():
             total = False
             index = int(index_str)
         elif index_str != '':
-            raise Exception("Element '" + index_str + "' in '" + params + "' is not supported")
+            raise Exception(f"Element '{index_str}' in '{self.name}' is not supported")
 
         if not total and index < 0 and all_params:
-            raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
+            raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
 
         result = self.get_value(total)
-        assert isinstance(result, tuple) or isinstance(result, list)
+        if not isinstance(result, tuple) and not isinstance(result, list):
+            raise Exception(f"Unexpected type from psutil.{self.name} with total={total}: {type(result)}; {isinstance(result, tuple)}; {isinstance(result, list)};")
         #assert hasattr(result, '_asdict')
         #assert hasattr(result, '_fields')
         if index < 0:
@@ -248,7 +311,7 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
                 assert hasattr(result, '_asdict')
                 return string_from_dict_optionally(result._asdict(), params_join)
             elif not total:
-                return list_from_array_of_namedtupes(result, param, params, index_join)
+                return list_from_array_of_namedtuples(result, param, self.name, index_join)
             assert isinstance(result, tuple)
             assert hasattr(result, '_fields')
             if param in result._fields:
@@ -277,9 +340,15 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     e.g. for calling psutil.net_io_counters
     '''
 
-    def handle(self, params:str) -> Payload:
-        name:Optional[str] = None
-        param, name = split(params)
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        param = params[0]
+        name = params[1] if len(params) == 2 else None
+
         all_params = param == '*' or param == '*;'
         params_join = param.endswith(';')
 
@@ -292,11 +361,11 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
             total = False
             index_join = True
             name = None
-        elif name != '':
+        elif name != '' and name is not None:
             total = False
 
         if not total and name is None and all_params:
-            raise Exception("Cannot list all elements and parameters at the same '" + params + "' request")
+            raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
 
         result = self.get_value(total)
         assert isinstance(result, tuple) or isinstance(result, dict)
@@ -323,16 +392,76 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     def get_value(self, total:bool) -> Union[Dict[str, NamedTuple], NamedTuple]:
         raise Exception("Not implemented")
 
+
+class DiskCountersIO(MethodCommandHandler):
+    '''
+    used by, e.g. cpu_times_percent
+    '''
+    def __init__(self, name:str):
+        super().__init__(name)
+
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        disk = params[0]
+        counter = params[1] if len(params) == 2 else ''
+
+        all_params = counter == '*' or counter == '*;'
+        params_join = counter.endswith(';')
+
+        total = False
+        #index_join = False
+        if disk == '*':
+            total = True
+        elif disk == '*;':
+            total = True
+            #index_join = True
+
+        result = self.get_value(total, disk)
+        #if not isinstance(result, tuple):
+        #    raise Exception(f"Expected a tuple, got: {type(result)}")
+
+        if all_params:  # not total
+            assert isinstance(result, tuple)
+            assert hasattr(result, '_asdict')
+            return string_from_dict_optionally(result._asdict(), params_join)
+
+        assert isinstance(result, tuple)
+        assert hasattr(result, '_fields')
+        if counter in result._fields:
+            return getattr(result, counter)
+        raise Exception(f"Element '{counter}' in '{self.name}' is not supported")
+
+    def get_value(self, total:bool, disk:str) -> NamedTuple:
+        result = psutil.disk_io_counters(perdisk=not total)
+        # result is a namedtuple when perdisk=False or a dict when perdisk=True
+        if total:
+            return result
+        else:
+            # the dictionary is indexed by just the device name e.g. "sda" and contains a tuple
+            return result[disk.replace("/dev/", "")]
+
+
 class DiskUsageCommandHandler(MethodCommandHandler):
 
     def __init__(self) -> None:
         super().__init__('disk_usage')
         return
 
-    def handle(self, params:str) -> Payload:
-        param, disk = split(params)
+    def handle(self, params: list[str]) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) != 2:
+            raise Exception(f"Exactly 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        param = params[0]
+        disk = params[1]
+
         if disk == '':
-            raise Exception("Disk ' in '" + self.name + "' should be specified")
+            raise Exception(f"Disk in '{self.name}' should be specified")
         disk = disk.replace('|', '/')  # replace slashes with vertical slashes to do not conflict with MQTT topic name
 
         tup = self.get_value(disk)
@@ -341,7 +470,7 @@ class DiskUsageCommandHandler(MethodCommandHandler):
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)
-        raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+        raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, disk:str) -> NamedTuple:
@@ -354,30 +483,41 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
         super().__init__('sensors_temperatures')
         return
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
         '''
         '''
-        tup = self.get_value()
-        # tup is a Dict[str, List[NamedTuple]]
-        assert isinstance(tup, dict)
+        assert isinstance(params, list)
 
-        source, param = split(params)
+        if len(params) != 1 and len(params) != 2 and len(params) != 3:
+            raise Exception(f"Exactly 1, 2 or 3 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        source = params[0]
+        label = params[1] if len(params) >= 2 else ''
+        param = params[2] if len(params) == 3 else ''
+
+        psutil_dict = self.get_value()
+        # psutil_dict is a Dict[str, List[NamedTuple]]
+        assert isinstance(psutil_dict, dict)
+
         if source == '*' or source == '*;':
-            d = {k: [i.current for i in v] for k, v in tup.items()}
+            d = {k: [i.current for i in v] for k, v in psutil_dict.items()}
             return string_from_dict_optionally(d, source.endswith(';'))
 
-        elif source in tup:
-            llist = tup[source]
-            label, param = split(param)
+        elif source in psutil_dict:
+            llist = psutil_dict[source]
             if label == '' and param == '':
                 return [i.current for i in llist]
             elif label == '*' or label == '*;':
                 llist = [i._asdict() for i in llist]
                 return string_from_dict_optionally(llist, label.endswith(';'))
             else:
-                temps = llist[int(label)] if label.isdigit() else next((x for x in llist if x.label == label), None)
+                if isinstance(label, int):
+                    temps = llist[label]
+                else:
+                    temps = next((x for x in llist if x.label == label), None)
+
                 if temps is None:
-                    raise Exception("Device '" + label + "' in '" + self.name + "' is not supported")
+                    raise Exception(f"Device '{label}' in '{self.name}' is not supported")
                 if param == '':
                     return temps.current
                 elif param == '*' or param == '*;':
@@ -385,7 +525,7 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
                 else:
                     return temps._asdict()[param]
 
-        raise Exception("Sensor '" + source + "' in '" + self.name + "' is not supported")
+        raise Exception(f"Sensor '{source}' in '{self.name}' is not supported")
 
 class SensorsFansCommandHandler(MethodCommandHandler):
     '''
@@ -394,18 +534,25 @@ class SensorsFansCommandHandler(MethodCommandHandler):
         super().__init__('sensors_fans')
         return
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params:list[str]) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) < 1 or len(params) > 3:
+            raise Exception(f"Exactly 1, 2 or 3 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
+        source = params[0]
+        label = params[1] if len(params) >= 2 else ''
+        param = params[2] if len(params) == 3 else ''
+
         tup = self.get_value()
         assert isinstance(tup, dict)
 
-        source, param = split(params)
         if source == '*' or source == '*;':
             tup = {k: [i.current for i in v] for k, v in tup.items()}
             return string_from_dict_optionally(tup, source.endswith(';'))
 
         if source in tup:
             llist = tup[source]
-            label, param = split(param)
             if label == '' and param == '':
                 return [i.current for i in llist]
             elif label == '*' or label == '*;':
@@ -421,8 +568,7 @@ class SensorsFansCommandHandler(MethodCommandHandler):
                     return string_from_dict_optionally(temps._asdict(), param.endswith(';'))
                 else:
                     return temps._asdict()[param]
-        raise Exception("Fan '" + source + "' in '" + self.name + "' is not supported")
-
+        raise Exception(f"Fan '{source}' in '{self.name}' is not supported")
 
 class ProcessesCommandHandler(CommandHandler):
     '''
@@ -438,36 +584,44 @@ class ProcessesCommandHandler(CommandHandler):
         super().__init__('processes')
         return
 
-    def handle(self, params:str) -> Payload:
-        process, param = split(params)
+    def handle(self, params:list[str]) -> Payload:
+        assert isinstance(params, list)
 
-        if process in ('*', '*;'):
-            if param == '*':
-                raise Exception(f"Parameter name in '{self.name}' should be specified")
-            result = {p.pid: self.get_process_value(p, param, params)
-                for p in psutil.process_iter()}
-            return string_from_dict_optionally(result, process.endswith(';'))
-        elif process.isdigit():
-            pid = int(process)
-        elif self.top_cpu_regexp.match(process):
-            pid = self.find_process(process, lambda p: p.cpu_percent(), True)
-        elif self.top_memory_regexp.match(process):
-            pid = self.find_process(process, lambda p: p.memory_percent(), True)
-        elif self.pid_file_regexp.match(process):
-            m = self.pid_file_regexp.match(process)
+        if len(params) != 2 and len(params) != 3:
+            raise Exception(f"Exactly 2 or 3 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+        process_id = params[0]
+        property = params[1]
+        remaining_params = [params[2]] if len(params) == 3 else []
+
+        if process_id in ('*', '*;'):
+            if property == '*':
+                raise Exception(f"The process property in '{self.name}' should be specified")
+            result = {p.pid: self.get_process_value(p, property, remaining_params) for p in psutil.process_iter()}
+            return string_from_dict_optionally(result, process_id.endswith(';'))
+        elif isinstance(process_id, int):
+            pid = process_id
+        elif process_id.isdigit():
+            pid = int(process_id)
+        elif self.top_cpu_regexp.match(process_id):
+            pid = self.find_process(process_id, lambda p: p.cpu_percent(), True)
+        elif self.top_memory_regexp.match(process_id):
+            pid = self.find_process(process_id, lambda p: p.memory_percent(), True)
+        elif self.pid_file_regexp.match(process_id):
+            m = self.pid_file_regexp.match(process_id)
             assert m is not None
             pid = self.get_pid_from_file(m.group(1).replace('|', '/'))
-        elif self.name_pattern_regexp.match(process):
-            m = self.name_pattern_regexp.match(process)
+        elif self.name_pattern_regexp.match(process_id):
+            m = self.name_pattern_regexp.match(process_id)
             assert m is not None
             pid = self.get_find_process(m.group(1))
         else:
-            raise Exception("Process in '" + params + "' should be selected")
+            raise Exception("Process in '{self.name}' should be selected")
 
         if pid < 0:
-            raise Exception("Process " + process + " not found")
-        return self.get_process_value(
-            psutil.Process(pid), param, params)
+            raise Exception(f"Process {process_id} not found")
+
+        # we have a PID and property to fetch:
+        return self.get_process_value(psutil.Process(pid), property, remaining_params)
 
     def find_process(self, request:str, cmp_func:Callable[..., float],
             reverse:bool) -> int:
@@ -495,14 +649,12 @@ class ProcessesCommandHandler(CommandHandler):
         raise Exception("Process matching '" + pattern + "' not found")
 
     @staticmethod
-    def get_process_value(process:psutil.Process, params:str,
-            all_params:str) -> Any:
-        prop, param = split(params)
-        process_handler = process_handlers.get(prop, None)
+    def get_process_value(process:psutil.Process, property:str, remaining_params:list[str]) -> Any:
+        process_handler = process_handlers.get(property, None)
         if process_handler is None:
-            raise Exception(f"Parameter '{prop}' in '{all_params}' is not supported")
+            raise Exception(f"Property '{property}' in 'processes' task is not supported")
 
-        return process_handler.handle(param, process)
+        return process_handler.handle(remaining_params, process)
 
 
 class SmartCommandHandler(CommandHandler):
@@ -517,35 +669,35 @@ class SmartCommandHandler(CommandHandler):
         super().__init__('smart')
         return
 
-    def handle(self, params:str) -> Payload:
+    def handle(self, params: list[str]) -> Payload:
         '''
         Will call self.get_value()
         '''
-        all_params = params
-        dev, params = split(params)
-        if dev == 'dev':
-            self.name, params = split(params)
-        else:
-            self.name = dev
+        assert isinstance(params, list)
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
 
-        self.name = f'/dev/{self.name}'
+        dev = params[0]
+        param = params[1] if len(params) == 2 else ''
+        self.name = dev
         self.device = SmartDevice(self.name)
+
         if self.device.serial is None:
-            errmsg = f"Use sudo to read '{self.name}' SMART data"
+            errmsg = f"Failed to read SMART data from '{self.name}': probably root permissions are required"
             logging.error(errmsg)
             raise Exception(errmsg)
 
         info = self.device.__getstate__()
-        if params == '':
+        if param == '':
             return string_from_dict_optionally(info, True)
-        elif params == '*':
+        elif param == '*':
             return string_from_dict_optionally(info, False)
-        elif params == '*;':
+        elif param == '*;':
             return string_from_dict_optionally(info, True)
-        val = info.get(params, None)
+        val = info.get(param, None)
         if val is not None:
             return val
-        raise Exception(f"Parameter '{all_params}' is not supported")
+        raise Exception(f"Parameter '{param}' is not supported")
 
     def get_value(self) -> Payload:
         raise Exception("Not implemented")
@@ -575,15 +727,7 @@ handlers = {
     'swap_memory': TupleCommandHandler('swap_memory'),
     'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
     'disk_usage': DiskUsageCommandHandler(),
-
-    'disk_io_counters': type(
-        "DiskIOCountersCommandHandler",
-        (IndexOrTotalTupleCommandHandler, object),
-        {
-            "get_value": lambda self, total:
-                psutil.disk_io_counters(perdisk=not total)
-        })('disk_io_counters'),
-
+    'disk_io_counters': DiskCountersIO('disk_io_counters'),
     'net_io_counters': type(
         "NetIOCountersCommandHandler",
         (NameOrTotalTupleCommandHandler, object),
@@ -610,7 +754,8 @@ class ProcessCommandHandler:
     def __init__(self, name:str):
         self.name = name
 
-    def handle(self, param:str, process:psutil.Process) -> Payload:
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
+        assert isinstance(params, list)
         raise Exception("Not implemented")
 
 
@@ -623,15 +768,22 @@ class ProcessMethodCommandHandler(ProcessCommandHandler):
             self.method = None  # method not defined
         return
 
-    def handle(self, param:str, process:psutil.Process) -> Payload:
-        if param != '':
-            raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
+        assert isinstance(params, list)
+        if params != []:
+            raise Exception(f"Parameter '{params}' in '{self.name}' is not supported")
 
         return self.get_value(process)
 
     def get_value(self, process:psutil.Process) -> Payload:
         if self.method is None:
             raise Exception(f"Not implemented: psutil.{self.name}")
+        # invoke the psutil method (e.g. "pid", "exe" etc) on the psutil.Process instance;
+        # e.g.
+        #     process = psutil.Process(1)
+        #     method = getattr(psutil.Process, "exe")
+        #     method(process)
+        #   >> '/usr/lib/systemd/systemd'
         return self.method(process)
 
 
@@ -645,9 +797,10 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
         self.subproperties = subproperties
         return
 
-    def handle(self, param:str, process:psutil.Process) -> Payload:
-        if param != '':
-            raise Exception("Parameter '" + param + "' in '" + self.name + "' is not supported")
+    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+        assert isinstance(params, list)
+        if params != []:
+            raise Exception("Parameter '" + params + "' in '" + self.name + "' is not supported")
 
         return self.get_value(process)
 
@@ -689,7 +842,12 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
 
 class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
 
-    def handle(self, param:str, process:psutil.Process) -> Payload:
+    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+        assert isinstance(params, list)
+        if len(params) != 1:
+            raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+        param = params[0]
+
         assert self.method is not None
         arr = self.method(process)
 
@@ -697,6 +855,8 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
+        elif isinstance(param, int):
+            return arr[param]
         elif param.isdigit():
             return arr[int(param)]
         #else:
@@ -705,9 +865,15 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
 
 class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
 
-    def handle(self, param:str, process:psutil.Process) -> Payload:
+    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+        assert isinstance(params, list)
+        if len(params) != 1:
+            raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+
         assert self.method is not None
         tup = self.method(process)
+
+        param = params[0]
         if param == '*' or param == '*;':
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
@@ -748,20 +914,20 @@ process_handlers = {
 }
 
 
-def list_from_array_of_namedtupes(
-        array_of_namedtupes: Union[List[Any], NamedTuple], key, func,
+def list_from_array_of_namedtuples(
+        array_of_namedtupes: Union[List[Any], NamedTuple], key:str, func:str,
         join:bool = False) -> Union[List[Any], str]:
     result = list()
     for tup in array_of_namedtupes:
         if key in tup._fields:
             result.append(getattr(tup, key))
         else:
-            raise Exception("Element '" + key + "' in '" + func + "' is not supported")
+            raise Exception(f"Element '{key}' in '{func}' is not supported")
     return string_from_list_optionally(result, join)
 
 
 def dict_from_dict_of_namedtupes(dict_of_namedtupes:Dict[str, NamedTuple],
-        key:str, func, join=False) -> Union[Dict[str, Any], str]:
+        key:str, func:str, join=False) -> Union[Dict[str, Any], str]:
     result = dict()
     for name, tup in dict_of_namedtupes.items():
         if key in tup._fields:
@@ -786,22 +952,25 @@ def split(s: str) -> Tuple[str, str]:
         return parts[0], parts[1]
     return parts[0], ''
 
-def get_value(path:str) -> Payload:
+def get_value(handlerName: str, params: list[str], formatter: str) -> Payload:
     '''
     Main module API.
-    Given a path, retrieve sensor value via corresponding Handler and a
-    corresponding formatter.
+    Given a task definition, retrieves the sensor value via the corresponding Task/Handler and
+    formats that sensor value with the corresponding formatter.
     '''
-    path, _format = Formatter.get_format(path)
-    head, tail = split(path)
-
-    handler = handlers.get(head, None)
+    handler = handlers.get(handlerName, None)
     if handler is None:
-        raise Exception(f"Element '{head}' in '{path}' is not supported")
+        raise Exception(f"Task '{handlerName}' is not supported")
 
-    value = handler.handle(tail)
-    if _format is not None:
-        value = Formatter.format(_format, value)
+    value = handler.handle(params)
+    if formatter is not None:
+        value = Formatter.format(formatter, value)
 
-    logging.debug("get_value(%s) => %s provided by %s", path, value, handler)
+    logging.debug("get_value(%s with params %s) => %s provided by %s", handlerName, params, value, handler)
     return value
+
+def get_supported_handlers() -> List[str]:
+    '''
+    Returns list of supported handlers
+    '''
+    return list(handlers.keys())

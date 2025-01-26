@@ -10,6 +10,18 @@ lint:
 docker:
 	docker build -t psmqtt:latest .
 
+# to cross-build docker images for other platforms (e.g. ARM), the buildx image builder backend is required:
+
+docker-armv6:
+	docker buildx build --platform linux/arm/v6 --tag psmqtt:latest --build-arg USERNAME=root .
+
+docker-armv7:
+	docker buildx build --platform linux/arm/v7 --tag psmqtt:latest --build-arg USERNAME=root .
+
+docker-arm64:
+	docker buildx build --platform linux/arm64/v8 --tag psmqtt:latest --build-arg USERNAME=root .
+
+
 test: unit-test integration-test
 
 unit-test:

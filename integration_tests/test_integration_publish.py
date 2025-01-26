@@ -19,6 +19,7 @@ def setup(request):
     """
     broker.start()
     print("Broker successfully started")
+    ##time.sleep(10)
 
     def remove_container():
         broker.stop()
@@ -33,14 +34,14 @@ def test_basic_publish():
 
     with PSMQTTContainer(broker=broker) as container:
 
-        dockerid = container.get_short_id()
+        tprefix = container.get_mqtt_topic_prefix()
         topics_under_test = [
-            {"topic_name": f"psmqtt/{dockerid}/cpu_percent", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 5},
-            {"topic_name": f"psmqtt/{dockerid}/virtual_memory/percent", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 5},
+            {"topic_name": f"{tprefix}/cpu_percent", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 5},
+            {"topic_name": f"{tprefix}/virtual_memory/percent", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 5},
             # disk_usage gets published every 3sec:
-            {"topic_name": f"psmqtt/{dockerid}/disk_usage/percent/|", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 2},
+            {"topic_name": f"{tprefix}/disk_usage/percent/|", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 2},
             # uptime gets published every 5sec:
-            {"topic_name": f"psmqtt/{dockerid}/uptime", "expected_payload": "STRING", "min_msg_count": 1},
+            {"topic_name": f"{tprefix}/uptime", "expected_payload": "STRING", "min_msg_count": 1},
         ]
 
         time.sleep(1)  # give time to the PSMQTTContainer to fully start
@@ -50,11 +51,15 @@ def test_basic_publish():
             assert False
 
         broker.watch_topics([t["topic_name"] for t in topics_under_test])
+        container.watch_for_internal_errors(broker)
 
         # the integration test config contains a configuration to print the boot_time every 5sec,
         # so wait a bit more to reduce test flakyness:
         time.sleep(6)
         container.print_logs()
+
+        # check there were no internal psmqtt errors
+        assert container.get_num_internal_errors(broker) == 0
 
         for t in topics_under_test:
             tname = t["topic_name"]

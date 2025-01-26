@@ -100,7 +100,9 @@ class MosquittoContainerEnhanced(MosquittoContainer):
         except Queue.Empty:
             return 0
 
-    def watch_topics(self, topics: list):
+    def watch_topics(self, topics: list[str]):
+        assert isinstance(topics, list)
+
         try:
             client = self.get_client()
         except OSError as err:

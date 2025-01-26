@@ -1,0 +1,93 @@
+#
+# PSMQTT configuration file
+# All values shown here are the default values
+#
+
+logging:
+  level: DEBUG
+  # path to the log file; if not set, logs will be printed to the console
+  # file: 
+  report_status_period_sec: 10
+
+mqtt:
+  # broker: details about the MQTT broker
+  broker:
+    host: localhost
+    port: 1883
+    #username:
+    #password:
+  
+  # client_id: the identifier of the MQTT client created by psmqtt; this is useful to identify psmqtt
+  # when inspecting the MQTT broker logs
+  clientid: psmqtt
+  
+  # clean_session: If "true", the broker will remove all information about this client when it disconnects. 
+  # If "false", the client is a persistent client and subscription information and queued messages will 
+  # be retained when the client disconnects
+  clean_session: false
+  
+  # qos: it can be:
+  #  - At most once (QoS 0)
+  #  - At least once (QoS 1)
+  #  - Exactly once (QoS 2)
+  # see https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels/
+  qos: 0
+  
+  # retain: if set to true, the message will be set as the "last known good"/retained message for 
+  # each topic populated by psmqtt
+  retain: false
+
+  # request: name of the topic that psmqtt will subscribe to, and where it will wait for information requests;
+  # to activate the request just send any payload message (e.g. "REQUEST") to a topic like:
+  # <psmqtt/COMPUTER_NAME/request/cpu_percent>. 
+  request_topic: "psmqtt/request/"
+
+  # publish_topic_prefix: defines the prefix for all published topics;
+  # if not provided, it defaults to "psmqtt/<hostname>/"
+  #publish_topic_prefix: 
+
+
+
+schedule:
+  # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
+  # the "cron" expression is a human-friendly expression, see https://github.com/kvh/recurrent/tree/master
+  # for example of supported syntaxes
+  - cron: "every 1 second"
+    tasks:
+      # each task is defined by
+      # * the (handler) name (see PSMQTT docs for full list of available task handlers);
+      # * optionally the task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
+      # * optionally the MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
+      # * optionally a formatter expression, which is a Jinja2 expression
+
+      # simple task, no parameter, no formatter:
+      - task: cpu_percent
+        params: [ "total" ]
+
+      # simple tasks with 1 or 2 parameters:
+      - task: virtual_memory
+        params: [ percent ]
+      - task: sensors_temperatures
+        params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
+      - task: smart
+        params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
+      - task: smart
+        params: [ /dev/sda, "*" ] # report all SMART attributes of "/dev/sda"; note that asterisks need quoting
+        topic: "/sda/*"
+
+      # task requesting to publish virtual_memory percentage into a topic named "foobar"
+      - task: virtual_memory
+        params: [ percent ]
+        topic: foobar
+      
+  - cron: "every 60 minutes"
+    tasks:
+      - task: disk_usage
+        params: [ percent, "/" ]
+    
+  - cron: "every 3 hours"
+    tasks:
+
+      # task with a Jinja2 formatter; single or double-quoting is necessary
+      - task: boot_time
+        formatter: "{{x|uptime}}"
