@@ -4,7 +4,7 @@
 
 FROM public.ecr.aws/docker/library/python:3.13-alpine AS builder
 
-RUN apk add build-base linux-headers
+RUN apk add build-base linux-headers 
 
 WORKDIR /build
 COPY ./requirements.txt .
@@ -46,8 +46,9 @@ COPY src/*.py ./src
 COPY psmqtt.service .
 COPY logging.conf .
 
-RUN mkdir ./conf
-COPY psmqtt.conf ./conf
+RUN mkdir ./conf ./schema
+COPY psmqtt.yaml ./conf
+COPY schema/* ./schema/
 
 # add user psmqtt to image
 RUN if [[ "$USERNAME" != "root" ]]; then \
@@ -60,7 +61,8 @@ RUN if [[ "$USERNAME" != "root" ]]; then \
 USER ${USERNAME}
 
 # set conf path
-ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.conf"
+ENV PSMQTTCONFIG="/opt/psmqtt/conf/psmqtt.yaml"
+ENV PSMQTTCONFIGSCHEMA="/opt/psmqtt/schema/psmqtt.schema.yaml"
 
 # add deps to PYTHONPATH
 ENV PYTHONPATH="/opt/psmqtt/deps"

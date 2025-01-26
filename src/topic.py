@@ -1,13 +1,31 @@
 # Copyright (c) 2016 psmqtt project
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
-from typing import Tuple
+from typing import Tuple, Dict
 
 class Topic:
     def __init__(self, topic:str):
         self.topic = topic
         self.wildcard_index, self.wildcard_len = self._find_wildcard(topic)
         return
+
+    @classmethod
+    def from_task(cls, topic_prefix: str, task: Dict[str,str]) -> 'Topic':
+        # create the MQTT topic by concatenating the task name and its parameters with the MQTT topic-level separator '/'
+        topicName = topic_prefix + task["task"]
+        nonEmptyParams = [x for x in task["params"] if x != '']
+
+        escapedParams = []
+        for x in nonEmptyParams:
+            if isinstance(x,str):
+                escapedParams.append(x.replace('/', '|'))
+            elif isinstance(x,int):
+                escapedParams.append(str(x))
+        if len(escapedParams) > 0:
+            topicName += '/' + '/'.join(escapedParams)
+
+        # ensure no empty topic-level separators are present:
+        return Topic(topicName.replace("//", "/"))
 
     @staticmethod
     def _find_wildcard(topic:str) -> Tuple[int, int]:
@@ -35,8 +53,10 @@ class Topic:
 
     def get_subtopic(self, param:str) -> str:
         if self.wildcard_index < 0:
-            raise Exception("Topic " + self.topic + " have no wildcard")
-        return self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
+            raise Exception(f"Topic {self.topic} has no wildcard")
+        subtopic = self.topic[:self.wildcard_index] + param + self.topic[self.wildcard_index + self.wildcard_len:]
+        # ensure no empty topic-level separators are present:
+        return subtopic.replace("//", "/")
 
     def get_topic(self) -> str:
         return self.topic

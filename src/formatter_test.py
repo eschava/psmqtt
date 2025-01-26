@@ -2,9 +2,11 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import unittest
+import pytest
 
 from .formatter import Formatter
 
+@pytest.mark.unit
 class TestFormatter(unittest.TestCase):
 
     def test_get_format(self) -> None:
@@ -42,7 +44,3 @@ class TestFormatter(unittest.TestCase):
         self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60))
         self.assertEqual("2 days, 1:39", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60+30))
         self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60-30))
-
-
-if __name__ == '__main__':
-    unittest.main()
