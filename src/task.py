@@ -21,8 +21,11 @@ class Task:
     fields.
     '''
 
-    # Counter of all errors that occurred during (any) task execution
+    # Counts how many tasks triggered an errors during their execution
     num_errors = 0
+
+    # Counts successfully-completed tasks
+    num_success = 0
 
     def __init__(self,
             name:str,
@@ -105,4 +108,10 @@ class Task:
             mqttc.publish(topic.get_error_topic(), str(ex))
             logging.exception(f"run_task caught: {self} : {ex}")
             Task.num_errors += 1
+
+        Task.num_success += 1
         return
+
+    @staticmethod
+    def num_total_tasks() -> int:
+        return Task.num_success + Task.num_errors

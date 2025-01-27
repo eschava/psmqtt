@@ -100,6 +100,8 @@ class Config:
             self.config["mqtt"]["clientid"] = 'psmqtt-%s' % os.getpid()
         if "qos" not in self.config["mqtt"]:
             self.config["mqtt"]["qos"] = 0
+        if "reconnect_period_sec" not in self.config["mqtt"]:
+            self.config["mqtt"]["reconnect_period_sec"] = 5
         if "publish_topic_prefix" not in self.config["mqtt"]:
             hn = socket.gethostname()
             self.config["mqtt"]["publish_topic_prefix"] = f"psmqtt/{hn}/"

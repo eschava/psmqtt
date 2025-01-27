@@ -13,7 +13,7 @@
 #
 
 from datetime import datetime
-from dateutil.rrule import rrulestr  # pip install python-dateutil
+from dateutil.rrule import rrulestr
 import argparse
 import os
 import sched
@@ -28,9 +28,6 @@ from recurrent import RecurringEvent
 from src.config import Config
 from src.mqtt_client import MqttClient
 from src.task import Task
-
-# global counter of tasks executed so far
-num_executed_tasks = 0
 
 class SchedulerThread(Thread):
 
@@ -71,8 +68,10 @@ class PsmqttApp:
         self.scheduler = None  # instance of sched.scheduler
         self.scheduler_thread = None  # instance of SchedulerThread
 
+        self.last_logged_status = (None, None, None)
+
     @staticmethod
-    def on_task_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: List[Task], cfg: Config, mqttc: MqttClient) -> None:
+    def on_task_timer(app: 'PsmqttApp', parsed_rrule: str, tasks: List[Task]) -> None:
         '''
         Takes a list of tasks to be run immediately.
         The list must contain dictionary items, each having "task", "params", "topic" and "formatter" fields.
@@ -88,22 +87,18 @@ class PsmqttApp:
                 "formatter": None }
             ]
         '''
-        global num_executed_tasks
 
-        logging.debug("on_task_timer(%s, %s, %d, %s)", s, parsed_rrule, scheduleIdx, tasks)
+        logging.debug("on_task_timer(%s, %s)", parsed_rrule, tasks)
 
         # support for the "exit_after" feature
-        exit_after = cfg.config["options"]["exit_after_num_tasks"]
+        exit_after = app.config.config["options"]["exit_after_num_tasks"]
         reschedule = True
 
-        taskIdx = 0
         for task in tasks:
             # main entrypoint for TASK execution:
-            task.run_task(mqttc)
+            task.run_task(app.mqtt_client)
 
-            taskIdx += 1
-            num_executed_tasks += 1
-            if exit_after > 0 and num_executed_tasks >= exit_after:
+            if exit_after > 0 and Task.num_total_tasks() >= exit_after:
                 reschedule = False
                 break
 
@@ -113,22 +108,31 @@ class PsmqttApp:
 
         # add next timer task
         if reschedule:
-            s.enter(delay, 1, PsmqttApp.on_task_timer, (s, parsed_rrule, scheduleIdx, tasks, cfg, mqttc))
+            app.scheduler.enter(delay, 1, PsmqttApp.on_task_timer, (app, parsed_rrule, tasks))
         return
 
     @staticmethod
-    def on_log_timer(s: sched.scheduler, log_period_sec: int, mqttc: MqttClient) -> None:
+    def on_log_timer(app: 'PsmqttApp') -> None:
         '''
         Periodically prints the status of psmqtt
         '''
 
-        # publish also on MQTT
-        status_topic = mqttc.topic_prefix + "psmqtt_status"
-        mqttc.mqttc.publish(status_topic + "/num_errors", Task.num_errors)
-        logging.info(f"psmqtt status: {Task.num_errors} errors while capturing sensor data; published status into on topic {status_topic}")
+        new_status = (Task.num_errors, Task.num_success, MqttClient.num_disconnects)
+        if new_status != app.last_logged_status:
+            # publish status on MQTT
+            status_topic = app.mqtt_client.topic_prefix + "psmqtt_status"
+            app.mqtt_client.publish(status_topic + "/num_tasks_errors", Task.num_errors)
+            app.mqtt_client.publish(status_topic + "/num_tasks_success", Task.num_success)
+            app.mqtt_client.publish(status_topic + "/num_mqtt_disconnects", MqttClient.num_disconnects)
+
+            # publish status on log
+            logging.info(f"psmqtt status: {Task.num_success} successful tasks; {Task.num_errors} failed tasks; {MqttClient.num_disconnects} MQTT disconnections; published status into on topic {status_topic}")
+
+            app.last_logged_status = new_status
 
         # add next timer task
-        s.enter(log_period_sec, 1, PsmqttApp.on_log_timer, (s, log_period_sec, mqttc))
+        log_period_sec = int(app.config.config["logging"]["report_status_period_sec"])
+        app.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([app]))
         return
 
     def read_version_file(filename='VERSION') -> str:
@@ -200,7 +204,8 @@ class PsmqttApp:
             self.config.config["mqtt"]["publish_topic_prefix"],
             self.config.config["mqtt"]["request_topic"],
             self.config.config["mqtt"]["qos"],
-            self.config.config["mqtt"]["retain"])
+            self.config.config["mqtt"]["retain"],
+            self.config.config["mqtt"]["reconnect_period_sec"])
 
         #
         # parse schedule
@@ -237,7 +242,7 @@ class PsmqttApp:
                 j += 1
 
             # include this in our scheduler:
-            self.scheduler.enter(delay_sec, 1, PsmqttApp.on_task_timer, (self.scheduler, parsed_rrule, i, task_list, self.config, self.mqtt_client))
+            self.scheduler.enter(delay_sec, 1, PsmqttApp.on_task_timer, (self, parsed_rrule, task_list))
             i += 1
 
         # add periodic log
@@ -248,7 +253,7 @@ class PsmqttApp:
             return 5
 
         if log_period_sec > 0:
-            self.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, (self.scheduler, log_period_sec, self.mqtt_client))
+            self.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([self]))
         #else: logging of the status has been disabled
 
         # store the scheduler into its own thread:
@@ -274,22 +279,21 @@ class PsmqttApp:
             return 2
 
         # block the main thread on the MQTT client loop
-        global num_executed_tasks
         keep_running = True
         exit_after = self.config.config["options"]["exit_after_num_tasks"]
         while keep_running:
             try:
                 self.mqtt_client.loop_start()
                 while True:
-                    if exit_after > 0 and num_executed_tasks >= exit_after:
-                        logging.warning("exiting after executing %d tasks as requested in the configuration file", num_executed_tasks)
+                    if exit_after > 0 and Task.num_total_tasks() >= exit_after:
+                        logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks())
                         keep_running = False
                         break
                     time.sleep(0.5)
 
             except socket.error:
                 logging.error("socket.error caught, sleeping for 5 sec...")
-                time.sleep(5)  # FIXME make configurable
+                time.sleep(self.config.config["mqtt"]["reconnect_period_sec"])
 
             except KeyboardInterrupt:
                 logging.warning("KeyboardInterrupt caught, exiting")

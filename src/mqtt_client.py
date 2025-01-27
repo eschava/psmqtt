@@ -12,20 +12,26 @@ class MqttClient:
     Wrapper around paho.Client
     '''
 
+    # Counter of MQTT broker disconnections
+    num_disconnects = 0
+
     def __init__(self,
             client_id:str,
             clean_session:bool,
             topic_prefix:str,
             request_topic:str,
             qos:int,
-            retain:bool) -> None:
+            retain:bool,
+            reconnect_period_sec:float) -> None:
 
         self.connected = False
         self.topic_prefix = topic_prefix
         self.request_topic = request_topic
         self.qos = qos
         self.retain = retain
-        # initialise MQTT broker connection
+        self.reconnect_period_sec = reconnect_period_sec
+
+        # use MQTT v3.1.1 for now
         self.mqttc = paho.Client(paho.CallbackAPIVersion.VERSION1,
             client_id, clean_session=clean_session, userdata=self,
             protocol=paho.MQTTv311)
@@ -58,7 +64,7 @@ class MqttClient:
             self.mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None,
                 cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS,
                 ciphers=None)
-        logging.debug("Connecting to '%s:%d'", mqtt_broker, mqtt_port)
+        logging.debug("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
         self.mqttc.connect(mqtt_broker, mqtt_port)
         return True
 
@@ -96,8 +102,9 @@ class MqttClient:
         '''
         MQTT callback in case of unexpected disconnection from the broker
         '''
-        logging.debug("OOOOPS! psmqtt disconnects")
-        time.sleep(10)  # FIXME: make this configurable
+        MqttClient.num_disconnects += 1
+        logging.debug("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
+        time.sleep(self.reconnect_period_sec)
         return
 
     def on_message(self, mqttc: paho.Client, userdata: Any, msg: paho.MQTTMessage) -> None:
