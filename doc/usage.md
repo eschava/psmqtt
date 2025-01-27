@@ -1,3 +1,5 @@
+# PSMQTT Usage
+
 <!-- vscode-markdown-toc -->
 * [PSMQTT Architecture](#PSMQTTArchitecture)
 * [Configuration file](#Configurationfile)
@@ -9,14 +11,13 @@
 * [Sending MQTT requests](#SendingMQTTrequests)
 
 <!-- vscode-markdown-toc-config
-	numbering=true
+	numbering=false
 	autoSave=true
 	/vscode-markdown-toc-config -->
 <!-- /vscode-markdown-toc -->
 
-# PSMQTT Usage
 
-##  1. <a name='PSMQTTArchitecture'></a>PSMQTT Architecture
+## <a name='PSMQTTArchitecture'></a>PSMQTT Architecture
 
 The PSMQTT architecture can be described as:
 
@@ -59,7 +60,7 @@ proces information, etc);
 
 The following section provides more details about the config file syntax.
 
-##  2. <a name='Configurationfile'></a>Configuration file
+## <a name='Configurationfile'></a>Configuration file
 
 The PSMQTT configuration file is a [YAML file](https://en.wikipedia.org/wiki/YAML).
 
@@ -101,7 +102,7 @@ Each of the following section describes in details the parameters:
 4. `<MQTT topic>`: [MQTT Topic](#mqtt-topic)
 
 
-###  2.1. <a name='CRONexpression'></a>CRON expression
+### <a name='CRONexpression'></a>CRON expression
 
 The `<human-friendly CRON expression>` is a string encoding a recurrent rule, 
 like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
@@ -112,7 +113,7 @@ You can check examples of recurring period definitions
 Note that cron expressions should be unique; if there are several schedules with the same period only
 last one will be used.
 
-###  2.2. <a name='Tasks'></a>Tasks
+### <a name='Tasks'></a>Tasks
 
 PSMQTT supports a large number of "tasks".
 A "task" is the combination of
@@ -346,7 +347,7 @@ Processes :
             - ** - all process properties and sub-properties. Topic per property
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
-####  2.2.1. <a name='UsefulTasks'></a>Useful Tasks
+#### <a name='UsefulTasks'></a>Useful Tasks
 
 These are 'tasks' I found most relevant and useful for tracking my
 server(s) health and performance:
@@ -368,7 +369,7 @@ Task|Description
 `sensors_fans/dell_smm/0`|Fan seed
 `sensors_battery/percent`|Battery charge
 
-###  2.3. <a name='Formatting'></a>Formatting
+### <a name='Formatting'></a>Formatting
 
 The output of each task can be formatted using
 [Jinja2](http://jinja.pocoo.org/) templates.
@@ -421,7 +422,7 @@ Examples:
 ```
 
 
-###  2.4. <a name='MQTTTopic'></a>MQTT Topic
+### <a name='MQTTTopic'></a>MQTT Topic
 
 The `<MQTT topic>` specification in each task definition is optional.
 If it is not specified, psmqtt will generate automatically an output MQTT topic 
@@ -470,7 +471,7 @@ If the wildcard `*` character is used in the task parameters but the MQTT topic 
 or does not contain the wildcard `*` character itself, then an error will be produced in psmqtt logs.
 
 
-##  3. <a name='SendingMQTTrequests'></a>Sending MQTT requests
+## <a name='SendingMQTTrequests'></a>Sending MQTT requests
 
 The [psmqtt.yaml](../psmqtt.yaml) file supports a configuration named "request_topic":
 
