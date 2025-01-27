@@ -1,3 +1,8 @@
+
+
+
+
+
 # PSMQTT Usage
 
 <!-- vscode-markdown-toc -->
@@ -5,6 +10,15 @@
 * [Configuration file](#Configurationfile)
 	* [CRON expression](#CRONexpression)
 	* [Tasks](#Tasks)
+		* [Category CPU](#CategoryCPU)
+		* [Category Memory](#CategoryMemory)
+		* [Category Disks](#CategoryDisks)
+		* [Category Network](#CategoryNetwork)
+		* [Category Temperature](#CategoryTemperature)
+		* [Category Fan](#CategoryFan)
+		* [Category Battery](#CategoryBattery)
+		* [Category Other system info](#CategoryOthersysteminfo)
+		* [Category Processes](#CategoryProcesses)
 		* [Useful Tasks](#UsefulTasks)
 	* [Formatting](#Formatting)
 	* [MQTT Topic](#MQTTTopic)
@@ -185,7 +199,8 @@ topic level separator.
 
 Here follows the reference documentation for all required tasks and their parameters:
 
-* **Category: CPU**
+#### <a name='CategoryCPU'></a>Category CPU
+
   * Task name: `cpu_percent`
     * Short description: CPU total usage in percentage. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
     * **REQUIRED**: `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
@@ -202,7 +217,8 @@ Here follows the reference documentation for all required tasks and their parame
     * Short description: CPU statistics. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or or a field name like `ctx_switches`, `interrupts`, `soft_interrupts`, `syscalls`.
 
-* **Category: Memory**
+#### <a name='CategoryMemory'></a>Category Memory
+
   * Task name: `virtual_memory`
     * Short description: Virtual memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total`, `available`, `percent`, etc.
@@ -212,7 +228,8 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total`, `used`, `free`, etc.
       Check full reference for all available fields
 
-* **Category: Disks**
+#### <a name='CategoryDisks'></a>Category Disks
+
   * Task name: `disk_partitions`
     * Short description: List of mounted disk partitions. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `device`, `mountpoint`, `fstype`, `opts`.
@@ -229,7 +246,8 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param2>`: The wildcard `*` or `*;` to select all partitions or an index `0`, `1`, `2`, etc to select a specific partition.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
 
-* **Category: Network**
+#### <a name='CategoryNetwork'></a>Category Network
+
   * Task name: `net_io_counters`
     * Short description: Network I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `bytes_sent`, `bytes_recv`, `packets_sent`, `packets_recv`, etc.
@@ -237,7 +255,8 @@ Here follows the reference documentation for all required tasks and their parame
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all network interface cards (NICs) or a NIC name like e.g. `eth0`, `wlan0`, `enp3s0f0`, etc to select a specific NIC.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
 
-* **Category: Temperature**
+#### <a name='CategoryTemperature'></a>Category Temperature
+
   * Task name: `sensors_temperatures`
     * Short description: Hardware temperatures. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all available sensor types (e.g. `asus`, `coretemp`, `amdgpu`, etc).
@@ -247,7 +266,8 @@ Here follows the reference documentation for all required tasks and their parame
     * **OPTIONAL**: `<param3>`: The wildcard `*` or `*;` to select all temperature information available from the selected sensors or field name like `current`, `high`, `critical` 
       to select only a specific information.
 
-* **Category: Fan speed**
+#### <a name='CategoryFan'></a>Category Fan
+
   * Task name: `sensors_fans`
     * Short description: Hardware fans speed. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_fans )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all available sensor types (e.g. `asus`, etc).
@@ -257,13 +277,15 @@ Here follows the reference documentation for all required tasks and their parame
     * **OPTIONAL**: `<param3>`: The wildcard `*` or `*;` to select all information available from the selected sensors or field name like `current` 
       to select only a specific information.
 
-* **Category: Battery**
+#### <a name='CategoryBattery'></a>Category Battery
+
   * Task name: `sensors_battery`
     * Short description: Battery status information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_battery )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `percent`, `secsleft`, `power_plugged`, etc.
       Check full reference for all available fields and their meaning.
 
-* **Category: Other system info**
+#### <a name='CategoryOthersysteminfo'></a>Category Other system info
+
   * Task name: `users`
     * Short description: Users currently connected on the system. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.users )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `name`, `terminal`, `host`, `started`, etc.
@@ -273,7 +295,8 @@ Here follows the reference documentation for all required tasks and their parame
     * Short description: System boot time. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#boot_time.users )
     * **NO PARAMETES**
 
-* **Category: Processes**
+#### <a name='CategoryProcesses'></a>Category Processes
+
   * Task name: `pids`
     * Short description: Currently running process IDs. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.pids )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all PIDs, the `count` string to return just the number of PIDs or an index `0`, `1`, `2`, etc to select a specific process ID.
