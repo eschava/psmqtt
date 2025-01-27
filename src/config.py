@@ -4,7 +4,6 @@
 import os
 import logging
 import logging.config
-import sys
 import yaml
 import yamale
 from yamale import YamaleError
@@ -155,4 +154,3 @@ class Config:
         else:
             logging.error(f"Invalid logging level '{logl}' in config file. Defaulting to ERROR level.")
             logging.basicConfig(level=logging.ERROR, force=True)
-

@@ -22,10 +22,11 @@ import logging
 import sys
 from threading import Thread
 import time
-from typing import Any, List
+from typing import List
 
 from src.config import Config
 from src.mqtt_client import MqttClient
+from src.task import Task
 
 # global counter of tasks executed so far
 num_executed_tasks = 0
@@ -41,7 +42,7 @@ class TimerThread(Thread):
         self.scheduler.run()
         return
 
-def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: List[Any], cfg: Config, mqttc: MqttClient) -> None:
+def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: List[Task], cfg: Config, mqttc: MqttClient) -> None:
     '''
     Takes a list of tasks to be run immediately.
     The list must contain dictionary items, each having "task", "params", "topic" and "formatter" fields.
@@ -61,9 +62,6 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
 
     logging.debug("on_timer(%s, %s, %d, %s)", s, parsed_rrule, scheduleIdx, tasks)
 
-    # delayed import to enable PYTHONPATH adjustment
-    from src.task import run_task
-
     # support for the "exit_after" feature
     exit_after = cfg.config["options"]["exit_after_num_tasks"]
     reschedule = True
@@ -75,7 +73,7 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
         task_friendly_name = f"schedule{scheduleIdx}.task{taskIdx}.{task['task']}"
 
         # main entrypoint for TASK execution:
-        run_task(mqttc, task_friendly_name, task)
+        task.run_task(mqttc, task_friendly_name)
 
         taskIdx += 1
         num_executed_tasks += 1
@@ -137,7 +135,7 @@ def run() -> int:
     parser.add_argument(
         "-V",
         "--version",
-        help="Print version and exit",
+        help="Print version and exit",\
         action="store_true",
         default=False,
     )
@@ -222,8 +220,13 @@ def run() -> int:
         assert isinstance(parsed_rrule, str)
         delay_sec = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
 
+        # instantiate each task associated with this schedule
+        task_list = []
+        for t in sch["tasks"]:
+            task_list.append(Task(t["task"], t["params"], t["topic"], t["formatter"], i))
+
         # include this in our scheduler:
-        s.enter(delay_sec, 1, on_timer, (s, parsed_rrule, i, sch["tasks"], cf, mqttc))
+        s.enter(delay_sec, 1, on_timer, (s, parsed_rrule, i, task_list, cf, mqttc))
         i += 1
 
     # add periodic log
