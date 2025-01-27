@@ -1,18 +1,20 @@
 <!-- vscode-markdown-toc -->
-* 1. [PSMQTT Architecture](#PSMQTTArchitecture)
-* 2. [Configuration file](#Configurationfile)
-	* 2.1. [CRON expression](#CRONexpression)
-	* 2.2. [Tasks](#Tasks)
-		* 2.2.1. [Useful Tasks](#UsefulTasks)
-	* 2.3. [Formatting](#Formatting)
-	* 2.4. [MQTT Topic](#MQTTTopic)
-* 3. [Sending MQTT requests](#SendingMQTTrequests)
+* [PSMQTT Architecture](#PSMQTTArchitecture)
+* [Configuration file](#Configurationfile)
+	* [CRON expression](#CRONexpression)
+	* [Tasks](#Tasks)
+		* [Useful Tasks](#UsefulTasks)
+	* [Formatting](#Formatting)
+	* [MQTT Topic](#MQTTTopic)
+* [Sending MQTT requests](#SendingMQTTrequests)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
 	autoSave=true
 	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc --># PSMQTT Usage
+<!-- /vscode-markdown-toc -->
+
+# PSMQTT Usage
 
 ##  1. <a name='PSMQTTArchitecture'></a>PSMQTT Architecture
 
