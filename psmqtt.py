@@ -25,7 +25,6 @@ import time
 from typing import Any, List
 
 from src.config import Config
-from src.config import load_config
 from src.mqtt_client import MqttClient
 
 # global counter of tasks executed so far
@@ -131,11 +130,10 @@ def run() -> int:
     '''
 
     # CLI interface
-
     parser = argparse.ArgumentParser(
         prog=os.path.basename(__file__),
         description='Publish psutil/pySMART counters to an MQTT broker according to scheduling rules',
-        epilog='See documentation at https://github.com/eschava/psmqtt for configuration examples')
+        epilog='See documentation at https://github.com/eschava/psmqtt for configuration examples. All the configuration options are read from the psmqtt.yaml file or the path pointed by the \'PSMQTTCONFIG\' environment variable.')
     parser.add_argument(
         "-V",
         "--version",
@@ -144,16 +142,30 @@ def run() -> int:
         default=False,
     )
 
+    if "COLUMNS" not in os.environ:
+        os.environ["COLUMNS"] = "120"  # avoid too many line wraps
     args = parser.parse_args()
-
     if args.version:
         print(f"Version: {read_version_file()}")
         sys.exit(0)
 
-    #
-    # read initial config files - this may exit(2)
-    #
-    cf = load_config()
+    # fix for error 'No handlers could be found for logger "recurrent"'
+    reccurrent_logger = logging.getLogger('recurrent')
+    if len(reccurrent_logger.handlers) == 0:
+        reccurrent_logger.addHandler(logging.NullHandler())
+
+    # start with DEBUG logging level till we load the config file:
+    logging.basicConfig(level=logging.DEBUG)
+
+    # read config file:
+    cf = Config()
+    try:
+        cf.load()
+    except Exception as e:
+        logging.error(f"Cannot load configuration: {e}. Aborting.")
+        sys.exit(2)
+
+    cf.apply_logging_config()
 
     # delayed import to enable PYTHONPATH adjustment
     from recurrent import RecurringEvent  # pip install recurrent

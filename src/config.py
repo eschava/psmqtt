@@ -21,12 +21,24 @@ class Config:
         self.config = None
         self.schema = None
 
-    def load(self, filename: str, schema_filename: str):
+    def load(self, filename: str = None, schema_filename: str = None):
         '''
         filename is a fully qualified path to the YAML config file.
         The YAML file is validated against the schema file provided as argument,
         and optional configuration parameters are populated with their default values.
         '''
+
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        dirname = os.path.abspath(os.path.join(dirname, '..'))
+
+        if filename is None:
+            filename = os.getenv(
+                'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
+        if schema_filename is None:
+            schema_filename = os.getenv(
+                'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
+
+        logging.info("Loading app config '%s' and its schema '%s'", filename, schema_filename)
 
         try:
             tuple_list = yamale.make_data(filename)
@@ -129,36 +141,9 @@ class Config:
 
         self.config["schedule"] = validated_schedule
 
-
-def load_config() -> Config:
-    '''
-    Load app config and returns it.
-    '''
-
-    dirname = os.path.dirname(os.path.abspath(__file__))
-    dirname = os.path.abspath(os.path.join(dirname, '..'))
-    psmqtt_conf_path = os.getenv(
-        'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
-    psmqtt_conf_schema_path = os.getenv(
-        'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
-
-    try:
-        # start with DEBUG logging level
-        logging.basicConfig(level=logging.DEBUG)
-
-        # fix for error 'No handlers could be found for logger "recurrent"'
-        reccurrent_logger = logging.getLogger('recurrent')
-        if len(reccurrent_logger.handlers) == 0:
-            reccurrent_logger.addHandler(logging.NullHandler())
-
-        logging.debug("Loading app config '%s' and its schema '%s'", psmqtt_conf_path, psmqtt_conf_schema_path)
-
-        # Config.load() will raise exceptions eventually:
-        cfg = Config()
-        cfg.load(psmqtt_conf_path, psmqtt_conf_schema_path)
-
+    def apply_logging_config(self):
         # Apply logging config
-        logl = cfg.config["logging"]["level"]
+        logl = self.config["logging"]["level"]
         if logl == "DEBUG":
             logging.basicConfig(level=logging.DEBUG, force=True)
         elif logl == "INFO":
@@ -170,8 +155,4 @@ def load_config() -> Config:
         else:
             logging.error(f"Invalid logging level '{logl}' in config file. Defaulting to ERROR level.")
             logging.basicConfig(level=logging.ERROR, force=True)
-        return cfg
 
-    except Exception as e:
-        logging.error(f"Cannot load configuration from file {psmqtt_conf_path}: {e}. Aborting.")
-        sys.exit(2)

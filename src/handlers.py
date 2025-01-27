@@ -1,11 +1,10 @@
 # Copyright (c) 2016 psmqtt project
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
-#from collections import namedtuple
 import fnmatch
 import json
 import logging
-import psutil  # pip install psutil
+import psutil
 from pySMART import Device as SmartDevice
 import re
 from typing import (
