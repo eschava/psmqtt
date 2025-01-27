@@ -70,6 +70,7 @@ class PsmqttApp:
 
         self.last_logged_status = (None, None, None)
 
+
     @staticmethod
     def on_task_timer(app: 'PsmqttApp', parsed_rrule: str, tasks: List[Task]) -> None:
         '''
@@ -112,6 +113,10 @@ class PsmqttApp:
         return
 
     @staticmethod
+    def log_status() -> None:
+        logging.info(f"psmqtt status: {Task.num_success} successful tasks; {Task.num_errors} failed tasks; {MqttClient.num_disconnects} MQTT disconnections")
+
+    @staticmethod
     def on_log_timer(app: 'PsmqttApp') -> None:
         '''
         Periodically prints the status of psmqtt
@@ -120,13 +125,13 @@ class PsmqttApp:
         new_status = (Task.num_errors, Task.num_success, MqttClient.num_disconnects)
         if new_status != app.last_logged_status:
             # publish status on MQTT
-            status_topic = app.mqtt_client.topic_prefix + "psmqtt_status"
+            status_topic = app.status_topic
             app.mqtt_client.publish(status_topic + "/num_tasks_errors", Task.num_errors)
             app.mqtt_client.publish(status_topic + "/num_tasks_success", Task.num_success)
             app.mqtt_client.publish(status_topic + "/num_mqtt_disconnects", MqttClient.num_disconnects)
 
             # publish status on log
-            logging.info(f"psmqtt status: {Task.num_success} successful tasks; {Task.num_errors} failed tasks; {MqttClient.num_disconnects} MQTT disconnections; published status into on topic {status_topic}")
+            PsmqttApp.log_status()
 
             app.last_logged_status = new_status
 
@@ -253,6 +258,9 @@ class PsmqttApp:
             return 5
 
         if log_period_sec > 0:
+            self.status_topic = app.mqtt_client.topic_prefix + "psmqtt_status"
+            logging.info(f"PSMQTT status will be published on topic {self.status_topic} every {log_period_sec}sec")
+
             self.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([self]))
         #else: logging of the status has been disabled
 
@@ -304,6 +312,9 @@ class PsmqttApp:
 
         # stop the scheduler thread as well
         self.scheduler_thread.stop()
+
+        # log status one last time
+        PsmqttApp.log_status()
 
         return 0
 

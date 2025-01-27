@@ -691,6 +691,11 @@ class SmartCommandHandler(CommandHandler):
             raise Exception(errmsg)
 
         info = self.device.__getstate__()
+
+        # delete 2 fields that are actually very cluttered fields repeating all the other dictionary keys:
+        del info["attributes"]
+        del info["if_attributes"]
+
         if param == '':
             return string_from_dict_optionally(info, True)
         elif param == '*':
