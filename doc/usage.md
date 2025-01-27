@@ -19,7 +19,7 @@
 		* [Category Battery](#category-battery)
 		* [Category Other system info](#category-other)
 		* [Category Processes](#category-processes)
-		* [Useful Tasks](#UsefulTasks)
+		* [Useful Tasks](#useful-tasks)
 	* [Formatting](#Formatting)
 	* [MQTT Topic](#MQTTTopic)
 * [Sending MQTT requests](#SendingMQTTrequests)
@@ -118,7 +118,8 @@ Each of the following section describes in details the parameters:
 
 ### <a name='CRONexpression'></a>CRON expression
 
-The `<human-friendly CRON expression>` is a string encoding a recurrent rule, 
+The `<human-friendly CRON expression>` that appears in the [scheduling expression](#Configurationfile) 
+is a string encoding a recurrent rule, 
 like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
 
 You can check examples of recurring period definitions
@@ -245,6 +246,12 @@ Here follows the reference documentation for all required tasks and their parame
       Check full reference for all available fields
     * **REQUIRED**: `<param2>`: The wildcard `*` or `*;` to select all partitions or an index `0`, `1`, `2`, etc to select a specific partition.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+  * Task name: `smart`
+    * Short description: Self-Monitoring, Analysis and Reporting Technology System (SMART) counters built into most modern ATA/SATA, SCSI/SAS and NVMe disks. [ Full reference ]( https://www.smartmontools.org/wiki/TocDoc )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all disks or a the name of  a specific drive e.g. `/dev/md0` or `/dev/sda1`.
+    * **REQUIRED**: `<param2>`: The wildcard `*` or `*;` to select all S.M.A.R.T. attributes or a field name like 
+      `interface`, `is_ssd`, `model`, `name`, `path`, `rotation_rate`, `serial`, `smart_capable`, `smart_enabled`, `smart_status`, `temperature`, etc.
+      Try the following Python snippet on your prompt to see which SMART attributes are detected by pySMART library: `sudo python3 -c 'import pySMART; pySMART.Device("/dev/sda").all_attributes()'`
 
 #### <a name='CategoryNetwork'></a>Category Network
 
@@ -380,7 +387,7 @@ Task|Description
 ### <a name='Formatting'></a>Formatting
 
 The output of each task can be formatted using
-[Jinja2](http://jinja.pocoo.org/) templates.
+[Jinja2](http://jinja.pocoo.org/) templates in the `formatter` field of [task definitions](#Configurationfile)
 
 E.g.:   
 
@@ -432,7 +439,7 @@ Examples:
 
 ### <a name='MQTTTopic'></a>MQTT Topic
 
-The `<MQTT topic>` specification in each task definition is optional.
+The `<MQTT topic>` specification in each [task definition](#Configurationfile) is optional.
 If it is not specified, psmqtt will generate automatically an output MQTT topic 
 in the form **psmqtt/COMPUTER_NAME/<task-name>**.
 
@@ -495,3 +502,52 @@ This is an alternative way to use psmqtt compared to the use of cron expressions
 E.g. to get information for the task `cpu_percent` with MQTT prefix `psmqtt/COMPUTER_NAME` you
 need to send any string on the topic **psmqtt/COMPUTER_NAME/request/cpu_percent**.
 The result will be pushed on the topic **psmqtt/COMPUTER_NAME/cpu_percent**.
+
+
+## <a name='ExampleConfigs'></a>Example configs
+
+The following `psmqtt.yaml` is an example intended to be used as reference for some
+syntax rules explained in this document:
+
+```
+logging:
+  level: WARNING
+  report_status_period_sec: 10
+
+mqtt:
+  broker:
+    host: 192.168.0.3
+    port: 1883
+    username: psmqtt
+    password: psmqtt-s3cr3t-pass
+  clientid: psmqtt
+  
+schedule:
+  - cron: "every 1 minute"
+    tasks:
+      - task: cpu_percent
+        params: [ total ]
+      - task: virtual_memory
+        params: [ percent ]
+
+      # cpu temp
+      - task: sensors_temperatures
+        params: [ rtk_thermal, 0 ]
+
+      # temperatures for 2 HDD in RAID from S.M.A.R.T data
+      - task: smart
+        params: [ "/dev/sdc", temperature ]
+      - task: smart
+        params: [ "/dev/sdd", temperature ]
+      
+  - cron: "every 1 hour"
+    tasks:
+      - task: disk_usage
+        params: [ percent, "/mnt/md0" ]
+    
+  - cron: "every 3 hours"
+    tasks:
+      - task: boot_time
+        formatter: "{{x|uptime}}"
+```
+

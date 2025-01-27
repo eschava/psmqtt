@@ -663,7 +663,7 @@ class ProcessesCommandHandler(CommandHandler):
 
 class SmartCommandHandler(CommandHandler):
     '''
-    Handler of commands addressed to SMART
+    Provides readings of S.M.A.R.T. counters via pySMART library
     '''
 
     def __init__(self) -> None:
