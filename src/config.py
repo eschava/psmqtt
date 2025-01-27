@@ -124,22 +124,19 @@ class Config:
 
 def load_config() -> Config:
     '''
-    Load logging and app config, returns the latter.
+    Load app config and returns it.
     '''
 
     dirname = os.path.dirname(os.path.abspath(__file__))
     dirname = os.path.abspath(os.path.join(dirname, '..'))
-
-    logging_conf_path = os.path.join(dirname, 'logging.conf')
     psmqtt_conf_path = os.getenv(
         'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
     psmqtt_conf_schema_path = os.getenv(
         'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
 
     try:
-        # read initial config files
-        logging.debug("Loading logging config '%s'", logging_conf_path)
-        logging.config.fileConfig(logging_conf_path)
+        # start with DEBUG logging level
+        logging.basicConfig(level=logging.DEBUG)
 
         # fix for error 'No handlers could be found for logger "recurrent"'
         reccurrent_logger = logging.getLogger('recurrent')
@@ -152,6 +149,19 @@ def load_config() -> Config:
         cfg = Config()
         cfg.load(psmqtt_conf_path, psmqtt_conf_schema_path)
 
+        # Apply logging config
+        logl = cfg.config["logging"]["level"]
+        if logl == "DEBUG":
+            logging.basicConfig(level=logging.DEBUG, force=True)
+        elif logl == "INFO":
+            logging.basicConfig(level=logging.INFO, force=True)
+        elif logl == "WARN" or logl == "WARNING":
+            logging.basicConfig(level=logging.WARNING, force=True)
+        elif logl == "ERR" or logl == "ERROR":
+            logging.basicConfig(level=logging.ERROR, force=True)
+        else:
+            logging.error(f"Invalid logging level '{logl}' in config file. Defaulting to ERROR level.")
+            logging.basicConfig(level=logging.ERROR, force=True)
         return cfg
 
     except Exception as e:
