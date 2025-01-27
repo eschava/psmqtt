@@ -90,6 +90,23 @@ def on_log_timer(s: sched.scheduler, log_period_sec: int, mqttc) -> None:
     s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec, mqttc))
     return
 
+def read_version_file(filename='VERSION') -> str:
+    """
+    Reads the content of a version file.
+    """
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    version_file_path = os.path.join(current_dir, filename)
+    try:
+        # Open the version file and read its content
+        with open(version_file_path, 'r') as f:
+            version_content = f.read()
+            return version_content
+
+    except FileNotFoundError:
+        logging.error(f"Version file '{filename}' not found in the current directory.")
+        return "N/A"
+
 def run() -> int:
     '''
     Main loop
@@ -99,7 +116,7 @@ def run() -> int:
 
     parser = argparse.ArgumentParser(
         prog=os.path.basename(__file__),
-        description='Publish HW counters to an MQTT broker according to scheduling rules',
+        description='Publish psutil/pySMART counters to an MQTT broker according to scheduling rules',
         epilog='See documentation at https://github.com/eschava/psmqtt for configuration examples')
     parser.add_argument(
         "-V",
@@ -112,8 +129,7 @@ def run() -> int:
     args = parser.parse_args()
 
     if args.version:
-        cfg = AppConfig()
-        print(f"Version: {cfg.app_version}")
+        print(f"Version: {read_version_file()}")
         sys.exit(0)
 
     #
