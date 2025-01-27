@@ -70,63 +70,22 @@ alex@nass:~/ > sudo smartctl --scan
 ```sh
 git clone https://github.com/eschava/psmqtt.git
 cd psmqtt
-git switch typing
 python3 -m pip install -r requirements.txt
 ```
 
 ## First Run
 
-I repeatedly run `psmqtt-publish.py` adding more and more tasks to identify
-discrepancies of `psutil` implementation:
-
-* `psutil/sensors_temperatures/coretemp` reports  package and core temps,
-whereas on FreeBSD it reports core temps only.
-* note passing a location of the libraries installed in the previous step.
+Edit your `psmqtt.yaml` to contain the correct MQTT broker IP address and port.
+Then:
 
 ```sh
-sudo python3 psmqtt-publish.py -vvv --pythonpath=/mnt/tank/home/alex/.local/lib/python3.9/site-packages mqtt \
-    cpu_percent \
-    virtual_memory/percent \
-    'sensors_temperatures/coretemp/Core 0/current' \
-    'sensors_temperatures/coretemp/Core 1/current' \
-    'sensors_temperatures/coretemp/Core 2/current' \
-    'sensors_temperatures/coretemp/Core 3/current' \
-    smart/ada0/temperature \
-    smart/ada1/temperature \
-    smart/ada2/temperature \
-    smart/ada3/temperature \
-    smart/ada4/temperature
+sudo python3 psmqtt.py
 ```
 
 ## Running `psmqtt` as a Service
 
-Modified `psmqtt.yaml`:
+Once you have successfully started psmqtt from command line it's suggested that you 
+check how to turn psmqtt into a [SystemD service](install-systemd-service.md).
 
-* specified my broker
-* set pythonpath
-* customized tasks
-
-```python
-mqtt_broker = 'mqtt'
-pythonpath = '/mnt/tank/home/alex/.local/lib/python3.9/site-packages'
-
-schedule = {
-    "every 1 minute": [
-        "cpu_percent",
-        "virtual_memory/percent",
-	"sensors_temperatures/coretemp/Core 0/current",
-	"sensors_temperatures/coretemp/Core 1/current",
-	"sensors_temperatures/coretemp/Core 2/current",
-	"sensors_temperatures/coretemp/Core 3/current",
-	"smart/ada0/temperature",
-	"smart/ada1/temperature",
-	"smart/ada2/temperature",
-	"smart/ada3/temperature",
-	"smart/ada4/temperature",
-    ],
-    "every 60 minutes": "disk_usage/percent/|",  # slash replaced with vertical slash
-    "every 3 hours": {
-        "boot_time/{{x|uptime}}": "uptime",
-    }
-}
-```
+Running psmqtt as a SystemD service allows you to automatically start it after boot,
+start/stop psmqtt as any system daemon, etc.
