@@ -102,9 +102,11 @@ class MqttClient:
         '''
         MQTT callback in case of unexpected disconnection from the broker
         '''
-        MqttClient.num_disconnects += 1
-        logging.debug("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
-        time.sleep(self.reconnect_period_sec)
+        if rc != 0:
+            MqttClient.num_disconnects += 1
+            logging.debug("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
+            time.sleep(self.reconnect_period_sec)
+        #else: rc==0 indicates an intentional disconnect
         return
 
     def on_message(self, mqttc: paho.Client, userdata: Any, msg: paho.MQTTMessage) -> None:

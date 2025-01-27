@@ -88,7 +88,7 @@ class PsmqttApp:
             ]
         '''
 
-        logging.debug("on_task_timer(%s, %s)", parsed_rrule, tasks)
+        logging.debug("PsmqttApp.on_task_timer(%s, %d tasks)", parsed_rrule, len(tasks))
 
         # support for the "exit_after" feature
         exit_after = app.config.config["options"]["exit_after_num_tasks"]
