@@ -14,6 +14,8 @@
 
 from datetime import datetime
 from dateutil.rrule import rrulestr  # pip install python-dateutil
+import argparse
+import os
 import sched
 import socket
 import logging
@@ -88,13 +90,31 @@ def on_log_timer(s: sched.scheduler, log_period_sec: int, mqttc) -> None:
     s.enter(log_period_sec, 1, on_log_timer, (s, log_period_sec, mqttc))
     return
 
-
 def run() -> int:
     '''
     Main loop
     '''
 
-    # FIXME: add a basic CLI interface with --help support at least
+    # CLI interface
+
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(__file__),
+        description='Publish HW counters to an MQTT broker according to scheduling rules',
+        epilog='See documentation at https://github.com/eschava/psmqtt for configuration examples')
+    parser.add_argument(
+        "-V",
+        "--version",
+        help="Print version and exit",
+        action="store_true",
+        default=False,
+    )
+
+    args = parser.parse_args()
+
+    if args.version:
+        cfg = AppConfig()
+        print(f"Version: {cfg.app_version}")
+        sys.exit(0)
 
     #
     # read initial config files - this may exit(2)
