@@ -104,7 +104,7 @@ class MqttClient:
         '''
         MQTT callback in case a message is received on the REQUEST topic
         '''
-        logging.debug("on_message()")
+        logging.debug("MqttClient.on_message()")
         logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
         if msg.topic.startswith(self.request_topic):
@@ -121,10 +121,16 @@ class MqttClient:
         self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
         return
 
-    def loop_forever(self) -> None:
+    def loop_start(self) -> None:
         '''
-        This function calls the network loop functions for you in an infinite blocking loop.
-        It handles reconnecting.
+        See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
         logging.info('starting MQTT client loop')
-        self.mqttc.loop_forever()
+        self.mqttc.loop_start()
+
+    def loop_stop(self) -> None:
+        '''
+        See https://www.eclipse.org/paho/clients/python/docs/#network-loop
+         '''
+        logging.info('stopping MQTT client loop')
+        self.mqttc.loop_stop()

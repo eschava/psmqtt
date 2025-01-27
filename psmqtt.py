@@ -279,7 +279,7 @@ class PsmqttApp:
         exit_after = self.config.config["options"]["exit_after_num_tasks"]
         while keep_running:
             try:
-                self.mqtt_client.mqttc.loop_start()
+                self.mqtt_client.loop_start()
                 while True:
                     if exit_after > 0 and num_executed_tasks >= exit_after:
                         logging.warning("exiting after executing %d tasks as requested in the configuration file", num_executed_tasks)
@@ -296,7 +296,7 @@ class PsmqttApp:
                 break
 
         # gracefully stop the event loop of MQTT client
-        self.mqtt_client.mqttc.loop_stop()
+        self.mqtt_client.loop_stop()
 
         # stop the scheduler thread as well
         self.scheduler_thread.stop()

@@ -80,7 +80,7 @@ class Task:
             # use the specified MQTT topic name; just make sure that the MQTT topic prefix is present
             topic = Topic(self.topic_name if self.topic_name.startswith(mqttc.topic_prefix)
                                 else mqttc.topic_prefix + self.topic_name)
-        logging.debug(f"run_task({self.task_friendly_name}): mqtt topic is '{topic.get_topic()}'")
+        logging.debug(f"Task.run_task({self.task_friendly_name}): mqtt topic is '{topic.get_topic()}'")
 
         try:
             payload = get_value(self.task_name, self.params, self.formatter)
