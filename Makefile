@@ -6,9 +6,10 @@ format:
 lint:
 	ruff check src/
 	flake8 -v
+	@yq . -e psmqtt.yaml >/dev/null && echo "valid psmqtt.yaml file" || ( echo "Invalid YAML file psmqtt.yaml. Fix syntax." ; exit 2 )
 
 docker:
-	docker build -t psmqtt:latest .
+	docker build -t psmqtt:latest --build-arg USERNAME=root .
 
 
 
@@ -17,8 +18,12 @@ docker:
 # and by using --network=host on the PSMQTT container, also the psmqtt default config
 # pointing to "localhost" as MQTT broker will work fine:
 
+ifeq ($(CFGFILE),)
+CFGFILE:=$(shell pwd)/psmqtt.yaml
+endif
+
 docker-run:
-	docker run -v $(shell pwd)/psmqtt.yaml:/opt/psmqtt/conf/psmqtt.yaml \
+	docker run -v $(CFGFILE):/opt/psmqtt/conf/psmqtt.yaml \
 		--hostname $(shell hostname) \
 		--network=host \
 		psmqtt:latest $(ARGS)
