@@ -1,4 +1,4 @@
-# Setting up `psmqtt` as a Service
+# Setting up `psmqtt` as a SystemD Service
 
 It is possible to:
 
@@ -10,21 +10,17 @@ This step-by-step guide should work on most SystemD-enabled Linux distributions 
 * Fedora and RedHat
 * many others
 
-Make a copy of `psmqtt` directory e.g., to `/opt/psmqtt`, for use by a service:
+Let's start.
+Make a copy of your cloned `psmqtt` directory to `/opt/psmqtt`:
 
 ```sh
 sudo cp -r ../psmqtt /opt
 ```
 
-Modify the included `psmqtt.service`:
+Ensure that your `/opt/psmqtt/psmqtt.yaml`:
 
-* specify `WorkingDirectory=/opt/psmqtt`
-* adjust `ExecStart=/usr/bin/python3 /opt/psmqtt/psmqtt.py`
-
-Ensure that `psmqtt.yaml` in `WorkingDirectory`:
-
-* points to your MQTT broker
-* schedules and tasks make sense
+* points to your MQTT broker (IP address and port)
+* has the scheduling rules and tasks that make sense for your setup
 
 Then:
 
@@ -35,20 +31,11 @@ sudo systemctl start psmqtt.service
 ```
 
 Check the service status with `sudo systemctl status psmqtt`.
-
 Look into syslog for potential errors:
 
 ```sh
 sudo tail /var/log/syslog
 ```
 
-In my case I noticed: `ModuleNotFoundError: No module named 'recurrent'`.
-
-To resolve the problem I did `sudo pip3 install -r requirements.txt` to install
-the packages into the site-packages.
-
-And then:
-
-```sh
-sudo systemctl restart psmqtt
-```
+If you get errors of type `ModuleNotFoundError`,
+make sure you correctly [installed psmqtt from sources](install-source.md) first.

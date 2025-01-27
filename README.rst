@@ -13,40 +13,16 @@ metrics (CPU, memory, disks, network, S.M.A.R.T. disk data) to an MQTT broker.
 * `recurrent <https://github.com/kvh/recurrent>` to describe reporting schedule.
 * `jinja2 <https://github.com/alex-foundation/jinja2>` to format the data.
 
-========================
-Installation from source
-========================
+============
+Installation
+============
 
-Clone this repository and then install the required Python libraries using `pip <https://pip.pypa.io/en/stable/installing/>`_::
+The suggested installation method is to use the provided `Docker image <doc/install-docker.md>`_.
+However alternative installation methods are available for Linux, FreeBSD and Windows:
 
-   pip install -r requirements.txt
-
-(Note that you should consider installing the required libraries in a Python venv to maintain them isolated from the rest of your Python installation.
-See `this page for more info <doc/debian.md>`_.)
-
-Finally you can run **PSMQTT** using::
-
-   python psmqtt.py
-
-You may want to install **PSMQTT** as a SystemD service/system-daemon, see `this page for more info <doc/install-systemd-service.md>`_.
-
-=====================
-Installing on FreeBSD
-=====================
-
-See `FreeBSD doc <doc/install-freebsd.md>`_
-
-=====================
-Installing on Windows
-=====================
-
-See `Windows doc <doc/install-windows.md>`_
-
-==================
-Deploy with Docker
-==================
-
-See `Docker doc <doc/install-docker.md>`_
+* Installing from **sources**: see `Install from source doc <doc/install-source.md>`_
+* Installing on **FreeBSD**: see `FreeBSD doc <doc/install-freebsd.md>`_
+* Installing on **Windows**: see `Windows doc <doc/install-windows.md>`_
 
 =======================
 Configuration and usage
