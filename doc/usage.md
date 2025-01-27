@@ -1,6 +1,20 @@
-# PSMQTT Usage
+<!-- vscode-markdown-toc -->
+* 1. [PSMQTT Architecture](#PSMQTTArchitecture)
+* 2. [Configuration file](#Configurationfile)
+	* 2.1. [CRON expression](#CRONexpression)
+	* 2.2. [Tasks](#Tasks)
+		* 2.2.1. [Useful Tasks](#UsefulTasks)
+	* 2.3. [Formatting](#Formatting)
+	* 2.4. [MQTT Topic](#MQTTTopic)
+* 3. [Sending MQTT requests](#SendingMQTTrequests)
 
-## PSMQTT Architecture
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc --># PSMQTT Usage
+
+##  1. <a name='PSMQTTArchitecture'></a>PSMQTT Architecture
 
 The PSMQTT architecture can be described as:
 
@@ -43,7 +57,7 @@ proces information, etc);
 
 The following section provides more details about the config file syntax.
 
-## Configuration file
+##  2. <a name='Configurationfile'></a>Configuration file
 
 The PSMQTT configuration file is a [YAML file](https://en.wikipedia.org/wiki/YAML).
 
@@ -85,7 +99,7 @@ Each of the following section describes in details the parameters:
 4. `<MQTT topic>`: [MQTT Topic](#mqtt-topic)
 
 
-### CRON expression
+###  2.1. <a name='CRONexpression'></a>CRON expression
 
 The `<human-friendly CRON expression>` is a string encoding a recurrent rule, 
 like e.g. "every 5 minutes" or "every monday" or "every hour except 9pm, 10pm and 11pm".
@@ -96,7 +110,7 @@ You can check examples of recurring period definitions
 Note that cron expressions should be unique; if there are several schedules with the same period only
 last one will be used.
 
-### Tasks
+###  2.2. <a name='Tasks'></a>Tasks
 
 PSMQTT supports a large number of "tasks".
 A "task" is the combination of
@@ -170,44 +184,31 @@ Here follows the reference documentation for all required tasks and their parame
 
 * **Category: CPU**
   * Task name: `cpu_percent`
-    * Short description: CPU total usage in percentage
-    * Number of required parameters: 1
-    * `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
+    * Short description: CPU total usage in percentage. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_percent )
+    * **REQUIRED**: `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
   * Task name: `cpu_times`
-    * Short description: CPU times information
-    * Number of required parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
-      Full list of available fields in the external docs.
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
+    * Short description: CPU times information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
   * Task name: `cpu_times_percent`
-    * Short description: CPU times in percentage
-    * Number of required parameters: 1 or 2
-    * `<param1>`: The wildcard `*` or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
-      Full list of available fields in the external docs.
-    * `<param2>`: The wildcard `*` or `*;` to select all CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU.
+    * Short description: CPU times in percentage. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
+    * **REQUIRED**: `<param1>`: The wildcard `*` or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
+      Check full reference for all available fields
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
   * Task name: `cpu_stats`
-    * Short description: CPU statistics
-    * Number of required parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `ctx_switches` / `interrupts` / `soft_interrupts` / `syscalls`.
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats )
+    * Short description: CPU statistics. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `ctx_switches` / `interrupts` / `soft_interrupts` / `syscalls`.
 
 
 * **Category: Memory**
   * Task name: `virtual_memory`
-    * Short description: Virtual memory information
-    * Number of required parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc.
-      Full list of available fields in the external docs.
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
+    * Short description: Virtual memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc.
+      Check full reference for all available fields
   * Task name: `swap_memory`
-    * Short description: Swap memory information
-    * Number of required parameters: 1
-    * `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `used` / `free` / etc.
-      Full list of available fields in the external docs.
-    * Link to external docs: [ psutil ]( https://psutil.readthedocs.io/en/latest/#psutil.swap_memory )
+    * Short description: Swap memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.swap_memory )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `used` / `free` / etc.
+      Check full reference for all available fields
 
 
 Disks :
@@ -343,7 +344,7 @@ Processes :
             - ** - all process properties and sub-properties. Topic per property
             - **; -  all process properties and sub-properties in one topic (JSON string)
 
-#### Useful Tasks
+####  2.2.1. <a name='UsefulTasks'></a>Useful Tasks
 
 These are 'tasks' I found most relevant and useful for tracking my
 server(s) health and performance:
@@ -365,7 +366,7 @@ Task|Description
 `sensors_fans/dell_smm/0`|Fan seed
 `sensors_battery/percent`|Battery charge
 
-### Formatting
+###  2.3. <a name='Formatting'></a>Formatting
 
 The output of each task can be formatted using
 [Jinja2](http://jinja.pocoo.org/) templates.
@@ -418,7 +419,7 @@ Examples:
 ```
 
 
-### MQTT Topic
+###  2.4. <a name='MQTTTopic'></a>MQTT Topic
 
 The `<MQTT topic>` specification in each task definition is optional.
 If it is not specified, psmqtt will generate automatically an output MQTT topic 
@@ -467,7 +468,7 @@ If the wildcard `*` character is used in the task parameters but the MQTT topic 
 or does not contain the wildcard `*` character itself, then an error will be produced in psmqtt logs.
 
 
-## Sending MQTT requests
+##  3. <a name='SendingMQTTrequests'></a>Sending MQTT requests
 
 The [psmqtt.yaml](../psmqtt.yaml) file supports a configuration named "request_topic":
 
