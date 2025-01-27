@@ -93,10 +93,15 @@ class MqttClient:
         '''
         logging.debug("on_connect()")
         if self.request_topic != '':
-            topic = self.request_topic + '#'
+            topic = self.request_topic
+            if topic[-1] != '/':
+                topic += "/"
+            topic += "#"   # match all remaining levels in the topic hierarchy
             logging.debug(
                 f"Connected to MQTT broker, subscribing to topic '{topic}'")
             mqttc.subscribe(topic, self.qos)
+        # else: request topic is disabled
+
         self.connected = True
         return
 
