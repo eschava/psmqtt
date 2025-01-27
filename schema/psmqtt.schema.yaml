@@ -1,10 +1,10 @@
 # psmqtt.yaml schema for the Yamala Python library
 
-logging: include('logging')
+logging: include('logging',required=False)
 
 mqtt: include('mqtt')
 
-options: include('options')
+options: include('options',required=False)
 
 schedule: list(include('cron_tasks'))
 ---
@@ -23,7 +23,7 @@ mqtt:
   publish_topic_prefix: str(required=False)
 ---
 options:
-  exit_after_num_tasks: int()
+  exit_after_num_tasks: int(required=False)
 ---
 broker:
   host: str()

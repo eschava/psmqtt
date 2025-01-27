@@ -7,7 +7,7 @@ on:
         - '*'
   
 jobs:
-  check_tag:
+  version_check:
     name: Check version tag
     runs-on: ubuntu-latest
     outputs:

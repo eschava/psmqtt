@@ -44,7 +44,7 @@ RUN mkdir ./src
 COPY *.py ./
 COPY src/*.py ./src
 COPY psmqtt.service .
-COPY logging.conf .
+COPY VERSION .
 
 RUN mkdir ./conf ./schema
 
