@@ -35,12 +35,17 @@ jobs:
         echo "This is a non-TAG build"
       if: ${{ steps.check.outputs.is_tag == 'false' }}
 
+    - name: Checkout the repository
+      uses: actions/checkout@v4
+      with:
+        path: ./psmqtt
+
     - run: |
         git_tag=${GITHUB_REF##*/}
         echo "Git tag is [${git_tag}]"
 
         # now get the version declared in VERSION
-        hardcoded_tag=$(cat VERSION)
+        hardcoded_tag=$(cat ./psmqtt/VERSION)
         echo "Tag declared in VERSION is [${hardcoded_tag}]"
         
         # compare
