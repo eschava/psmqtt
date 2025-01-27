@@ -70,7 +70,6 @@ class PsmqttApp:
 
         self.last_logged_status = (None, None, None)
 
-
     @staticmethod
     def on_task_timer(app: 'PsmqttApp', parsed_rrule: str, tasks: List[Task]) -> None:
         '''
