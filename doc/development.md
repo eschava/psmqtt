@@ -38,5 +38,4 @@ docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 
 * support MQTTv5?
 * add HomeAssistant discovery message support
-* review the very verbose num_errors log (log only if something changes)
-* merge psmqtt-publish.py with psmqtt.py
+* restore the ability to request psmqtt tasks from MQTT
