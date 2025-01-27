@@ -68,7 +68,7 @@ alex@nass:~/ > sudo smartctl --scan
 ## Installation
 
 ```sh
-git clone https://github.com/asokolsky/psmqtt.git
+git clone https://github.com/eschava/psmqtt.git
 cd psmqtt
 git switch typing
 python3 -m pip install -r requirements.txt
@@ -100,7 +100,7 @@ sudo python3 psmqtt-publish.py -vvv --pythonpath=/mnt/tank/home/alex/.local/lib/
 
 ## Running `psmqtt` as a Service
 
-Modified `psmqtt.conf`:
+Modified `psmqtt.yaml`:
 
 * specified my broker
 * set pythonpath

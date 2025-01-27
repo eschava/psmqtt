@@ -1,3 +1,6 @@
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
 import time
 from typing import Any, Optional, Text, Tuple
 from jinja2 import Environment  # pip install jinja2

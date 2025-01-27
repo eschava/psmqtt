@@ -1,3 +1,6 @@
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
 import os
 import logging
 import logging.config
@@ -45,11 +48,13 @@ class Config:
         self.config = the_tuple[0]
 
         # add default values for optional configuration parameters, if they're missing:
-        self._fill_defaults()
+        self._fill_defaults_logging()
+        self._fill_defaults_mqtt()
+        self._fill_defaults_schedule()
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
         return
 
-    def _fill_defaults(self):
+    def _fill_defaults_logging(self):
         # logging
         if "logging" not in self.config:
             self.config["logging"] = {"level": "ERROR", "report_status_period_sec": 3600}
@@ -58,6 +63,7 @@ class Config:
         if "report_status_period_sec" not in self.config["logging"]:
             self.config["logging"]["report_status_period_sec"] = 3600
 
+    def _fill_defaults_mqtt(self):
         # mqtt.broker object
         if 'port' not in self.config["mqtt"]["broker"]:
             self.config['mqtt']["broker"]["port"] = 1883
@@ -67,6 +73,10 @@ class Config:
             self.config['mqtt']["broker"]["password"] = None
 
         # other optional "mqtt" keys
+        if "retain" not in self.config["mqtt"]:
+            self.config["mqtt"]["retain"] = False
+        if "clean_session" not in self.config["mqtt"]:
+            self.config["mqtt"]["clean_session"] = False
         if "clientid" not in self.config["mqtt"]:
             self.config["mqtt"]["clientid"] = 'psmqtt-%s' % os.getpid()
         if "qos" not in self.config["mqtt"]:
@@ -83,6 +93,7 @@ class Config:
         if "request_topic" not in self.config["mqtt"]:
             self.config["mqtt"]["request_topic"] = 'request'
 
+    def _fill_defaults_schedule(self):
         # provide defaults for the "schedule" key
         if not isinstance(self.config["schedule"], list):
             raise ValueError("Invalid 'schedule' key in configuration file: must be a list")

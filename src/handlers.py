@@ -1,3 +1,7 @@
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
+#from collections import namedtuple
 import fnmatch
 import json
 import logging
@@ -659,7 +663,7 @@ class ProcessesCommandHandler(CommandHandler):
 
 class SmartCommandHandler(CommandHandler):
     '''
-    Handler of commands addressed to SMART
+    Provides readings of S.M.A.R.T. counters via pySMART library
     '''
 
     def __init__(self) -> None:

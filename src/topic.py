@@ -1,3 +1,6 @@
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
 from typing import Tuple, Dict
 
 class Topic:

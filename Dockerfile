@@ -47,7 +47,13 @@ COPY psmqtt.service .
 COPY logging.conf .
 
 RUN mkdir ./conf ./schema
-COPY psmqtt.yaml ./conf
+
+# do not copy the default configuration file: it's better to error out loudly
+# if the user fails to bind-mount his own config file.
+# the reason is that at least the MQTT broker IP address is something the user
+# will need to configure
+#COPY psmqtt.yaml ./conf
+
 COPY schema/* ./schema/
 
 # add user psmqtt to image

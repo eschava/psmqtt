@@ -1,3 +1,6 @@
+# Copyright (c) 2016 psmqtt project
+# Licensed under the MIT License.  See LICENSE file in the project root for full license information.
+
 from enum import IntEnum
 import json
 import logging
@@ -90,10 +93,15 @@ class MqttClient:
         '''
         logging.debug("on_connect()")
         if self.request_topic != '':
-            topic = self.request_topic + '#'
+            topic = self.request_topic
+            if topic[-1] != '/':
+                topic += "/"
+            topic += "#"   # match all remaining levels in the topic hierarchy
             logging.debug(
                 f"Connected to MQTT broker, subscribing to topic '{topic}'")
             mqttc.subscribe(topic, self.qos)
+        # else: request topic is disabled
+
         self.connected = True
         return
 
