@@ -3,7 +3,7 @@
 
 import time
 from typing import Any, Optional, Text, Tuple
-from jinja2 import Environment  # pip install jinja2
+from jinja2 import Environment
 
 def kb(value:int) -> str:
     return str(value // 1024) + " KB"

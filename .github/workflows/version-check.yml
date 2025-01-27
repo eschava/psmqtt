@@ -1,0 +1,54 @@
+name: version-check
+
+on: 
+    push:
+      branches:
+        - '**'
+      tags:
+        - '*'
+  
+jobs:
+  version_check:
+    name: Check version tag
+    runs-on: ubuntu-latest
+    outputs:
+      is_tag: ${{ steps.check.outputs.is_tag }}
+
+    steps:
+    - name: Check if it's a tagged release
+      id: check
+      run: |
+        echo "GITHUB_REF is: ${GITHUB_REF}"
+        if [[ -n "${GITHUB_REF##*refs/tags/*}" ]]; then
+          echo "This looks like a non-TAG build"
+          echo "is_tag=false" >> $GITHUB_ENV
+          echo "is_tag=false" >> $GITHUB_OUTPUT
+        else
+          echo "This looks like a TAG build"
+          echo "is_tag=true" >> $GITHUB_ENV
+          echo "is_tag=true" >> $GITHUB_OUTPUT
+        fi
+    - run: |
+        echo "This is a TAG build"
+      if: ${{ steps.check.outputs.is_tag == 'true' }}
+    - run: |
+        echo "This is a non-TAG build"
+      if: ${{ steps.check.outputs.is_tag == 'false' }}
+
+    - run: |
+        git_tag=${GITHUB_REF##*/}
+        echo "Git tag is [${git_tag}]"
+
+        # now get the version declared in VERSION
+        hardcoded_tag=$(cat VERSION)
+        echo "Tag declared in VERSION is [${hardcoded_tag}]"
+        
+        # compare
+        if [[ "${git_tag}" != "${hardcoded_tag}" ]]; then
+          echo "MISMATCH DETECTED between Git tag and VERSION. Please remember to bump the version"
+          echo "inside VERSION before releasing a new tag."
+          exit 123
+        else
+          echo "Git tag and VERSION are coherent! Proceeding."
+        fi
+      if: ${{ steps.check.outputs.is_tag == 'true' }}

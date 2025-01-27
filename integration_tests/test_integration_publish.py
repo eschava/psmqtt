@@ -1,5 +1,6 @@
 import pytest
 import time
+import math
 
 from integration_tests.psmqtt_container import PSMQTTContainer
 from integration_tests.mosquitto_container import MosquittoContainerEnhanced
@@ -36,12 +37,13 @@ def test_basic_publish():
 
         tprefix = container.get_mqtt_topic_prefix()
         topics_under_test = [
-            {"topic_name": f"{tprefix}/cpu_percent", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 5},
-            {"topic_name": f"{tprefix}/virtual_memory/percent", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 5},
+            # cpu_percent gets published every 1sec:
+            {"topic_name": f"{tprefix}/cpu_percent", "expected_payload": "FLOATING_POINT_NUMBER", "frequency_sec": 1},
+            {"topic_name": f"{tprefix}/virtual_memory/percent", "expected_payload": "FLOATING_POINT_NUMBER", "frequency_sec": 1},
             # disk_usage gets published every 3sec:
-            {"topic_name": f"{tprefix}/disk_usage/percent/|", "expected_payload": "FLOATING_POINT_NUMBER", "min_msg_count": 2},
+            {"topic_name": f"{tprefix}/disk_usage/percent/|", "expected_payload": "FLOATING_POINT_NUMBER", "frequency_sec": 3},
             # uptime gets published every 5sec:
-            {"topic_name": f"{tprefix}/uptime", "expected_payload": "STRING", "min_msg_count": 1},
+            {"topic_name": f"{tprefix}/uptime", "expected_payload": "STRING", "frequency_sec": 5},
         ]
 
         time.sleep(1)  # give time to the PSMQTTContainer to fully start
@@ -55,7 +57,9 @@ def test_basic_publish():
 
         # the integration test config contains a configuration to print the boot_time every 5sec,
         # so wait a bit more to reduce test flakyness:
-        time.sleep(6)
+        test_duration_sec = 8
+
+        time.sleep(test_duration_sec)
         container.print_logs()
 
         # check there were no internal psmqtt errors
@@ -69,8 +73,12 @@ def test_basic_publish():
             print(f"  Total messages in topic: {msg_count} msgs")
             print(f"  Last payload in topic: {last_payload}")
 
+            expected_msg_count = math.floor(test_duration_sec/t['frequency_sec'])
+            print(f"  Expected scheduling period sec: {t['frequency_sec']}")
+            print(f"  Expected number of messages: {expected_msg_count}")
+
             # some tolerance to deal with jitter during the test:
-            assert msg_count >= t["min_msg_count"] and msg_count <= t["min_msg_count"]+2
+            assert msg_count >= expected_msg_count and msg_count <= expected_msg_count+2
 
             # check payload
             if t["expected_payload"] == "FLOATING_POINT_NUMBER":

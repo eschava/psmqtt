@@ -4,9 +4,10 @@
 #
 
 logging:
-  level: DEBUG
-  # path to the log file; if not set, logs will be printed to the console
-  # file: 
+  level: INFO
+
+  # psmqtt will report its own status (e.g. number of errors) every N seconds on its log output
+  # and on the specific '<mqtt.publish_topic_prefix>/status' topic
   report_status_period_sec: 10
 
 mqtt:
@@ -37,6 +38,11 @@ mqtt:
   # each topic populated by psmqtt
   retain: false
 
+  # reconnect_period_sec: defines how frequently psmqtt will re-attempt a connection to the MQTT broker
+  # if the connection is lost. You should be setting this parameter to the smallest value that makes sense
+  # according to your PSMQTT scheduling rules.
+  reconnect_period_sec: 5
+
   # request: name of the topic that psmqtt will subscribe to, and where it will wait for information requests;
   # to activate the request just send any payload message (e.g. "REQUEST") to a topic like:
   # <psmqtt/COMPUTER_NAME/request/cpu_percent>. 
@@ -46,7 +52,12 @@ mqtt:
   # if not provided, it defaults to "psmqtt/<hostname>/"
   #publish_topic_prefix: 
 
-
+options:
+  # exit_after_num_tasks: this configuration parameter is used to simulate the "psmqtt-publish.py" script variant that was
+  # provided in the past by psmqtt project; if exit_after_num_tasks=N, psmqtt will gracefully exit after
+  # publishing all data associated with N tasks, that are executed according to usual scheduling rules.
+  # The special value ZERO indicates that psmqtt publish tasks indefinitively, until stopped via SIGTERM.
+  exit_after_num_tasks: 0
 
 schedule:
   # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
@@ -55,10 +66,10 @@ schedule:
   - cron: "every 1 second"
     tasks:
       # each task is defined by
-      # * the (handler) name (see PSMQTT docs for full list of available task handlers);
-      # * optionally the task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
-      # * optionally the MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
-      # * optionally a formatter expression, which is a Jinja2 expression
+      # * "task": the name (see PSMQTT docs for full list of available task handlers);
+      # * "params": optional task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
+      # * "topic": optional MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
+      # * "formatter": optional formatter expression, which is a Jinja2 expression
 
       # simple task, no parameter, no formatter:
       - task: cpu_percent

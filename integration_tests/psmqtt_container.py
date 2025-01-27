@@ -32,7 +32,7 @@ class PSMQTTContainer(DockerContainer):
     def watch_for_internal_errors(self, broker: MosquittoContainerEnhanced) -> None:
         # watch the psmqtt internal status topic
         self.internal_mqtt_topics = {
-            "num_errors": self.get_mqtt_topic_prefix() + "/psmqtt_status/num_errors"
+            "num_errors": self.get_mqtt_topic_prefix() + "/psmqtt_status/num_tasks_errors"
             # add more in future?
         }
         print(f"Watching for internal errors in the PSMQTT container on topic: {self.internal_mqtt_topics['num_errors']}")

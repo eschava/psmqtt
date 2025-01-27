@@ -4,7 +4,6 @@
 import os
 import logging
 import logging.config
-import sys
 import yaml
 import yamale
 from yamale import YamaleError
@@ -21,12 +20,24 @@ class Config:
         self.config = None
         self.schema = None
 
-    def load(self, filename: str, schema_filename: str):
+    def load(self, filename: str = None, schema_filename: str = None):
         '''
         filename is a fully qualified path to the YAML config file.
         The YAML file is validated against the schema file provided as argument,
         and optional configuration parameters are populated with their default values.
         '''
+
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        dirname = os.path.abspath(os.path.join(dirname, '..'))
+
+        if filename is None:
+            filename = os.getenv(
+                'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
+        if schema_filename is None:
+            schema_filename = os.getenv(
+                'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
+
+        logging.info("Loading app config '%s' and its schema '%s'", filename, schema_filename)
 
         try:
             tuple_list = yamale.make_data(filename)
@@ -50,6 +61,7 @@ class Config:
         # add default values for optional configuration parameters, if they're missing:
         self._fill_defaults_logging()
         self._fill_defaults_mqtt()
+        self._fill_defaults_options()
         self._fill_defaults_schedule()
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
         return
@@ -62,6 +74,13 @@ class Config:
             self.config["logging"]["level"] = "ERROR"
         if "report_status_period_sec" not in self.config["logging"]:
             self.config["logging"]["report_status_period_sec"] = 3600
+
+    def _fill_defaults_options(self):
+        # logging
+        if "options" not in self.config:
+            self.config["options"] = {"exit_after_num_tasks": 0}
+        if "exit_after_num_tasks" not in self.config["options"]:
+            self.config["options"]["exit_after_num_tasks"] = 0
 
     def _fill_defaults_mqtt(self):
         # mqtt.broker object
@@ -81,6 +100,8 @@ class Config:
             self.config["mqtt"]["clientid"] = 'psmqtt-%s' % os.getpid()
         if "qos" not in self.config["mqtt"]:
             self.config["mqtt"]["qos"] = 0
+        if "reconnect_period_sec" not in self.config["mqtt"]:
+            self.config["mqtt"]["reconnect_period_sec"] = 5
         if "publish_topic_prefix" not in self.config["mqtt"]:
             hn = socket.gethostname()
             self.config["mqtt"]["publish_topic_prefix"] = f"psmqtt/{hn}/"
@@ -121,39 +142,18 @@ class Config:
 
         self.config["schedule"] = validated_schedule
 
-
-def load_config() -> Config:
-    '''
-    Load logging and app config, returns the latter.
-    '''
-
-    dirname = os.path.dirname(os.path.abspath(__file__))
-    dirname = os.path.abspath(os.path.join(dirname, '..'))
-
-    logging_conf_path = os.path.join(dirname, 'logging.conf')
-    psmqtt_conf_path = os.getenv(
-        'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
-    psmqtt_conf_schema_path = os.getenv(
-        'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
-
-    try:
-        # read initial config files
-        logging.debug("Loading logging config '%s'", logging_conf_path)
-        logging.config.fileConfig(logging_conf_path)
-
-        # fix for error 'No handlers could be found for logger "recurrent"'
-        reccurrent_logger = logging.getLogger('recurrent')
-        if len(reccurrent_logger.handlers) == 0:
-            reccurrent_logger.addHandler(logging.NullHandler())
-
-        logging.debug("Loading app config '%s' and its schema '%s'", psmqtt_conf_path, psmqtt_conf_schema_path)
-
-        # Config.load() will raise exceptions eventually:
-        cfg = Config()
-        cfg.load(psmqtt_conf_path, psmqtt_conf_schema_path)
-
-        return cfg
-
-    except Exception as e:
-        logging.error(f"Cannot load configuration from file {psmqtt_conf_path}: {e}. Aborting.")
-        sys.exit(2)
+    def apply_logging_config(self):
+        # Apply logging config
+        logl = self.config["logging"]["level"]
+        logging.info(f"Setting log level to {logl}")
+        if logl == "DEBUG":
+            logging.basicConfig(level=logging.DEBUG, force=True)
+        elif logl == "INFO":
+            logging.basicConfig(level=logging.INFO, force=True)
+        elif logl == "WARN" or logl == "WARNING":
+            logging.basicConfig(level=logging.WARNING, force=True)
+        elif logl == "ERR" or logl == "ERROR":
+            logging.basicConfig(level=logging.ERROR, force=True)
+        else:
+            logging.error(f"Invalid logging level '{logl}' in config file. Defaulting to ERROR level.")
+            logging.basicConfig(level=logging.ERROR, force=True)

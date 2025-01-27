@@ -6,9 +6,33 @@ format:
 lint:
 	ruff check src/
 	flake8 -v
+	@yq . -e psmqtt.yaml >/dev/null && echo "valid psmqtt.yaml file" || ( echo "Invalid YAML file psmqtt.yaml. Fix syntax." ; exit 2 )
 
 docker:
-	docker build -t psmqtt:latest .
+	docker build -t psmqtt:latest --build-arg USERNAME=root .
+
+
+
+# note that by using --network=host on the Mosquitto container, its default configuration
+# will work out of the box (by default Mosquitto listens only local connections);
+# and by using --network=host on the PSMQTT container, also the psmqtt default config
+# pointing to "localhost" as MQTT broker will work fine:
+
+ifeq ($(CFGFILE),)
+CFGFILE:=$(shell pwd)/psmqtt.yaml
+endif
+
+docker-run:
+	docker run -v $(CFGFILE):/opt/psmqtt/conf/psmqtt.yaml \
+		--hostname $(shell hostname) \
+		--network=host \
+		psmqtt:latest $(ARGS)
+
+docker-run-mosquitto:
+	docker container stop mosquitto || true
+	docker container rm mosquitto || true
+	docker run -d --name=mosquitto --network=host eclipse-mosquitto:latest 
+
 
 # to cross-build docker images for other platforms (e.g. ARM), the buildx image builder backend is required:
 
@@ -20,7 +44,6 @@ docker-armv7:
 
 docker-arm64:
 	docker buildx build --platform linux/arm64/v8 --tag psmqtt:latest --build-arg USERNAME=root .
-
 
 test: unit-test integration-test
 

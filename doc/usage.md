@@ -499,9 +499,16 @@ This configuration allows you to specify an MQTT topic that will be **subscribed
 by psmqtt and used as **input** trigger for emitting measurements.
 This is an alternative way to use psmqtt compared to the use of cron expressions.
 
-E.g. to get information for the task `cpu_percent` with MQTT prefix `psmqtt/COMPUTER_NAME` you
-need to send any string on the topic **psmqtt/COMPUTER_NAME/request/cpu_percent**.
-The result will be pushed on the topic **psmqtt/COMPUTER_NAME/cpu_percent**.
+E.g. to force psmqtt to run the task:
+```
+- task: cpu_times_percent
+  params: [ "*" ]
+  topic: "cpu/*"
+```
+
+it's possible to send the YAML string above on the topic **psmqtt/COMPUTER_NAME/request**;
+the task will be executed immediately when received and will be interpreted like any
+other task in the configuration file.
 
 
 ## <a name='ExampleConfigs'></a>Example configs
