@@ -24,7 +24,11 @@ from threading import Thread
 import time
 from typing import Any, List
 
+from src.config import Config
 from src.config import load_config
+
+# global counter of tasks executed so far
+num_executed_tasks = 0
 
 class TimerThread(Thread):
 
@@ -37,7 +41,7 @@ class TimerThread(Thread):
         self.scheduler.run()
         return
 
-def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: List[Any]) -> None:
+def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: List[Any], cfg: Config) -> None:
     '''
     Takes a list of tasks to be run immediately.
     The list must contain dictionary items, each having "task", "params", "topic" and "formatter" fields.
@@ -53,11 +57,16 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
             "formatter": None }
         ]
     '''
+    global num_executed_tasks
 
     logging.debug("on_timer(%s, %s, %d, %s)", s, parsed_rrule, scheduleIdx, tasks)
 
     # delayed import to enable PYTHONPATH adjustment
     from src.task import run_task
+
+    # support for the "exit_after" feature
+    exit_after = cfg.config["options"]["exit_after_num_tasks"]
+    reschedule = True
 
     assert isinstance(tasks, list)
     taskIdx = 0
@@ -66,13 +75,18 @@ def on_timer(s: sched.scheduler, parsed_rrule: str, scheduleIdx: int, tasks: Lis
         task_friendly_name = f"schedule{scheduleIdx}.task{taskIdx}.{task['task']}"
         run_task(task_friendly_name, task)
         taskIdx += 1
+        num_executed_tasks += 1
+        if exit_after > 0 and num_executed_tasks >= exit_after:
+            reschedule = False
+            break
 
     # need reparse rule (see #10)
     now = datetime.now()
     delay = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
 
     # add next timer task
-    s.enter(delay, 1, on_timer, (s, parsed_rrule, scheduleIdx, tasks))
+    if reschedule:
+        s.enter(delay, 1, on_timer, (s, parsed_rrule, scheduleIdx, tasks, cfg))
     return
 
 def on_log_timer(s: sched.scheduler, log_period_sec: int, mqttc) -> None:
@@ -193,7 +207,7 @@ def run() -> int:
         delay_sec = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
 
         # include this in our scheduler:
-        s.enter(delay_sec, 1, on_timer, (s, parsed_rrule, i, sch["tasks"]))
+        s.enter(delay_sec, 1, on_timer, (s, parsed_rrule, i, sch["tasks"], cf))
         i += 1
 
     # add periodic log
@@ -211,9 +225,19 @@ def run() -> int:
     TimerThread(s).start()
 
     # block the main thread on the MQTT client loop
-    while True:
+    exit_after = cf.config["options"]["exit_after_num_tasks"]
+
+    global num_executed_tasks
+    keep_running = True
+    while keep_running:
         try:
-            mqttc.loop_forever()
+            mqttc.mqttc.loop_start()
+            while True:
+                if num_executed_tasks >= exit_after:
+                    logging.warning("exiting after executing %d tasks as requested in the configuration file", num_executed_tasks)
+                    keep_running = False
+                    break
+                time.sleep(0.5)
 
         except socket.error:
             logging.debug("socket.error caught, sleeping for 5 sec...")
@@ -222,6 +246,10 @@ def run() -> int:
         except KeyboardInterrupt:
             logging.debug("KeyboardInterrupt caught, exiting")
             break
+
+    # gracefully stop the event loop of MQTT client
+    mqttc.mqttc.loop_stop()
+
     return 0
 
 

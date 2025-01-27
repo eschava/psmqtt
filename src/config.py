@@ -50,6 +50,7 @@ class Config:
         # add default values for optional configuration parameters, if they're missing:
         self._fill_defaults_logging()
         self._fill_defaults_mqtt()
+        self._fill_defaults_options()
         self._fill_defaults_schedule()
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
         return
@@ -62,6 +63,13 @@ class Config:
             self.config["logging"]["level"] = "ERROR"
         if "report_status_period_sec" not in self.config["logging"]:
             self.config["logging"]["report_status_period_sec"] = 3600
+
+    def _fill_defaults_options(self):
+        # logging
+        if "options" not in self.config:
+            self.config["options"] = {"exit_after_num_tasks": 0}
+        if "exit_after_num_tasks" not in self.config["options"]:
+            self.config["options"]["exit_after_num_tasks"] = 0
 
     def _fill_defaults_mqtt(self):
         # mqtt.broker object

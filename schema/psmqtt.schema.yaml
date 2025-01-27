@@ -4,6 +4,8 @@ logging: include('logging')
 
 mqtt: include('mqtt')
 
+options: include('options')
+
 schedule: list(include('cron_tasks'))
 ---
 logging:
@@ -19,6 +21,9 @@ mqtt:
   retain: bool(required=False)
   request_topic: str(required=False)
   publish_topic_prefix: str(required=False)
+---
+options:
+  exit_after_num_tasks: int()
 ---
 broker:
   host: str()
