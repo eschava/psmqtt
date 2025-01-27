@@ -52,7 +52,7 @@ options:
   # provided in the past by psmqtt project; if exit_after_num_tasks=N, psmqtt will gracefully exit after
   # publishing all data associated with N tasks, that are executed according to usual scheduling rules.
   # The special value ZERO indicates that psmqtt publish tasks indefinitively, until stopped via SIGTERM.
-  exit_after_num_tasks: 3
+  exit_after_num_tasks: 0
 
 schedule:
   # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
