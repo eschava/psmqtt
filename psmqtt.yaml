@@ -4,7 +4,7 @@
 #
 
 logging:
-  level: WARNING
+  level: INFO
 
   # psmqtt will report its own status (e.g. number of errors) every N seconds on its log output
   # and on the specific '<mqtt.publish_topic_prefix>/status' topic

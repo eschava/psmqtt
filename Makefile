@@ -24,6 +24,8 @@ docker-run:
 		psmqtt:latest $(ARGS)
 
 docker-run-mosquitto:
+	docker container stop mosquitto || true
+	docker container rm mosquitto || true
 	docker run -d --name=mosquitto --network=host eclipse-mosquitto:latest 
 
 

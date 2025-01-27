@@ -143,6 +143,7 @@ class Config:
     def apply_logging_config(self):
         # Apply logging config
         logl = self.config["logging"]["level"]
+        logging.info(f"Setting log level to {logl}")
         if logl == "DEBUG":
             logging.basicConfig(level=logging.DEBUG, force=True)
         elif logl == "INFO":
