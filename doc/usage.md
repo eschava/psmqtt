@@ -191,161 +191,146 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param1>`: The wildcard `*` or `*;` to select all the CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU
   * Task name: `cpu_times`
     * Short description: CPU times information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `user`, `nice`, `system`, etc.
   * Task name: `cpu_times_percent`
     * Short description: CPU times in percentage. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
-    * **REQUIRED**: `<param1>`: The wildcard `*` or `*;` to select all fields or one of `user` / `nice` / `system` / etc.
+    * **REQUIRED**: `<param1>`: The wildcard `*` or `*;` to select all fields or a field name like `user`, `nice`, `system`, etc.
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all CPUs or the CPU index `0`, `1`, `2`, etc to select a single CPU.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
   * Task name: `cpu_stats`
     * Short description: CPU statistics. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_stats )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of `ctx_switches` / `interrupts` / `soft_interrupts` / `syscalls`.
-
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or or a field name like `ctx_switches`, `interrupts`, `soft_interrupts`, `syscalls`.
 
 * **Category: Memory**
   * Task name: `virtual_memory`
     * Short description: Virtual memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `available` / `percent` / etc.
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total`, `available`, `percent`, etc.
       Check full reference for all available fields
   * Task name: `swap_memory`
     * Short description: Swap memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.swap_memory )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total` / `used` / `free` / etc.
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or one of  `total`, `used`, `free`, etc.
       Check full reference for all available fields
 
+* **Category: Disks**
+  * Task name: `disk_partitions`
+    * Short description: List of mounted disk partitions. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `device`, `mountpoint`, `fstype`, `opts`.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all partitions or an index `0`, `1`, `2`, etc to select a specific partition.
+      Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+  * Task name: `disk_usage`
+    * Short description: Disk usage for a particular drive. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_usage )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `total`, `used`, `free`, `percent`.
+    * **REQUIRED**: `<param2>`: The name of the drive for which disk usage must be published, e.g. `/dev/md0` or `/dev/sda1`.
+  * Task name: `disk_io_counters`
+    * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, etc.
+      Check full reference for all available fields
+    * **REQUIRED**: `<param2>`: The wildcard `*` or `*;` to select all partitions or an index `0`, `1`, `2`, etc to select a specific partition.
+      Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
 
-Disks :
+* **Category: Network**
+  * Task name: `net_io_counters`
+    * Short description: Network I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `bytes_sent`, `bytes_recv`, `packets_sent`, `packets_recv`, etc.
+      Check full reference for all available fields
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all network interface cards (NICs) or a NIC name like e.g. `eth0`, `wlan0`, `enp3s0f0`, etc to select a specific NIC.
+      Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
 
-    disk_partitions/{device/mountpoint/fstype/opts}/* - Disk partitions separate parameters. Topic per disk number
-    disk_partitions/{device/mountpoint/fstype/opts}/*; - Disk partitions separate parameters per disk number in one topic (JSON string)
-    disk_partitions/{device/mountpoint/fstype/opts}/{0/1/2/etc} - Disk partitions separate parameter for single disk number
-    disk_partitions/*/{0/1/2/etc} - Disk partitions parameters for single disk number. Topic per parameter
-    disk_partitions/*;/{0/1/2/etc} - Disk partitions parameters for single disk number in one topic (JSON string)
-    disk_usage/{total/used/free/percent}/{drive} - Disk usage single parameter (slashes in drive should be replaced with vertical slash)
-    disk_usage/*/{drive} - Disk usage separate parameters. Topic per parameter
-    disk_usage/*;/{drive} - Disk usage separate parameters in one topic (JSON string)
-    disk_io_counters/* - Disk I/O counters. Topic per parameter
-    disk_io_counters/*;  - Disk I/O counters in one topic (JSON string)
-    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time} - Disk I/O counters separate parameters
-    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/* - Disk I/O counters separate parameters. Topic per disk number
-    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/*; - Disk I/O counters separate parameters per disk number in one topic (JSON string)
-    disk_io_counters/{read_count/write_count/read_bytes/write_bytes/read_time/write_time/read_merged_count/write_merged_count/busy_time}/{0/1/2/etc} - Disk IO counters separate parameters for single disk
-    disk_io_counters/*/{0/1/2/etc} - Disk I/O counters for single disk. Topic per parameter
-    disk_io_counters/*;/{0/1/2/etc} - Disk I/O counters for single disk in one topic (JSON string)
+* **Category: Temperature**
+  * Task name: `sensors_temperatures`
+    * Short description: Hardware temperatures. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all available sensor types (e.g. `asus`, `coretemp`, `amdgpu`, etc).
+      Try the following Python snippet on your prompt to see which temperature sensor types are detected by psutil library: `python3 -c 'import psutil, pprint; pprint.pprint(psutil.sensors_temperatures())'`
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all temperature sensors of the selected sensor type or a `label` value to select a specific sensor.
+      E.g. you might want to use `Core 0` as label to publish only the temperature of the first logical core.
+    * **OPTIONAL**: `<param3>`: The wildcard `*` or `*;` to select all temperature information available from the selected sensors or field name like `current`, `high`, `critical` 
+      to select only a specific information.
 
-Network :
+* **Category: Fan speed**
+  * Task name: `sensors_fans`
+    * Short description: Hardware fans speed. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_fans )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all available sensor types (e.g. `asus`, etc).
+      Try the following Python snippet on your prompt to see which fan sensor types are detected by psutil library: `python3 -c 'import psutil, pprint; pprint.pprint(psutil.sensors_fans())'`
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all fan sensors of the selected sensor type or a `label` value to select a specific sensor.
+      E.g. you might want to use `cpu_fan` as label to publish only the fan speed of the CPU.
+    * **OPTIONAL**: `<param3>`: The wildcard `*` or `*;` to select all information available from the selected sensors or field name like `current` 
+      to select only a specific information.
 
-    net_io_counters/* - Network I/O counters. Topic per parameter
-    net_io_counters/*;  - Network I/O counters in one topic (JSON string)
-    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout} - Network I/O counters separate parameters
-    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/* - Network I/O counters separate parameters. Topic per device name
-    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/*; - Network I/O counters separate parameters per device in one topic (JSON string)
-    net_io_counters/{bytes_sent/bytes_recv/packets_sent/packets_recv/errin/errout/dropin/dropout}/{eth0/wlan0/etc} - Network I/O counters separate parameters for single device
-    net_io_counters/*/{eth0/wlan0/etc} - Network I/O counters for single device. Topic per parameter
-    net_io_counters/*;/{eth0/wlan0/etc} - Network I/O counters for single device in one topic (JSON string)
+* **Category: Battery**
+  * Task name: `sensors_battery`
+    * Short description: Battery status information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_battery )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `percent`, `secsleft`, `power_plugged`, etc.
+      Check full reference for all available fields and their meaning.
 
-Temperature :
+* **Category: Other system info**
+  * Task name: `users`
+    * Short description: Users currently connected on the system. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.users )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all fields or a field name like `name`, `terminal`, `host`, `started`, etc.
+      Check full reference for all available fields and their meaning.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `*;` to select all users or an index `0`, `1`, `2`, etc to select a specific user.
+  * Task name: `boot_time`
+    * Short description: System boot time. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#boot_time.users )
+    * **NO PARAMETES**
 
-    sensors_temperatures/* - Sensors current temperatures. Topic per sensor
-    sensors_temperatures/*;  - Sensors current temperatures in one topic (JSON string)
-    sensors_temperatures/{SENSOR_NAME} - Single sensor current temperature (could be array value if sensor has several devices)
-    sensors_temperatures/{SENSOR_NAME}/* - Single sensor temperatures. Topic per temperature
-    sensors_temperatures/{SENSOR_NAME}/*; - Single sensor temperatures in one topic (JSON string)
-    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single sensor device by number/label current temperature
-    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single sensor device by number/label temperature. Topic per parameter
-    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single sensor device by number/label temperature in one topic (JSON string)
-    sensors_temperatures/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single sensor device by number/label temperature separate parameters
+* **Category: Processes**
+  * Task name: `pids`
+    * Short description: Currently running process IDs. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.pids )
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `*;` to select all PIDs, the `count` string to return just the number of PIDs or an index `0`, `1`, `2`, etc to select a specific process ID.
+  * Task name: `processes`
+    * Short description: Single process parameters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#processes )
+    * **REQUIRED**: `<param1>`: one of 
+      - numeric ID of the process
+      - `top_cpu` - top CPU consuming process
+      - `top_cpu[N]` - CPU consuming process number N
+      - `top_memory` - top memory consuming process
+      - `top_memory[N]` - memory consuming process number N
+      - `pid[PATH]` - process with ID specified in the file having PATH path (.pid file).
+      - `name[PATTERN]` - process with name matching PATTERN pattern (use `*` to match zero or more characters, `?` for single character)
+      - `*` - to get value of some property for all processes. Topic per process ID
+      - `*;` - to get value of some property for all processes in one topic (JSON string)
+    * **OPTIONAL**: `<param2>`: one of
+      - `pid` - process ID
+      - `ppid - `parent process ID
+      - `name` - process name
+      - `exe` - process executable file
+      - `cwd` - process working directory
+      - `cmdline/*` - command line. Topic per line
+      - `cmdline/*;` - command line in one topic (JSON string)
+      - `cmdline/count` - number of command line lines
+      - `cmdline/{0/1/etc}` - command line single line
+      - `status` - process status (running/sleeping/idle/dead/etc)
+      - `username` - user started process
+      - `create_time` - time when process was started (Unix timestamp)
+      - `terminal` - terminal of the process
+      - `uids/*` - process user IDs. Topic per parameter
+      - `uids/*;` - process user IDs in one topic (JSON string)
+      - `uids/{real/effective/saved}` - process user IDs single parameter
+      - `gids/*` - process group IDs. Topic per parameter
+      - `gids/*;` - process group IDs in one topic (JSON string)
+      - `gids/{real/effective/saved}` - process group IDs single parameter
+      - `cpu_times/*` - process CPU times. Topic per parameter
+      - `cpu_times/*;` - process CPU times in one topic (JSON string)
+      - `cpu_times/{user/system/children_user/children_system}` - process CPU times single parameter
+      - `cpu_percent` - CPU percent used by process
+      - `memory_percent` - memory percent used by process
+      - `memory_info/*` - memory used by process. Topic per parameter
+      - `memory_info/*;` - memory used by process in one topic (JSON string)
+      - `memory_info/{rss/vms/shared/text/lib/data/dirty/uss/pss/swap}` - memory used by process single parameter
+      - `io_counters/*` - process I/O counters. Topic per parameter
+      - `io_counters/*;` - process I/O counters in one topic (JSON string)
+      - `io_counters/{read_count/write_count/read_bytes/write_bytes}` - process I/O single counter
+      - `num_threads` - number of threads
+      - `num_fds` - number of file descriptors
+      - `num_ctx_switches/*` - number of context switches. Topic per parameter
+      - `num_ctx_switches/*;` - number of context switches in one topic (JSON string)
+      - `num_ctx_switches/{voluntary/involuntary}` - context switches single counter
+      - `nice` - nice value
+      - `*` - all process properties. Topic per property
+      - `*;` - all process properties in one topic (JSON string)
+      - `**` - all process properties and sub-properties. Topic per property
+      - `**;` -  all process properties and sub-properties in one topic (JSON string)
 
-Fan speed :
-
-    sensors_fans/* - Fans current speeds. Topic per fan
-    sensors_fans/*;  - Fans current speeds in one topic (JSON string)
-    sensors_fans/{SENSOR_NAME} - Single fan current speed (could be array value if fan has several devices)
-    sensors_fans/{SENSOR_NAME}/* - Single fan speeds. Topic per speed
-    sensors_fans/{SENSOR_NAME}/*; - Single fan speeds in one topic (JSON string)
-    sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL} - Single fan device by number/label current speed
-    sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/* - Single fan device by number/label speed. Topic per parameter
-    sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/*; - Single fan device by number/label speed in one topic (JSON string)
-    sensors_fans/{SENSOR_NAME}/{DEVICE_NUMBER/DEVICE_LABEL}/{label/current/high/critical} - Single fan device by number/label speed separate parameters
-
-Battery :
-
-    sensors_battery/* - Battery state. Topic per parameter
-    sensors_battery/*;  - Battery state parameters in one topic (JSON string)
-    sensors_battery/{percent/secsleft/power_plugged} - Battery state separate parameters
-         where secsleft could be
-             -1 if time is unknown
-             -2 for unlimited time (power is plugged)
-             or time in seconds
-
-Other system info :
-
-    users/{name/terminal/host/started}/* - Active users separate parameters. Topic per user
-    users/{name/terminal/host/started}/*; - Active users separate parameters per user in one topic (JSON string)
-    users/{name/terminal/host/started}/{0/1/2/etc} - Active users separate parameter for single user
-    users/*/{0/1/2/etc} - Active users parameters for single user. Topic per parameter
-    users/*;/{0/1/2/etc} - Active users parameters for single user in one topic (JSON string)
-    boot_time - System boot time as a Unix timestamp
-    boot_time/{{x|uptime}} - String representation of up time
-
-Processes :
-
-    pids/* - all system processes IDs. Topic per process
-    pids/*; - all system processes IDs in one topic (JSON string)
-    pids/{0/1/2/etc} - single process ID
-    pids/count - total number of processes
-    processes/{PROCESS_ID}/{PARAMETER_NAME} - single process parameter(s)
-        where PROCESS_ID could be one of
-            - numeric ID of the process
-            - top_cpu - top CPU consuming process
-            - top_cpu[N] - CPU consuming process number N
-            - top_memory - top memory consuming process
-            - top_memory[N] - memory consuming process number N
-            - pid[PATH] - process with ID specified in the file having PATH path (.pid file). Slashes in path should be replaced with vertical slash
-            - name[PATTERN] - process with name matching PATTERN pattern (use * to match zero or more characters, ? for single character)
-            - * - to get value of some property for all processes. Topic per process ID
-            - *; - to get value of some property for all processes in one topic (JSON string)
-        and PARAMETER_NAME could be one of
-            - pid - process ID
-            - ppid - parent process ID
-            - name - process name
-            - exe - process executable file
-            - cwd - process working directory
-            - cmdline/* - command line. Topic per line
-            - cmdline/*; - command line in one topic (JSON string)
-            - cmdline/count - number of command line lines
-            - cmdline/{0/1/etc} - command line single line
-            - status - process status (running/sleeping/idle/dead/etc)
-            - username - user started process
-            - create_time - time when process was started (Unix timestamp)
-            - terminal - terminal of the process
-            - uids/* - process user IDs. Topic per parameter
-            - uids/*; - process user IDs in one topic (JSON string)
-            - uids/{real/effective/saved} - process user IDs single parameter
-            - gids/* - process group IDs. Topic per parameter
-            - gids/*; - process group IDs in one topic (JSON string)
-            - gids/{real/effective/saved} - process group IDs single parameter
-            - cpu_times/* - process CPU times. Topic per parameter
-            - cpu_times/*; - process CPU times in one topic (JSON string)
-            - cpu_times/{user/system/children_user/children_system} - process CPU times single parameter
-            - cpu_percent - CPU percent used by process
-            - memory_percent - memory percent used by process
-            - memory_info/* - memory used by process. Topic per parameter
-            - memory_info/*; - memory used by process in one topic (JSON string)
-            - memory_info/{rss/vms/shared/text/lib/data/dirty/uss/pss/swap} - memory used by process single parameter
-            - io_counters/* - process I/O counters. Topic per parameter
-            - io_counters/*; - process I/O counters in one topic (JSON string)
-            - io_counters/{read_count/write_count/read_bytes/write_bytes} - process I/O single counter
-            - num_threads - number of threads
-            - num_fds - number of file descriptors
-            - num_ctx_switches/* - number of context switches. Topic per parameter
-            - num_ctx_switches/*; - number of context switches in one topic (JSON string)
-            - num_ctx_switches/{voluntary/involuntary} - context switches single counter
-            - nice - nice value
-            - * - all process properties. Topic per property
-            - *; - all process properties in one topic (JSON string)
-            - ** - all process properties and sub-properties. Topic per property
-            - **; -  all process properties and sub-properties in one topic (JSON string)
 
 #### <a name='UsefulTasks'></a>Useful Tasks
 
