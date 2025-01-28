@@ -110,7 +110,7 @@ class MqttClient:
         '''
         if rc != 0:
             MqttClient.num_disconnects += 1
-            logging.warning("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
+            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
             time.sleep(self.reconnect_period_sec)
         #else: rc==0 indicates an intentional disconnect
         return
