@@ -77,7 +77,7 @@ class Task:
         '''
         assert mqttc is not None
 
-        if not mqttc.mqttc.is_connected():
+        if not mqttc.is_connected():
             logging.warning(f"Aborting task {self.task_friendly_name}: no MQTT connection available at this time")
             Task.num_errors += 1
             return
