@@ -71,7 +71,7 @@ class MqttClient:
             self.mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None,
                 cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS,
                 ciphers=None)
-        logging.debug("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
+        logging.info("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
         self.mqttc.connect(mqtt_broker, mqtt_port)
         return True
 
@@ -91,14 +91,13 @@ class MqttClient:
                     compatibility with MQTT v5.0, we recommend adding
                     properties=None.
         '''
-        logging.debug("on_connect()")
+        logging.warning(f"Connected to MQTT broker with result_code={result_code}")
         if self.request_topic != '':
             topic = self.request_topic
             if topic[-1] != '/':
                 topic += "/"
             topic += "#"   # match all remaining levels in the topic hierarchy
-            logging.debug(
-                f"Connected to MQTT broker, subscribing to topic '{topic}'")
+            logging.info(f"Subscribing to REQUEST topic '{topic}'")
             mqttc.subscribe(topic, self.qos)
         # else: request topic is disabled
 
@@ -111,7 +110,7 @@ class MqttClient:
         '''
         if rc != 0:
             MqttClient.num_disconnects += 1
-            logging.debug("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
+            logging.warning("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
             time.sleep(self.reconnect_period_sec)
         #else: rc==0 indicates an intentional disconnect
         return
@@ -120,8 +119,7 @@ class MqttClient:
         '''
         MQTT callback in case a message is received on the REQUEST topic
         '''
-        logging.debug("MqttClient.on_message()")
-        logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+        logging.info(f"MqttClient.on_message(): topic: {msg.topic}; payload: {msg.payload}")
 
         if msg.topic.startswith(self.request_topic):
             #task = msg.topic[len(self.request_topic):]
@@ -140,7 +138,7 @@ class MqttClient:
         return
 
     def publish(self, topic:str, payload:str) -> None:
-        logging.info("MqttClient.publish('%s', '%s')", topic, payload)
+        logging.debug("MqttClient.publish('%s', '%s')", topic, payload)
         MqttClient.num_published_total += 1
         self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
         return

@@ -33,7 +33,7 @@ def setup(request):
 @pytest.mark.integration
 def test_basic_publish():
 
-    with PSMQTTContainer(broker=broker) as container:
+    with PSMQTTContainer(broker=broker, loglevel="DEBUG") as container:
 
         tprefix = container.get_mqtt_topic_prefix()
         topics_under_test = [
