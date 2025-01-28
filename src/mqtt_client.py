@@ -15,6 +15,12 @@ class MqttClient:
     # Counter of MQTT broker disconnections
     num_disconnects = 0
 
+    # Counter of messages that were published successfully
+    num_published_successful = 0
+
+    # Counter of total messages reaching the MqttClient.publish()
+    num_published_total = 0
+
     def __init__(self,
             client_id:str,
             clean_session:bool,
@@ -42,6 +48,7 @@ class MqttClient:
         self.mqttc.on_message = self.on_message
         self.mqttc.on_connect = self.on_connect
         self.mqttc.on_disconnect = self.on_disconnect
+        self.mqttc.on_publish = self.on_publish
 
         self.mqttc.will_set('clients/psmqtt', payload="Adios!", qos=0, retain=False)
         return
@@ -125,8 +132,16 @@ class MqttClient:
             logging.warning('Unknown topic: ' + msg.topic)
         return
 
+    def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int) -> None:
+        '''
+        MQTT callback in case of successful/failed publish()
+        '''
+        MqttClient.num_published_successful += 1
+        return
+
     def publish(self, topic:str, payload:str) -> None:
         logging.info("MqttClient.publish('%s', '%s')", topic, payload)
+        MqttClient.num_published_total += 1
         self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
         return
 

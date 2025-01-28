@@ -77,6 +77,11 @@ class Task:
         '''
         assert mqttc is not None
 
+        if not mqttc.mqttc.is_connected():
+            logging.warning(f"Aborting task {self.task_friendly_name}: no MQTT connection available at this time")
+            Task.num_errors += 1
+            return
+
         if self.topic_name is None:
             topic = self._topic_from_task(mqttc.topic_prefix)
         else:
@@ -106,7 +111,7 @@ class Task:
 
         except Exception as ex:
             mqttc.publish(topic.get_error_topic(), str(ex))
-            logging.exception(f"run_task caught: {self} : {ex}")
+            logging.exception(f"Task.run_task({self.task_friendly_name}) failed: {ex}")
             Task.num_errors += 1
 
         Task.num_success += 1
