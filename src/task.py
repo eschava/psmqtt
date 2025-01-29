@@ -6,6 +6,7 @@ import json
 import logging
 from typing import Any, List
 
+from .handlers_base import BaseHandler
 from .handlers_all import TaskHandlers
 from .topic import Topic
 from .mqtt_client import MqttClient
@@ -49,7 +50,10 @@ class Task:
         escapedParams = []
         for x in nonEmptyParams:
             if isinstance(x,str):
-                escapedParams.append(x.replace('/', '|'))
+                if BaseHandler.is_join_wildcard(x):
+                    continue
+                else:
+                    escapedParams.append(x.replace('/', '|'))
             elif isinstance(x,int):
                 escapedParams.append(str(x))
         if len(escapedParams) > 0:
