@@ -66,7 +66,7 @@ class TaskHandlers:
 
         'processes': ProcessesCommandHandler(),
 
-        # OTHERS 
+        # OTHERS
         'users': IndexTupleCommandHandler('users'),
         'boot_time': ValueCommandHandler('boot_time'),
         'pids': IndexCommandHandler('pids'),
