@@ -1,6 +1,7 @@
 # Copyright (c) 2016 psmqtt project
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
+import json
 from typing import Any, Dict, List, Union, NamedTuple
 
 def list_from_array_of_namedtuples(
