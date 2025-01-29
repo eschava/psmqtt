@@ -46,7 +46,7 @@ class SmartCommandHandler(BaseHandler):
         val = info.get(param, None)
         if val is not None:
             return val
-        raise Exception(f"{self.name}: Parameter '{param}' is not supported")
+        raise Exception(f"{self.name}: Parameter '{param}' is not supported for device '{dev}")
 
     def get_value(self, dev: str) -> Payload:
         '''
@@ -71,7 +71,12 @@ class SmartCommandHandler(BaseHandler):
 
         # explode the "tests" entry to dictionary keys in the form
         #  tests[TEST_NUM]=JSON
-        sorted_test_list = sorted(smart_data.tests, key=lambda x: x.hours)
+        # sort the tests in such a way that test[0] is always the most recent one (having the highest "hours" value)
+        try:
+            sorted_test_list = sorted(smart_data.tests, key=lambda x: int(x.hours))
+        except ValueError:
+            # failed casting to int... use the pySMART sorting
+            sorted_test_list = smart_data.tests
         idx = 0
         for t in sorted_test_list:
             info[f"test[{idx}]"] = string_from_dict(t.__getstate__())
