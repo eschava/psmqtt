@@ -14,7 +14,7 @@ class PSMQTTContainer(DockerContainer):
 
     CONFIG_FILE = "integration-tests-psmqtt.yaml"
 
-    def __init__(self, broker: MosquittoContainerEnhanced) -> None:
+    def __init__(self, broker: MosquittoContainerEnhanced, loglevel: str) -> None:
         super().__init__(image="psmqtt:latest")
 
         # IMPORTANT: to link with the MQTT broker we want to use the IP address internal to the docker network,
@@ -23,8 +23,7 @@ class PSMQTTContainer(DockerContainer):
         broker_container = broker.get_wrapped_container()
         broker_ip = broker.get_docker_client().bridge_ip(broker_container.id)
         broker_port = MosquittoContainerEnhanced.MQTT_PORT
-        print(f"Linking the {self.image} container with the MQTT broker at host:ip {broker_ip}:{broker_port}")
-        config_file = self._prepare_config_file(broker_ip, broker_port)
+        config_file = self._prepare_config_file(broker_ip, broker_port, loglevel)
 
         # bind-mount the generated, transient, config file to the standard location of config file within PSMQTT container
         self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.yaml", mode="ro")
@@ -38,7 +37,7 @@ class PSMQTTContainer(DockerContainer):
         print(f"Watching for internal errors in the PSMQTT container on topic: {self.internal_mqtt_topics['num_errors']}")
         broker.watch_topics(list(self.internal_mqtt_topics.values()))
 
-    def _prepare_config_file(self, broker_ip: str, broker_port: int) -> str:
+    def _prepare_config_file(self, broker_ip: str, broker_port: int, loglevel: str) -> str:
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
         original_cfgfile = os.path.join(TEST_DIR, self.CONFIG_FILE)
 
@@ -50,6 +49,7 @@ class PSMQTTContainer(DockerContainer):
             original = content
             content = content.replace("__MQTT_BROKER_IP_PLACEHOLDER__", broker_ip)
             content = content.replace("__MQTT_BROKER_PORT_PLACEHOLDER__", f"{broker_port}")
+            content = content.replace("__LOGLEVEL_PLACEHOLDER__", f"{loglevel}")
 
             if original != content:
                 f.seek(0)  # Rewind to the beginning
@@ -58,7 +58,11 @@ class PSMQTTContainer(DockerContainer):
             else:
                 raise ValueError("Failed to replace placeholders in the configuration file")
 
-        print(f"Prepared configuration file '{temp_cfgfile}' for use in integration tests")
+        print(f"Prepared configuration file for '{self.image}' for use in integration tests:")
+        print(f"  Temp config file bind-mounted to the container: {temp_cfgfile}")
+        print(f"  Set MQTT broker at host:ip {broker_ip}:{broker_port}")
+        print(f"  Set loglevel to {loglevel}")
+
         return temp_cfgfile
 
     def is_running(self) -> bool:

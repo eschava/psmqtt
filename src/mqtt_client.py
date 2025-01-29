@@ -15,6 +15,12 @@ class MqttClient:
     # Counter of MQTT broker disconnections
     num_disconnects = 0
 
+    # Counter of messages that were published successfully
+    num_published_successful = 0
+
+    # Counter of total messages reaching the MqttClient.publish()
+    num_published_total = 0
+
     def __init__(self,
             client_id:str,
             clean_session:bool,
@@ -32,18 +38,19 @@ class MqttClient:
         self.reconnect_period_sec = reconnect_period_sec
 
         # use MQTT v3.1.1 for now
-        self.mqttc = paho.Client(paho.CallbackAPIVersion.VERSION1,
+        self._mqttc = paho.Client(paho.CallbackAPIVersion.VERSION1,
             client_id, clean_session=clean_session, userdata=self,
             protocol=paho.MQTTv311)
         # protocol=paho.MQTTv5
         # see http://www.steves-internet-guide.com/python-mqtt-client-changes/
 
         # set the call-backs
-        self.mqttc.on_message = self.on_message
-        self.mqttc.on_connect = self.on_connect
-        self.mqttc.on_disconnect = self.on_disconnect
+        self._mqttc.on_message = self.on_message
+        self._mqttc.on_connect = self.on_connect
+        self._mqttc.on_disconnect = self.on_disconnect
+        self._mqttc.on_publish = self.on_publish
 
-        self.mqttc.will_set('clients/psmqtt', payload="Adios!", qos=0, retain=False)
+        self._mqttc.will_set('clients/psmqtt', payload="Adios!", qos=0, retain=False)
         return
 
     def connect(self,
@@ -57,15 +64,15 @@ class MqttClient:
         # Delays will be: 3, 6, 12, 24, 30, 30, ...
         # mqttc.reconnect_delay_set(delay=3, delay_max=30, exponential_backoff=True)
 
-        self.mqttc.username_pw_set(username, password)
+        self._mqttc.username_pw_set(username, password)
 
         if mqtt_port == 8883:
             assert paho.ssl
-            self.mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None,
+            self._mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None,
                 cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS,
                 ciphers=None)
-        logging.debug("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
-        self.mqttc.connect(mqtt_broker, mqtt_port)
+        logging.info("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
+        self._mqttc.connect(mqtt_broker, mqtt_port)
         return True
 
     def on_connect(self, mqttc: paho.Client, userdata: Any, flags: Any,
@@ -84,14 +91,13 @@ class MqttClient:
                     compatibility with MQTT v5.0, we recommend adding
                     properties=None.
         '''
-        logging.debug("on_connect()")
+        logging.warning(f"Connected to MQTT broker with result_code={result_code}")
         if self.request_topic != '':
             topic = self.request_topic
             if topic[-1] != '/':
                 topic += "/"
             topic += "#"   # match all remaining levels in the topic hierarchy
-            logging.debug(
-                f"Connected to MQTT broker, subscribing to topic '{topic}'")
+            logging.info(f"Subscribing to REQUEST topic '{topic}'")
             mqttc.subscribe(topic, self.qos)
         # else: request topic is disabled
 
@@ -104,7 +110,7 @@ class MqttClient:
         '''
         if rc != 0:
             MqttClient.num_disconnects += 1
-            logging.debug("OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
+            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
             time.sleep(self.reconnect_period_sec)
         #else: rc==0 indicates an intentional disconnect
         return
@@ -113,8 +119,7 @@ class MqttClient:
         '''
         MQTT callback in case a message is received on the REQUEST topic
         '''
-        logging.debug("MqttClient.on_message()")
-        logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+        logging.info(f"MqttClient.on_message(): topic: {msg.topic}; payload: {msg.payload}")
 
         if msg.topic.startswith(self.request_topic):
             #task = msg.topic[len(self.request_topic):]
@@ -122,12 +127,21 @@ class MqttClient:
             #        and run it
             logging.error("Feature not yet implemented. Please raise a github issue if you need it.")
         else:
-            logging.warning('Unknown topic: ' + msg.topic)
+            logging.warning(f"Unknown topic: {msg.topic}")
         return
 
+    def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int) -> None:
+        '''
+        MQTT callback in case of successful/failed publish()
+        '''
+        MqttClient.num_published_successful += 1
+        return
+
+    # FIXME: change this signature to allow batch-sending multiple messages
     def publish(self, topic:str, payload:str) -> None:
-        logging.info("MqttClient.publish('%s', '%s')", topic, payload)
-        self.mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
+        logging.debug("MqttClient.publish('%s', '%s')", topic, payload)
+        MqttClient.num_published_total += 1
+        self._mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
         return
 
     def loop_start(self) -> None:
@@ -135,11 +149,14 @@ class MqttClient:
         See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
         logging.info('starting MQTT client loop')
-        self.mqttc.loop_start()
+        self._mqttc.loop_start()
 
     def loop_stop(self) -> None:
         '''
         See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
         logging.info('stopping MQTT client loop')
-        self.mqttc.loop_stop()
+        self._mqttc.loop_stop()
+
+    def is_connected(self) -> bool:
+        return self._mqttc.is_connected()

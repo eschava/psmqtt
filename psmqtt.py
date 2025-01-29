@@ -113,7 +113,7 @@ class PsmqttApp:
 
     @staticmethod
     def log_status() -> None:
-        logging.info(f"psmqtt status: {Task.num_success} successful tasks; {Task.num_errors} failed tasks; {MqttClient.num_disconnects} MQTT disconnections")
+        logging.info(f"psmqtt status: {Task.num_success} successful tasks; {Task.num_errors} failed tasks; {MqttClient.num_disconnects} MQTT disconnections; {MqttClient.num_published_successful}/{MqttClient.num_published_total} successful/total MQTT messages published")
 
     @staticmethod
     def on_log_timer(app: 'PsmqttApp') -> None:
@@ -281,9 +281,9 @@ class PsmqttApp:
                 self.config.config["mqtt"]["broker"]["username"],
                 self.config.config["mqtt"]["broker"]["password"])
         except ConnectionRefusedError as e:
-            logging.error(f"Cannot connect to MQTT broker: {e}. Aborting.")
-            # FIXME: we're currently bailing out here -- instead we should keep retrying the connection!
-            return 2
+            logging.error(f"Cannot connect to MQTT broker: {e}. Retrying shortly.")
+            # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
+            # so, if and when the MQTT broker will be available, the connection will be established
 
         # block the main thread on the MQTT client loop
         keep_running = True
