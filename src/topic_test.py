@@ -11,7 +11,7 @@ def get_subtopic(topic:str, param:str) -> str:
     return t.get_subtopic(param) if t.is_multitopic() else topic
 
 @pytest.mark.unit
-class TopicTest(unittest.TestCase):
+class TestTopic(unittest.TestCase):
 
     def test_get_subtopic(self) -> None:
         self.assertEqual("/haha", get_subtopic('/haha', 'a'))

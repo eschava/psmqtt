@@ -78,13 +78,17 @@ schedule:
       # simple tasks with 1 or 2 parameters:
       - task: virtual_memory
         params: [ percent ]
-      - task: sensors_temperatures
-        params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
+      #- task: sensors_temperatures
+      #  params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
       - task: smart
         params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
       - task: smart
-        params: [ /dev/sda, "*" ] # report all SMART attributes of "/dev/sda"; note that asterisks need quoting
-        topic: "/sda/*"
+        params: [ /dev/sda, "*" ]
+        #topic: "sda_info"
+        topic: "/sda_smart_status/*"
+      - task: smart
+        params: [ /dev/sda, "tests/0" ]
+        topic: "sda_info_last_test"
 
       # task requesting to publish virtual_memory percentage into a topic named "foobar"
       - task: virtual_memory

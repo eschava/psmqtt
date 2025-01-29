@@ -7,7 +7,7 @@ import pytest
 from .task import Task
 
 @pytest.mark.unit
-class TaskTest(unittest.TestCase):
+class TestTask(unittest.TestCase):
 
     def test_topic_from_task(self):
 

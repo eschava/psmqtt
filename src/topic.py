@@ -5,6 +5,10 @@ from typing import Tuple
 
 class Topic:
     def __init__(self, topic:str):
+
+        # sanitize topic name by removing any empty topic-level separators:
+        topic = topic.replace('//', '/')
+
         self.topic = topic
         self.wildcard_index, self.wildcard_len = self._find_wildcard(topic)
         return
