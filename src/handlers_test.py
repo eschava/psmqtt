@@ -8,7 +8,7 @@ from typing import Any, Dict, NamedTuple, Optional
 import psutil._common
 import pytest
 
-from .handlers import (
+from .handlers_base import (
     DiskUsageCommandHandler,
     IndexCommandHandler,
     IndexOrTotalCommandHandler,

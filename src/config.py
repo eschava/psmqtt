@@ -9,7 +9,7 @@ import yamale
 from yamale import YamaleError
 
 import socket
-from .handlers import get_supported_handlers
+from .handlers_all import TaskHandlers
 
 class Config:
     '''
@@ -119,7 +119,7 @@ class Config:
         if not isinstance(self.config["schedule"], list):
             raise ValueError("Invalid 'schedule' key in configuration file: must be a list")
 
-        available_handlers_names = get_supported_handlers()
+        available_handlers_names = TaskHandlers.get_supported_handlers()
 
         validated_schedule = []
         for s in self.config["schedule"]:

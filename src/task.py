@@ -6,7 +6,7 @@ import json
 import logging
 from typing import Any, List
 
-from .handlers import get_value
+from .handlers_all import TaskHandlers
 from .topic import Topic
 from .mqtt_client import MqttClient
 
@@ -91,10 +91,12 @@ class Task:
         logging.debug(f"Task.run_task({self.task_friendly_name}): mqtt topic is '{topic.get_topic()}'")
 
         try:
-            payload = get_value(self.task_name, self.params, self.formatter)
+            payload = TaskHandlers.get_value(self.task_name, self.params, self.formatter)
             is_seq = isinstance(payload, list) or isinstance(payload, dict)
             if is_seq and not topic.is_multitopic():
-                raise Exception(f"Result of task '{self.task_friendly_name}' has several values but topic doesn't contain '*' char")
+                raise Exception(f"Result of task '{self.task_friendly_name}' has several values but topic doesn't contain the wildcard '*' character. Please include the wildcard in the topic specification.")
+            if not is_seq and topic.is_multitopic():
+                raise Exception(f"Result of task '{self.task_friendly_name}' has a single value but the topic contains the wildcard '*' character. Please remove the wildcard from the topic specification.")
 
             if isinstance(payload, list):
                 for i, v in enumerate(payload):

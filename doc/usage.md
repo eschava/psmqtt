@@ -454,9 +454,9 @@ mqtt:
 configures psmqtt to emit all outputs at **my-prefix/<task-name>**.
 
 It's important to note that when the task emits more than one output due to the use of the
-wildcard `*` character then the MQTT topic must be specified and must include the 
+wildcard `*` character then the MQTT topic _must_ be specified and _must_ include the 
 wildcard `*` character itself.
-An example the task
+As an example the task
 
 ```
 schedule:
@@ -467,10 +467,10 @@ schedule:
         topic: "cpu/*"
 ```
 
-is producing 10 percentage outputs on a Linux system; one for each of `user`, `nice`, `system`,
+is producing 10 outputs on a Linux system: one for each of the `user`, `nice`, `system`,
 `idle`, `iowait`, `irq`, `softirq`, `steal`, `guest` and `guest_nice` fields emitted by psutil.
 These 10 outputs must be published on 10 different MQTT topics.
-The use of `cpu/*` configures psmqtt to produce as output topics:
+The use of `cpu/*` as MQTT topic configures psmqtt to send the 10 outputs to the following 10 topics:
 * **psmqtt/COMPUTER_NAME/cpu/user**
 * **psmqtt/COMPUTER_NAME/cpu/nice**
 * **psmqtt/COMPUTER_NAME/cpu/system**
@@ -483,7 +483,7 @@ The use of `cpu/*` configures psmqtt to produce as output topics:
 * **psmqtt/COMPUTER_NAME/cpu/guest_nice**
 
 If the wildcard `*` character is used in the task parameters but the MQTT topic is not specified
-or does not contain the wildcard `*` character itself, then an error will be produced in psmqtt logs.
+or does not contain the wildcard `*` character itself, then an error will be emitted (check psmqtt logs).
 
 
 ## <a name='SendingMQTTrequests'></a>Sending MQTT requests
