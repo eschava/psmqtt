@@ -73,7 +73,7 @@ class SmartCommandHandler(BaseHandler):
         #  tests[TEST_NUM]=JSON
         # sort the tests in such a way that test[0] is always the most recent one (having the highest "hours" value)
         try:
-            sorted_test_list = sorted(smart_data.tests, key=lambda x: int(x.hours))
+            sorted_test_list = sorted(smart_data.tests, key=lambda x: int(x.hours), reverse=True)
         except ValueError:
             # failed casting to int... use the pySMART sorting
             sorted_test_list = smart_data.tests
@@ -82,7 +82,7 @@ class SmartCommandHandler(BaseHandler):
             info[f"test[{idx}]"] = string_from_dict(t.__getstate__())
             idx += 1
 
-        # delete 2 fields that are useless after the "explosion" just done:
+        # delete fields that are useless after the flattening of SMART attributes and SMART tests just done:
         del info["attributes"]
         del info["if_attributes"]
         del info["tests"]
