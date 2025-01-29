@@ -40,4 +40,5 @@ docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 * add HomeAssistant discovery message support
 * restore the ability to request psmqtt tasks from MQTT
 * implement batch transmission to MQTT to optimize network and CPU usage
-
+* publish on pypi the project
+* improve SMART handler so we can publish current Power_On_Hours attribute .raw_int c and last self-test ".hours" property
