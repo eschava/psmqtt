@@ -39,7 +39,7 @@ schedule:
       - task: cpu_percent
       - task: cpu_percent
         params: [ 0 ]
-        topic: "cpu_percent_core0_details/*"
+        topic: "cpu_percent_core0_details"
       - task: cpu_percent
         params: [ "*" ]
         topic: "cpu_percent_test/*"
@@ -56,7 +56,7 @@ schedule:
         params: [ "*" ]
       - task: cpu_stats
         params: [ "soft_interrupts" ]
-        topic: "cpu_stats_only_softirq/*"
+        topic: "cpu_stats_only_softirq"
 
       # TEST virtual_memory
       - task: virtual_memory
@@ -118,6 +118,7 @@ schedule:
       # TEST sensors_battery
       - task: sensors_battery
         params: [ "*" ]
+        topic: "sensors_battery"
       
       # TEST users
       - task: users

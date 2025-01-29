@@ -9,7 +9,7 @@ from typing import (
 
 from .formatter import Formatter
 
-from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexTupleCommandHandler, IndexOrTotalCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
+from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
 from .handlers_psutil_processes import ProcessesCommandHandler, ProcessPropertiesCommandHandler, ProcessMethodCommandHandler, ProcessMethodIndexCommandHandler, ProcessMethodTupleCommandHandler
 from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIO, SensorsTemperaturesCommandHandler
 from .handlers_pysmart import SmartCommandHandler
@@ -17,6 +17,9 @@ from .handlers_pysmart import SmartCommandHandler
 class TaskHandlers:
 
     handlers = {
+
+        # CPU
+
         'cpu_times': TupleCommandHandler('cpu_times'),
 
         'cpu_percent': type(
@@ -36,11 +39,21 @@ class TaskHandlers:
             })('cpu_times_percent'),
 
         'cpu_stats': TupleCommandHandler('cpu_stats'),
+
+        # MEMORY
+
         'virtual_memory': TupleCommandHandler('virtual_memory'),
         'swap_memory': TupleCommandHandler('swap_memory'),
+
+        # DISK
+
         'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
         'disk_usage': DiskUsageCommandHandler(),
         'disk_io_counters': DiskCountersIO('disk_io_counters'),
+        'smart': SmartCommandHandler(),
+
+        # NETWORK
+
         'net_io_counters': type(
             "NetIOCountersCommandHandler",
             (NameOrTotalTupleCommandHandler, object),
@@ -49,14 +62,20 @@ class TaskHandlers:
                     psutil.net_io_counters(pernic=not total)
             })('net_io_counters'),
 
+        # PROCESSES
+
         'processes': ProcessesCommandHandler(),
+
+        # OTHERS 
         'users': IndexTupleCommandHandler('users'),
         'boot_time': ValueCommandHandler('boot_time'),
         'pids': IndexCommandHandler('pids'),
+
+        # SENSORS
+
         'sensors_temperatures': SensorsTemperaturesCommandHandler(),
         'sensors_fans': SensorsFansCommandHandler(),
         'sensors_battery': TupleCommandHandler('sensors_battery'),
-        'smart': SmartCommandHandler(),
     }
 
     process_handlers = {

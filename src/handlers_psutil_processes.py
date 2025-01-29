@@ -12,10 +12,10 @@ from typing import (
     List,
 )
 
-from .handlers_base import CommandHandler, Payload
+from .handlers_base import BaseHandler, Payload
 from .utils import string_from_dict_optionally, string_from_list_optionally
 
-class ProcessesCommandHandler(CommandHandler):
+class ProcessesCommandHandler(BaseHandler):
     '''
     '''
 
@@ -38,8 +38,8 @@ class ProcessesCommandHandler(CommandHandler):
         property = params[1]
         remaining_params = [params[2]] if len(params) == 3 else []
 
-        if process_id in ('*', '*;'):
-            if property == '*':
+        if BaseHandler.is_wildcard(process_id):
+            if BaseHandler.is_regular_wildcard(property):
                 raise Exception(f"The process property in '{self.name}' should be specified")
             result = {p.pid: self.get_process_value(p, property, remaining_params) for p in psutil.process_iter()}
             return string_from_dict_optionally(result, process_id.endswith(';'))
@@ -205,7 +205,7 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
         assert self.method is not None
         arr = self.method(process)
 
-        if param == '*' or param == '*;':
+        if BaseHandler.is_wildcard(param):
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
@@ -228,7 +228,7 @@ class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
         tup = self.method(process)
 
         param = params[0]
-        if param == '*' or param == '*;':
+        if BaseHandler.is_wildcard(param):
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)

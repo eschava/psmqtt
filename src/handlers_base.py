@@ -19,7 +19,7 @@ from .utils import list_from_array_of_namedtuples, dict_from_dict_of_namedtupes,
 # all command handlers will return from their handle() function a Payload:
 Payload = Union[List[Any], Dict[str, Any], NamedTuple, str, float, int]
 
-class CommandHandler:
+class BaseHandler:
     '''
     Abstract base class that has a handle() method.
     All task handlers will inherit from this base class.
@@ -30,20 +30,30 @@ class CommandHandler:
         return
 
     def handle(self, params: list[str]) -> Payload:
-        '''
-        Will call self.get_value()
-        '''
         assert isinstance(params, list)
         raise Exception("Not implemented")
 
     def get_value(self) -> Payload:
         raise Exception("Not implemented")
 
-class MethodCommandHandler(CommandHandler):
+    @staticmethod
+    def is_wildcard(param: str) -> bool:
+        return param == "*" or param == "+"
+
+    @staticmethod
+    def is_regular_wildcard(param: str) -> bool:
+        return param == "*"
+
+    @staticmethod
+    def is_join_wildcard(param: str) -> bool:
+        return param == "+"
+
+
+class MethodCommandHandler(BaseHandler):
     '''
-    CommandHandler with self.method pointing to psutil function,
+    MethodCommandHandler is a BaseHandler with a self.method pointing to a psutil function,
     e.g. psutil.cpu_percent(), boot_time.
-    handle invokes self.method and just returns its value.
+    Provides a get_value() function that invokes self.method and just returns its value.
 
     E.g. if the "cpu_percent" name is provided in the ctor, then this class will
     return the output of "psutil.cpu_percent()" from its get_value() function.
@@ -59,37 +69,34 @@ class MethodCommandHandler(CommandHandler):
             logging.warning(f"psutil '{self.name}' not implemented")
         return
 
-    def handle(self, params: list[str]) -> Payload:
-        '''
-        Will call self.get_value()
-        '''
-
-        assert isinstance(params, list)
-        raise Exception("Not implemented")
-
     def get_value(self) -> Payload:
+        '''
+        Invokes the psutil function pointed by self.method.
+        '''
         if self.method is None:
             raise Exception(f"psutil '{self.name}' not implemented")
         return self.method()
 
 class ValueCommandHandler(MethodCommandHandler):
     '''
-    CommandHandler with self.method pointing to psutil function,
-    e.g. psutil.cpu_percent(), boot_time.
-    handle invokes self.method and just returns its value.
+    ValueCommandHandler provides an handle() function that just returns the
+    output of the get_value() function.
+    This is a good class to be used when no parameters are expected.
     '''
 
     def handle(self, params: list[str]) -> Payload:
+        '''
+        Will call self.get_value()
+        '''
         assert isinstance(params, list)
         if params != []:
-            raise Exception(f"Parameter '{params}' in '{self.name}' is not supported")
+            raise Exception(f"{self.name}: Parameter '{params}' is not supported")
 
         return self.get_value()
 
 class IndexCommandHandler(MethodCommandHandler):
     '''
-    CommandHandler with self.method pointing to psutil function returning a
-    list, e.g. pids
+    IndexCommandHandler handles psutil functions that return a list, e.g. the psutil.pids() function.
     '''
 
     def handle(self, params: list[str]) -> Payload:
@@ -98,27 +105,25 @@ class IndexCommandHandler(MethodCommandHandler):
         arr = self.get_value()
         assert isinstance(arr, list)
 
-        if len(params) > 1:
-            raise Exception(f"Exactly 1 parameter is supported; found {len(params)} parameters instead: {params}")
-        if len(params) == 0:
-            raise Exception(f"Found 0 parameters, need exactly 1 in '{self.name}'")
+        if len(params) != 1:
+            raise Exception(f"{self.name}: exactly 1 parameter is required; found {len(params)} parameters instead: {params}")
 
-        param = params[0]
-        if param == '*' or param == '*;':
-            return string_from_list_optionally(arr, param.endswith(';'))
-        elif param == 'count':
+        index_str = params[0]
+        if BaseHandler.is_wildcard(index_str):
+            return string_from_list_optionally(arr, BaseHandler.is_join_wildcard(index_str))
+        elif index_str == 'count':
             return len(arr)
-        elif isinstance(param, int):
-            return arr[param]
-        elif param.isdigit():
-            return arr[int(param)]
-        raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+        elif isinstance(index_str, int):
+            return arr[index_str]
+        elif index_str.isdigit():
+            return arr[int(index_str)]
+        raise Exception(f"{self.name}: Parameter '{index_str}' is not supported as index")
 
 
 class TupleCommandHandler(MethodCommandHandler):
     '''
-    CommandHandler with self.method pointing to a psutil function returning a
-    tuple, e.g. cpu_times, cpu_stats, virtual_memory, swap_memory
+    TupleCommandHandler handles psutil functions that return a named
+    tuple, e.g. psutil.cpu_times, psutil.cpu_stats, psutil.virtual_memory, psutil.swap_memory
     '''
 
     def handle(self, params: list[str]) -> Payload:
@@ -129,83 +134,93 @@ class TupleCommandHandler(MethodCommandHandler):
             # this might happen when psutil didn't find ANY hardware support;
             # e.g. on a computer that has no battery, the psutil.sensors_battery() returns None
             return "None"
+
         assert isinstance(tup, tuple)
 
         if len(params) != 1:
-            raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+            raise Exception(f"{self.name}: exactly 1 parameter is required; found {len(params)} parameters instead: {params}")
 
         # the parameter for this handler decides which tuple field we should select:
         tuple_field = params[0]
-        if tuple_field == '*':
+        if BaseHandler.is_regular_wildcard(tuple_field):
             return tup._asdict()
-        if tuple_field == '*;':
+        if BaseHandler.is_join_wildcard(tuple_field):
             return string_from_dict(tup._asdict())
         elif tuple_field in tup._fields:
             return getattr(tup, tuple_field)
         elif tuple_field == '':
-            raise Exception(f"Parameter in '{self.name}' should be selected")
-        raise Exception(f"Parameter '{tuple_field}' in '{self.name}' is not supported")
+            raise Exception(f"{self.name}: Parameter should be selected")
+        raise Exception(f"{self.name}: Parameter '{tuple_field}' is not supported")
 
 
 class IndexTupleCommandHandler(MethodCommandHandler):
     '''
-    CommandHandler with self.method pointing to a psutil function returning a
-    list of named tuples, e.g. disk_partitions, users
+    IndexTupleCommandHandler handles psutil functions that return a
+    list of named tuples, e.g. psutil.disk_partitions, psutil.users
     '''
 
     def handle(self, params: list[str]) -> Payload:
         '''
         This handler accepts 1 or 2 parameters.
-        The first parameter must be either:
-        * is the index of the element in the list of named tuples.
+        The first parameter shall be:
+        * a field name appearing inside the tuples
+        * wildcard
+        The second parameter shall be:
+        * the index of a particular tuple
         '''
         assert isinstance(params, list)
 
-        if len(params) == 0:
-            raise Exception(f"Found 0 parameters, need 1 or 2 in '{self.name}'")
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"{self.name}: exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
 
-        param = params[0]
+        field_selector = params[0]
         index_str = params[1] if len(params) >= 2 else ''
 
-        all_params = param == '*' or param == '*;'
+        all_fields = BaseHandler.is_wildcard(field_selector)
         index = -1
 
-        if isinstance(param, int):
-            all_params = True
-            index = param
-        elif param.isdigit():
-            all_params = True
-            index = int(param)
+        if isinstance(field_selector, int):
+            all_fields = True
+            index = field_selector
+        elif field_selector.isdigit():
+            all_fields = True
+            index = int(field_selector)
         elif isinstance(index_str, int):
             index = index_str
         elif index_str.isdigit():
             index = int(index_str)
-        elif index_str != '*' and index_str != '*;':
-            raise Exception(f"Element '{index_str}' in '{params}' is not supported")
+        elif not BaseHandler.is_wildcard(index_str):
+            raise Exception(f"{self.name}: Element '{index_str}' in '{params}' is not supported")
 
-        if index < 0 and all_params:
-            raise Exception(f"Cannot list all elements and parameters into the same '{self.name}' request")
+        if index < 0 and all_fields:
+            raise Exception(f"{self.name}: Cannot list all fields from all results into the same task")
 
         result = self.get_value()
         assert isinstance(result, list)
         if index < 0:
-            return list_from_array_of_namedtuples(result, param, self.name, index_str.endswith(';'))
+            # no index selected: select the same field from ALL tuples
+            return list_from_array_of_namedtuples(result, field_selector, self.name, BaseHandler.is_join_wildcard(index_str))
         else:  # index selected
             try:
                 elt = result[index]
-                if all_params:
-                    return string_from_dict_optionally(elt._asdict(), param.endswith(';'))
-                elif param in elt._fields:
-                    return getattr(elt, param)
+                if all_fields:
+                    return string_from_dict_optionally(elt._asdict(), BaseHandler.is_join_wildcard(field_selector))
+                elif field_selector in elt._fields:
+                    return getattr(elt, field_selector)
                 else:
-                    raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+                    raise Exception(f"{self.name}: Parameter '{field_selector}' is not supported")
             except IndexError:
-                raise Exception(f"Element #{index} is not present")
+                raise Exception(f"{self.name}: Element #{index} is not present")
 
-class IndexOrTotalCommandHandler(CommandHandler):
+
+class IndexOrTotalCommandHandler(BaseHandler):
     '''
-    CommandHandler with self.method pointing to a psutil function which
-    returns a ??, e.g. psutils.cpu_percent.
+    IndexOrTotalCommandHandler handles psutil functions that return a list of values.
+    Differently from IndexCommandHandler, this class requires a get_value() implementation
+    taking 1 boolean parameter "total".
+
+    This class is used to handle some psutil functions that support the possibility to return the
+    TOTAL quantity of something, e.g. cpu usage.
     '''
     def __init__(self, name:str):
         super().__init__(name)
@@ -219,13 +234,13 @@ class IndexOrTotalCommandHandler(CommandHandler):
         count = False
         index = -1
         if len(params) != 0 and len(params) != 1:
-            raise Exception(f"Exactly 0 or 1 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+            raise Exception(f"{self.name}: Exactly 0 or 1 parameters are required; found {len(params)} parameters instead: {params}")
 
         param = params[0] if len(params) == 1 else ''
 
-        if param == '*':
+        if BaseHandler.is_regular_wildcard(param):
             total = False
-        elif param == '*;':
+        elif BaseHandler.is_join_wildcard(param):
             total = False
             join = True
         elif param == 'total':
@@ -240,7 +255,7 @@ class IndexOrTotalCommandHandler(CommandHandler):
             total = False
             index = int(param)
         elif param != '':
-            raise Exception(f"Parameter '{param}' in '{self.name}' is not supported")
+            raise Exception(f"{self.name}: Parameter '{param}' is not supported")
         try:
             result = self.get_value(total)
             assert isinstance(result, list) or isinstance(result, float) or isinstance(result, int)
@@ -255,7 +270,7 @@ class IndexOrTotalCommandHandler(CommandHandler):
             else:
                 return result
         except IndexError:
-            raise Exception(f"Element #{index} is not present")
+            raise Exception(f"{self.name}: Element #{index} is not present")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, total:bool) -> List[Any]:
@@ -267,7 +282,12 @@ class IndexOrTotalCommandHandler(CommandHandler):
 
 class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
     '''
-    used by, e.g. cpu_times_percent
+    IndexOrTotalTupleCommandHandler handles psutil functions that return a list of named tuples.
+    Differently from IndexTupleCommandHandler, this class requires a get_value() implementation
+    taking 1 boolean parameter "total".
+
+    This class is used to handle some psutil functions that support the possibility to return the
+    TOTAL quantity of something, e.g. detailed cpu usage from psutil.cpu_times_percent().
     '''
     def __init__(self, name:str):
         super().__init__(name)
@@ -276,20 +296,20 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:
-            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+            raise Exception(f"{self.name}: Exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
 
         param = params[0]
         index_str = params[1] if len(params) == 2 else ''
 
-        all_params = param == '*' or param == '*;'
-        params_join = param.endswith(';')
+        all_params = BaseHandler.is_wildcard(param)
+        params_join = BaseHandler.is_join_wildcard(param)
 
         total = True
         index_join = False
         index = -1
-        if index_str == '*':
+        if BaseHandler.is_regular_wildcard(index_str):
             total = False
-        elif index_str == '*;':
+        elif BaseHandler.is_join_wildcard(index_str):
             total = False
             index_join = True
         elif isinstance(index_str, int):
@@ -299,14 +319,14 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
             total = False
             index = int(index_str)
         elif index_str != '':
-            raise Exception(f"Element '{index_str}' in '{self.name}' is not supported")
+            raise Exception(f"{self.name}: Element '{index_str}' is not supported")
 
         if not total and index < 0 and all_params:
-            raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
+            raise Exception(f"{self.name}: Cannot list all elements and parameters at the same '{params}' request")
 
         result = self.get_value(total)
         if not isinstance(result, tuple) and not isinstance(result, list):
-            raise Exception(f"Unexpected type from psutil.{self.name} with total={total}: {type(result)}; {isinstance(result, tuple)}; {isinstance(result, list)};")
+            raise Exception(f"{self.name}: Unexpected type from psutil.{self.name} with total={total}: {type(result)}; {isinstance(result, tuple)}; {isinstance(result, list)};")
         #assert hasattr(result, '_asdict')
         #assert hasattr(result, '_fields')
         if index < 0:
@@ -320,7 +340,7 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
             assert hasattr(result, '_fields')
             if param in result._fields:
                 return getattr(result, param)
-            raise Exception(f"Element '{param}' in '{params}' is not supported")
+            raise Exception(f"{self.name}: Element '{param}' in '{params}' is not supported")
 
         # index selected
         try:
@@ -330,9 +350,9 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
                 return string_from_dict_optionally(result._asdict(), params_join)
             elif param in result._fields:
                 return getattr(result, param)
-            raise Exception(f"Element '{param}' in '{params}' is not supported")
+            raise Exception(f"{self.name}: Element '{param}' in '{params}' is not supported")
         except IndexError:
-            raise Exception(f"Element #{index} is not present")
+            raise Exception(f"{self.name}: Element #{index} is not present")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, total:bool) -> Union[List[NamedTuple], NamedTuple]:
@@ -341,27 +361,28 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
 
 class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     '''
-    e.g. for calling psutil.net_io_counters
+    IndexOrTotalTupleCommandHandler handles psutil functions that return a named tuple
+    or a dictionary of named tuples.
     '''
 
     def handle(self, params: list[str]) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:
-            raise Exception(f"Exactly 1 or 2 parameters are supported for '{self.name}'; found {len(params)} parameters instead: {params}")
+            raise Exception(f"{self.name}: Exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
 
         param = params[0]
         name = params[1] if len(params) == 2 else None
 
-        all_params = param == '*' or param == '*;'
-        params_join = param.endswith(';')
+        all_params = BaseHandler.is_wildcard(param)
+        params_join = BaseHandler.is_join_wildcard(param)
 
         total = True
         index_join = False
-        if name == '*':
+        if BaseHandler.is_regular_wildcard(name):
             total = False
             name = None
-        elif name == '*;':
+        elif BaseHandler.is_join_wildcard(name):
             total = False
             index_join = True
             name = None
@@ -369,7 +390,7 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
             total = False
 
         if not total and name is None and all_params:
-            raise Exception(f"Cannot list all elements and parameters at the same '{params}' request")
+            raise Exception(f"{self.name}: Cannot list all elements and parameters at the same '{params}' request")
 
         result = self.get_value(total)
         assert isinstance(result, tuple) or isinstance(result, dict)
@@ -383,14 +404,14 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
             assert isinstance(result, tuple)
             if param in result._fields:
                 return getattr(result, param)
-            raise Exception(f"Element '{param}' in '{params}' is not supported")
+            raise Exception(f"{self.name}: Element '{param}' in '{params}' is not supported")
 
         res = result[name]
         if all_params:
             return string_from_dict_optionally(res._asdict(), params_join)
         elif param in res._fields:
             return getattr(res, param)
-        raise Exception(f"Parameter '{param}' in '{params}' is not supported")
+        raise Exception(f"{self.name}: Parameter '{param}' in '{params}' is not supported")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, total:bool) -> Union[Dict[str, NamedTuple], NamedTuple]:
