@@ -75,6 +75,41 @@ class MqttClient:
         self._mqttc.connect(mqtt_broker, mqtt_port)
         return True
 
+    # FIXME: change this signature to allow batch-sending multiple messages
+    def publish(self, topic:str, payload:str) -> None:
+        '''
+        Publish a message to the MQTT broker
+        '''
+        logging.debug("MqttClient.publish('%s', '%s')", topic, payload)
+        MqttClient.num_published_total += 1
+        self._mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
+        return
+
+    def loop_start(self) -> None:
+        '''
+        See https://www.eclipse.org/paho/clients/python/docs/#network-loop
+         '''
+        logging.info('starting MQTT client loop')
+        self._mqttc.loop_start()
+
+    def loop_stop(self) -> None:
+        '''
+        See https://www.eclipse.org/paho/clients/python/docs/#network-loop
+         '''
+        logging.info('stopping MQTT client loop')
+        self._mqttc.loop_stop()
+
+    def is_connected(self) -> bool:
+        '''
+        Returns true if currently connected to the MQTT broker
+        '''
+        return self._mqttc.is_connected()
+
+    # ---------------------------------------------------------------------------- #
+    #                                   Callbacks                                  #
+    # These will execute in the Paho secondary thread startd via loop_start()      #
+    # ---------------------------------------------------------------------------- #
+
     def on_connect(self, mqttc: paho.Client, userdata: Any, flags: Any,
             result_code: Any, properties: Any = None) -> None:
         '''
@@ -91,7 +126,11 @@ class MqttClient:
                     compatibility with MQTT v5.0, we recommend adding
                     properties=None.
         '''
-        logging.warning(f"Connected to MQTT broker with result_code={result_code}")
+        if result_code != 0:
+            logging.warning(f"Connected to MQTT broker with result_code={result_code}")
+        else:
+            logging.info("Successfully connected to MQTT broker")
+
         if self.request_topic != '':
             topic = self.request_topic
             if topic[-1] != '/':
@@ -100,6 +139,8 @@ class MqttClient:
             logging.info(f"Subscribing to REQUEST topic '{topic}'")
             mqttc.subscribe(topic, self.qos)
         # else: request topic is disabled
+
+        # FIXME: add here subscription to HA status topic
 
         self.connected = True
         return
@@ -128,6 +169,9 @@ class MqttClient:
             logging.error("Feature not yet implemented. Please raise a github issue if you need it.")
         else:
             logging.warning(f"Unknown topic: {msg.topic}")
+
+        # FIXME: add here processing of HA startup message  -- so we know when we need to send discovery messages
+
         return
 
     def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int) -> None:
@@ -136,27 +180,3 @@ class MqttClient:
         '''
         MqttClient.num_published_successful += 1
         return
-
-    # FIXME: change this signature to allow batch-sending multiple messages
-    def publish(self, topic:str, payload:str) -> None:
-        logging.debug("MqttClient.publish('%s', '%s')", topic, payload)
-        MqttClient.num_published_total += 1
-        self._mqttc.publish(topic, payload, qos=self.qos, retain=self.retain)
-        return
-
-    def loop_start(self) -> None:
-        '''
-        See https://www.eclipse.org/paho/clients/python/docs/#network-loop
-         '''
-        logging.info('starting MQTT client loop')
-        self._mqttc.loop_start()
-
-    def loop_stop(self) -> None:
-        '''
-        See https://www.eclipse.org/paho/clients/python/docs/#network-loop
-         '''
-        logging.info('stopping MQTT client loop')
-        self._mqttc.loop_stop()
-
-    def is_connected(self) -> bool:
-        return self._mqttc.is_connected()

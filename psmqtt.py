@@ -296,6 +296,9 @@ class PsmqttApp:
                         logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks())
                         keep_running = False
                         break
+
+                    # FIXME: add check here for "HA started" flag -- if true send all discovery messages
+
                     time.sleep(0.5)
 
             except socket.error:
