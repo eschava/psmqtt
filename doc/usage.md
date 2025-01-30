@@ -242,10 +242,18 @@ Here follows the reference documentation for all required tasks and their parame
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
   * Task name: `smart`
     * Short description: Self-Monitoring, Analysis and Reporting Technology System (SMART) counters built into most modern ATA/SATA, SCSI/SAS and NVMe disks. [ Full reference ]( https://www.smartmontools.org/wiki/TocDoc )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all disks or a the name of  a specific drive e.g. `/dev/md0` or `/dev/sda1`.
+    * **REQUIRED**: `<param1>`: The name of a specific drive e.g. `/dev/md0` or `/dev/sda`.
     * **REQUIRED**: `<param2>`: The wildcard `*` or `+` to select all S.M.A.R.T. attributes or a field name like 
-      `interface`, `is_ssd`, `model`, `name`, `path`, `rotation_rate`, `serial`, `smart_capable`, `smart_enabled`, `smart_status`, `temperature`, etc.
-      Try the following Python snippet on your prompt to see which SMART attributes are detected by pySMART library: `sudo python3 -c 'import pySMART; pySMART.Device("/dev/sda").all_attributes()'`
+      `interface`, `is_ssd`, `model`, `name`, `path`, `rotation_rate`, `serial`, `smart_capable`, `smart_enabled`, `smart_status`, `temperature`, `test_capabilities`.
+      All SMART attributes are reported in fields named `attribute_raw[ATTRIBUTE_NAME]`. The availability of specific
+      attributes depends on the disk vendor and disk model. E.g. a typical SMART attribute name would be `Power_On_Hours`
+      which can be selected using for `<param2>` the value `attribute_raw[Power_On_Hours]`.
+      All SMART tests (short self tests, long self tests, etc) are reported in fields named `test[TEST_INDEX]`
+      with `<TEST_INDEX>` being a number `0`, `1`, `2`, etc (depending on how many SMART tests were run on the disk).
+      The value of each `test[TEST_INDEX]` is a JSON string containing details about that test, e.g. `hours`, `type`,
+      `status`, etc. The tests are sorted by `hours` in decreasing order so that `test[0]` always indicates the most
+      recent SMART test results.
+      You can try the following Python snippet on your prompt to see which SMART attributes are detected by pySMART library for e.g. your device `/dev/sda`: `sudo python3 -c 'import pySMART; pySMART.Device("/dev/sda").all_attributes()'`
 
 #### <a name='CategoryNetwork'></a>Category Network
 
