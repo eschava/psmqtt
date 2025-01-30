@@ -83,36 +83,49 @@ class Config:
             self.config["options"]["exit_after_num_tasks"] = 0
 
     def _fill_defaults_mqtt(self):
+        m = self.config["mqtt"]
+
         # mqtt.broker object
-        if 'port' not in self.config["mqtt"]["broker"]:
-            self.config['mqtt']["broker"]["port"] = 1883
-        if 'username' not in self.config["mqtt"]["broker"]:
-            self.config['mqtt']["broker"]["username"] = None
-        if 'password' not in self.config["mqtt"]["broker"]:
-            self.config['mqtt']["broker"]["password"] = None
+        if 'port' not in m["broker"]:
+            m["broker"]["port"] = 1883
+        if 'username' not in m["broker"]:
+            m["broker"]["username"] = None
+        if 'password' not in m["broker"]:
+            m["broker"]["password"] = None
 
         # other optional "mqtt" keys
-        if "retain" not in self.config["mqtt"]:
-            self.config["mqtt"]["retain"] = False
-        if "clean_session" not in self.config["mqtt"]:
-            self.config["mqtt"]["clean_session"] = False
-        if "clientid" not in self.config["mqtt"]:
-            self.config["mqtt"]["clientid"] = 'psmqtt-%s' % os.getpid()
-        if "qos" not in self.config["mqtt"]:
-            self.config["mqtt"]["qos"] = 0
-        if "reconnect_period_sec" not in self.config["mqtt"]:
-            self.config["mqtt"]["reconnect_period_sec"] = 5
-        if "publish_topic_prefix" not in self.config["mqtt"]:
+        if "retain" not in m:
+            m["retain"] = False
+        if "clean_session" not in m:
+            m["clean_session"] = False
+        if "clientid" not in m:
+            m["clientid"] = 'psmqtt-%s' % os.getpid()
+        if "qos" not in m:
+            m["qos"] = 0
+        if "reconnect_period_sec" not in m:
+            m["reconnect_period_sec"] = 5
+        if "publish_topic_prefix" not in m:
             hn = socket.gethostname()
-            self.config["mqtt"]["publish_topic_prefix"] = f"psmqtt/{hn}/"
+            m["publish_topic_prefix"] = f"psmqtt/{hn}/"
         else:
             # make sure the publish_topic_prefix ALWAYS ends with a slash,
             # to ensure separation from the topic that will be appended to it
-            if self.config["mqtt"]["publish_topic_prefix"][-1] != '/':
-                self.config["mqtt"]["publish_topic_prefix"] += '/'
+            if m["publish_topic_prefix"][-1] != '/':
+                m["publish_topic_prefix"] += '/'
 
-        if "request_topic" not in self.config["mqtt"]:
-            self.config["mqtt"]["request_topic"] = 'request'
+        if "request_topic" not in m:
+            m["request_topic"] = 'request'
+
+        # mqtt.ha_discovery object
+        if 'ha_discovery' not in m:
+            m["ha_discovery"] = {"enabled": False, "topic": "homeassistant"}
+        if 'enabled' not in m["ha_discovery"]:
+            m["ha_discovery"]["enabled"] = False
+        if 'topic' not in m["ha_discovery"]:
+            m["ha_discovery"]["topic"] = "homeassistant"
+
+        # enhance the original config with the one containing all settings:
+        self.config["mqtt"] = m
 
     def _fill_defaults_schedule(self):
         # provide defaults for the "schedule" key
@@ -126,21 +139,44 @@ class Config:
             # "cron" & "tasks" fields presence is already ensured by the JSON schema
             validated_tasks = []
             for t in s["tasks"]:
-                # more validation on "task" name
+                # validate "task" name
                 if t["task"] not in available_handlers_names:
                     raise ValueError(f"Invalid task '{t['task']}' in configuration file. Supported tasks are: {available_handlers_names}")
-                # provide defaults for "params" and "formatter" fields
-                if "params" not in t:
-                    t["params"] = []
-                if "formatter" not in t:
-                    t["formatter"] = None
-                if "topic" not in t:
-                    t["topic"] = None
+
+                # provide defaults for the task:
+                t = self._fill_defaults_task(t)
+
+                # consider this as valid:
                 validated_tasks.append(t)
 
             validated_schedule.append({"cron": s["cron"], "tasks": validated_tasks})
 
+        # get rid of original schedule and replace with validated scheduling rules:
         self.config["schedule"] = validated_schedule
+
+    def _fill_defaults_task(self, t: dict[str,str]) -> dict[str,str]:
+        if "params" not in t:
+            t["params"] = []
+        if "formatter" not in t:
+            t["formatter"] = None
+        if "topic" not in t:
+            t["topic"] = None
+
+        if "ha_discovery" not in t:
+            t["ha_discovery"] = {"name": "", "platform": "sensor", "device_class": "", "unit_of_measurement": "", "icon": "", "expire_after": 0}
+        if "name" not in t["ha_discovery"]:
+            t["ha_discovery"]["name"] = ""
+        if "platform" not in t["ha_discovery"]:
+            t["ha_discovery"]["platform"] = "sensor"
+        if "device_class" not in t["ha_discovery"]:
+            t["ha_discovery"]["device_class"] = ""
+        if "unit_of_measurement" not in t["ha_discovery"]:
+            t["ha_discovery"]["unit_of_measurement"] = ""
+        if "icon" not in t["ha_discovery"]:
+            t["ha_discovery"]["icon"] = ""
+        if "expire_after" not in t["ha_discovery"]:
+            t["ha_discovery"]["expire_after"] = 0
+        return t
 
     def apply_logging_config(self):
         # Apply logging config
