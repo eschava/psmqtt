@@ -51,6 +51,8 @@ class Task:
         for x in nonEmptyParams:
             if isinstance(x,str):
                 if BaseHandler.is_join_wildcard(x):
+                    # skip any join wildcard (+) parameter from the MQTT topic; do insert however the regular wildcard (*)
+                    # so that the Topic class knows that it's actually a multi-topic
                     continue
                 else:
                     escapedParams.append(x.replace('/', '|'))
