@@ -50,6 +50,13 @@ class TestTask(unittest.TestCase):
         ]
 
         for t in testcases:
-            task = Task(t["input_task"]["task"], t["input_task"]["params"], "", "", 0, 0)
+            task = Task(
+                t["input_task"]["task"],
+                t["input_task"]["params"],
+                "",  # mqtt_topic
+                "",  # formatter
+                {},  # ha_discovery
+                "",  # mqtt_topic_prefix
+                0, 0)
             topic = task._topic_from_task(t["prefix"])
             self.assertEqual(topic.get_topic(), t["expected_topic_name"])
