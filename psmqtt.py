@@ -168,13 +168,13 @@ class PsmqttApp:
         ha_device_name = self.config.config["mqtt"]["ha_discovery"]["device_name"]
         psmqtt_ver = PsmqttApp.read_version_file()
 
-        # FIXME: these 3 info below should somehow be linked to the HW device from which 
+        # FIXME: these 3 info below should somehow be linked to the HW device from which
         #        the information has been extracted, so we need somehow to read them from the
         #        computer where psmqtt runs (considering the option that psmqtt runs inside docker)
         underlying_hw = {
             "manufacturer": "PSMQTT",
             "model": "TODO",
-            "sw_version": "1.0", 
+            "sw_version": "1.0",
             "hw_version": "1.0"
         }
         num_msgs = 0
@@ -278,11 +278,11 @@ class PsmqttApp:
             j = 0
             for t in sch["tasks"]:
                 task_list.append(Task(
-                    t["task"], 
-                    t["params"], 
-                    t["topic"], 
-                    t["formatter"], 
-                    t["ha_discovery"], 
+                    t["task"],
+                    t["params"],
+                    t["topic"],
+                    t["formatter"],
+                    t["ha_discovery"],
                     self.config.config["mqtt"]["publish_topic_prefix"],
                     i, j))
                 j += 1

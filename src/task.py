@@ -167,8 +167,8 @@ class Task:
                 "name": device_name,
                 "mf": underlying_hw["manufacturer"],
                 "mdl": underlying_hw["model"],
-                "sw": underlying_hw["sw_version"], 
-                "hw": underlying_hw["hw_version"], 
+                "sw": underlying_hw["sw_version"],
+                "hw": underlying_hw["hw_version"],
             },
             "o": {
                 "name":"psmqtt",

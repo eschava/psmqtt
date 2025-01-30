@@ -165,7 +165,7 @@ class Config:
             t["topic"] = None
 
         if "ha_discovery" not in t:
-            t["ha_discovery"] = None #{"name": "", "platform": "sensor", "device_class": "", "unit_of_measurement": "", "icon": "", "expire_after": 0}
+            t["ha_discovery"] = None
         else:
             h = t["ha_discovery"]
             if "name" not in h:
