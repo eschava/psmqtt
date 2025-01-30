@@ -4,7 +4,8 @@
 from enum import IntEnum
 import json
 import logging
-from typing import Any, List
+import hashlib
+from typing import Any, List, Dict
 
 from .handlers_base import BaseHandler
 from .handlers_all import TaskHandlers
@@ -19,6 +20,7 @@ class Task:
      * "params"
      * "topic" and
      * "formatter"
+     * "ha_discovery"
     fields.
     '''
 
@@ -33,14 +35,27 @@ class Task:
             params:List[str],
             mqtt_topic:str,
             formatter:str,
+            ha_discovery:Dict[str,Any],
+            mqtt_topic_prefix:str,
             parent_schedule_rule_idx:int,
             task_idx:int) -> None:
         self.task_name = name
         self.params = params
         self.topic_name = mqtt_topic
         self.formatter = formatter
+        self.ha_discovery = ha_discovery
+
         self.parent_schedule_rule_idx = parent_schedule_rule_idx
         self.task_friendly_name = f"schedule{parent_schedule_rule_idx}.task{task_idx}.{name}"
+
+        # create a Topic instance associated with this Task:
+        if self.topic_name is None:
+            self.topic = self._topic_from_task(mqtt_topic_prefix)
+        else:
+            # use the specified MQTT topic name; just make sure that the MQTT topic prefix is present
+            self.topic = Topic(self.topic_name if self.topic_name.startswith(mqtt_topic_prefix)
+                                else mqtt_topic_prefix + self.topic_name)
+        logging.info(f"Task.run_task({self.task_friendly_name}): MQTT topic is '{self.topic.get_topic()}'")
 
     def _topic_from_task(self, topic_prefix: str) -> Topic:
         # create the MQTT topic by concatenating the task name and its parameters with the MQTT topic-level separator '/'
@@ -88,37 +103,29 @@ class Task:
             Task.num_errors += 1
             return
 
-        if self.topic_name is None:
-            topic = self._topic_from_task(mqttc.topic_prefix)
-        else:
-            # use the specified MQTT topic name; just make sure that the MQTT topic prefix is present
-            topic = Topic(self.topic_name if self.topic_name.startswith(mqttc.topic_prefix)
-                                else mqttc.topic_prefix + self.topic_name)
-        logging.debug(f"Task.run_task({self.task_friendly_name}): mqtt topic is '{topic.get_topic()}'")
-
         try:
             payload = TaskHandlers.get_value(self.task_name, self.params, self.formatter)
             is_seq = isinstance(payload, list) or isinstance(payload, dict)
-            if is_seq and not topic.is_multitopic():
+            if is_seq and not self.topic.is_multitopic():
                 raise Exception(f"Result of task '{self.task_friendly_name}' has several values but topic doesn't contain the wildcard '*' character. Please include the wildcard in the topic specification.")
-            if not is_seq and topic.is_multitopic():
+            if not is_seq and self.topic.is_multitopic():
                 raise Exception(f"Result of task '{self.task_friendly_name}' has a single value but the topic contains the wildcard '*' character. Please remove the wildcard from the topic specification.")
 
             if isinstance(payload, list):
                 for i, v in enumerate(payload):
-                    subtopic = topic.get_subtopic(str(i))
+                    subtopic = self.topic.get_subtopic(str(i))
                     mqttc.publish(subtopic, Task._payload_as_string(v))
 
             elif isinstance(payload, dict):
                 for key in payload:
-                    subtopic = topic.get_subtopic(str(key))
+                    subtopic = self.topic.get_subtopic(str(key))
                     v = payload[key]
                     mqttc.publish(subtopic, Task._payload_as_string(v))
             else:
-                mqttc.publish(topic.get_topic(), Task._payload_as_string(payload))
+                mqttc.publish(self.topic.get_topic(), Task._payload_as_string(payload))
 
         except Exception as ex:
-            mqttc.publish(topic.get_error_topic(), str(ex))
+            mqttc.publish(self.topic.get_error_topic(), str(ex))
             logging.exception(f"Task.run_task({self.task_friendly_name}) failed: {ex}")
             Task.num_errors += 1
 
@@ -126,5 +133,64 @@ class Task:
         return
 
     @staticmethod
-    def num_total_tasks() -> int:
+    def num_total_tasks_executed() -> int:
+        '''
+        Returns the total number of tasks executed so far, both those successful and those failed.
+        '''
         return Task.num_success + Task.num_errors
+
+    def get_ha_unique_id(self, device_name:str) -> str:
+        '''
+        Returns a reasonable-unique ID to be used inside HA discovery messages
+        '''
+
+        concatenated = "".join(self.params)
+        hash_object = hashlib.sha256(concatenated.encode())
+        hash_hex = hash_object.hexdigest()
+        return f"{device_name}-{self.task_name}-{hash_hex[:12]}"
+
+    def get_ha_discovery_payload(self, device_name:str, psmqtt_ver:str, underlying_hw:Dict[str,str]) -> str:
+        '''
+        Returns an HomeAssistant MQTT discovery message associated with this task.
+        This method is only available for single-valued tasks, having their "ha_discovery" metadata
+        populated in the configuration file.
+        See https://www.home-assistant.io/integrations/mqtt/#discovery-messages
+        '''
+        if self.ha_discovery is None:
+            return None
+        if self.topic.is_multitopic():
+            raise Exception(f"Task '{self.task_friendly_name}' has HA discovery configured but the topic contains the wildcard '*' character, so this is a multi-result task. HA discovery options are not supported on multi-result tasks.")
+
+        msg = {
+            "dev": {
+                "ids": device_name,
+                "name": device_name,
+                "mf": underlying_hw["manufacturer"],
+                "mdl": underlying_hw["model"],
+                "sw": underlying_hw["sw_version"], 
+                "hw": underlying_hw["hw_version"], 
+            },
+            "o": {
+                "name":"psmqtt",
+                "sw": psmqtt_ver,
+                "url": "https://github.com/eschava/psmqtt"
+            },
+            "device_class": self.ha_discovery["device_class"],
+            "unit_of_measurement": self.ha_discovery["unit_of_measurement"],
+            "unique_id": self.get_ha_unique_id(device_name),
+            "state_topic": self.topic.get_topic(),
+            "name": self.ha_discovery["name"],
+            "expire_after": self.ha_discovery["expire_after"],
+            "icon": self.ha_discovery["icon"],
+        }
+        return json.dumps(msg)
+
+    def get_ha_discovery_topic(self, ha_topic:str, device_name:str) -> str:
+        '''
+        Returns the TOPIC associated with the PAYLOAD returned by get_ha_discovery_payload()
+        '''
+        # the topic shall be in format
+        #   <discovery_prefix>/<component>/[<node_id>/]<object_id>/config
+        # see https://www.home-assistant.io/integrations/mqtt/#discovery-topic
+        unique_id = self.get_ha_unique_id(device_name)
+        return f"{ha_topic}/{self.ha_discovery['platform']}/{device_name}/{unique_id}/config"

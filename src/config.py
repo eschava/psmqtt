@@ -123,6 +123,8 @@ class Config:
             m["ha_discovery"]["enabled"] = False
         if 'topic' not in m["ha_discovery"]:
             m["ha_discovery"]["topic"] = "homeassistant"
+        if 'device_name' not in m["ha_discovery"]:
+            m["ha_discovery"]["device_name"] = socket.gethostname()
 
         # enhance the original config with the one containing all settings:
         self.config["mqtt"] = m
@@ -163,19 +165,23 @@ class Config:
             t["topic"] = None
 
         if "ha_discovery" not in t:
-            t["ha_discovery"] = {"name": "", "platform": "sensor", "device_class": "", "unit_of_measurement": "", "icon": "", "expire_after": 0}
-        if "name" not in t["ha_discovery"]:
-            t["ha_discovery"]["name"] = ""
-        if "platform" not in t["ha_discovery"]:
-            t["ha_discovery"]["platform"] = "sensor"
-        if "device_class" not in t["ha_discovery"]:
-            t["ha_discovery"]["device_class"] = ""
-        if "unit_of_measurement" not in t["ha_discovery"]:
-            t["ha_discovery"]["unit_of_measurement"] = ""
-        if "icon" not in t["ha_discovery"]:
-            t["ha_discovery"]["icon"] = ""
-        if "expire_after" not in t["ha_discovery"]:
-            t["ha_discovery"]["expire_after"] = 0
+            t["ha_discovery"] = None #{"name": "", "platform": "sensor", "device_class": "", "unit_of_measurement": "", "icon": "", "expire_after": 0}
+        else:
+            h = t["ha_discovery"]
+            if "name" not in h:
+                h["name"] = ""
+            if "platform" not in h:
+                h["platform"] = "sensor"
+            if "device_class" not in h:
+                h["device_class"] = ""
+            if "unit_of_measurement" not in h:
+                h["unit_of_measurement"] = ""
+            if "icon" not in h:
+                h["icon"] = ""
+            if "expire_after" not in h:
+                h["expire_after"] = 0
+            t["ha_discovery"] = h
+
         return t
 
     def apply_logging_config(self):

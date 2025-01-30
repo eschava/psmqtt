@@ -21,6 +21,9 @@ class MqttClient:
     # Counter of total messages reaching the MqttClient.publish()
     num_published_total = 0
 
+    # Constant value indicating the absence of a connection to the broker from get_connection_id()
+    CONN_ID_INVALID = 0
+
     def __init__(self,
             client_id:str,
             clean_session:bool,
@@ -28,14 +31,19 @@ class MqttClient:
             request_topic:str,
             qos:int,
             retain:bool,
-            reconnect_period_sec:float) -> None:
+            reconnect_period_sec:float,
+            ha_status_topic:str) -> None:
 
-        self.connected = False
         self.topic_prefix = topic_prefix
         self.request_topic = request_topic
         self.qos = qos
         self.retain = retain
         self.reconnect_period_sec = reconnect_period_sec
+        self.ha_status_topic = ha_status_topic
+
+        # internal flags:
+        self._connection_id = MqttClient.CONN_ID_INVALID
+        self._ha_discovery_messages_requested = False
 
         # use MQTT v3.1.1 for now
         self._mqttc = paho.Client(paho.CallbackAPIVersion.VERSION1,
@@ -105,6 +113,24 @@ class MqttClient:
         '''
         return self._mqttc.is_connected()
 
+    def get_connection_id(self) -> int:
+        '''
+        Returns the ID of the current connection to the MQTT broker;
+        this ID allows to distinguish between different connections so that
+        the caller can detect whether the connection has been lost and re-established
+        '''
+        if self._mqttc.is_connected():
+            return self._connection_id
+        return MqttClient.CONN_ID_INVALID
+
+    def get_and_reset_ha_discovery_messages_requested_flag(self) -> bool:
+        '''
+        Returns the value of the internal flag _ha_discovery_messages_requested and resets it
+        '''
+        ret = self._ha_discovery_messages_requested
+        self._ha_discovery_messages_requested = False
+        return ret
+
     # ---------------------------------------------------------------------------- #
     #                                   Callbacks                                  #
     # These will execute in the Paho secondary thread startd via loop_start()      #
@@ -140,9 +166,13 @@ class MqttClient:
             mqttc.subscribe(topic, self.qos)
         # else: request topic is disabled
 
-        # FIXME: add here subscription to HA status topic
+        if self.ha_status_topic != '':
+            logging.info(f"Subscribing to HomeAssistant status topic '{self.ha_status_topic}'")
+            mqttc.subscribe(self.ha_status_topic, self.qos)
+        # else: Home Assistant MQTT discovery messages are disabled
 
-        self.connected = True
+        # create an ID for this new connection to the MQTT broker:
+        self._connection_id += 1
         return
 
     def on_disconnect(self, mqttc: paho.Client, userdata: Any, rc: Any) -> None:
@@ -167,11 +197,16 @@ class MqttClient:
             # FIXME: deserialize from the payload the YAML that defines the TASK
             #        and run it
             logging.error("Feature not yet implemented. Please raise a github issue if you need it.")
+        elif msg.topic == self.ha_status_topic:
+            mqtt_payload = msg.payload.decode("UTF-8")
+            if mqtt_payload == "online":
+                logging.info("HomeAssistant status changed to 'online'. Sending out MQTT discovery messages.")
+                self._ha_discovery_messages_requested = True
+            elif mqtt_payload == "offline":
+                # this is typically not a good news, unless it's a planned maintainance
+                logging.info("!!! HomeAssistant status changed to 'offline' !!!")
         else:
             logging.warning(f"Unknown topic: {msg.topic}")
-
-        # FIXME: add here processing of HA startup message  -- so we know when we need to send discovery messages
-
         return
 
     def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int) -> None:

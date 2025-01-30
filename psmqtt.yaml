@@ -61,6 +61,10 @@ mqtt:
 
     # ha_discovery.topic: defines the topic that psmqtt will publish its "homeassistant" MQTT discovery topics;
     topic: homeassistant
+
+    # ha_discovery.device_name: the name of the device grouping all sensors published to HomeAssistant;
+    # it defaults to the <hostname> of the computer
+    #device_name: 
     
 options:
   # exit_after_num_tasks: this configuration parameter is used to simulate the "psmqtt-publish.py" script variant that was

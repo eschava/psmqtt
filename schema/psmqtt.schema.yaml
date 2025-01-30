@@ -27,6 +27,7 @@ mqtt:
 mqtt_ha_discovery:
   enabled: bool(required=False)
   topic: str(required=False)
+  device_name: str(required=False)
 ---
 mqtt_broker:
   host: str()

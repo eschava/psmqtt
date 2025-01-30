@@ -69,6 +69,7 @@ class PsmqttApp:
         self.scheduler_thread = None  # instance of SchedulerThread
 
         self.last_logged_status = (None, None, None)
+        self.all_task_list = []
 
     @staticmethod
     def on_task_timer(app: 'PsmqttApp', parsed_rrule: str, tasks: List[Task]) -> None:
@@ -98,7 +99,7 @@ class PsmqttApp:
             # main entrypoint for TASK execution:
             task.run_task(app.mqtt_client)
 
-            if exit_after > 0 and Task.num_total_tasks() >= exit_after:
+            if exit_after > 0 and Task.num_total_tasks_executed() >= exit_after:
                 reschedule = False
                 break
 
@@ -139,10 +140,11 @@ class PsmqttApp:
         app.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([app]))
         return
 
+    @staticmethod
     def read_version_file(filename='VERSION') -> str:
-        """
+        '''
         Reads the content of a version file.
-        """
+        '''
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         version_file_path = os.path.join(current_dir, filename)
@@ -155,6 +157,35 @@ class PsmqttApp:
         except FileNotFoundError:
             logging.error(f"Version file '{filename}' not found in the current directory.")
             return "N/A"
+
+    def publish_ha_discovery_messages(self):
+        '''
+        Publish MQTT discovery messages for HomeAssistant, from all tasks that have been decorated
+        with the "ha_discovery" metadata
+        '''
+
+        ha_discovery_topic = self.config.config["mqtt"]["ha_discovery"]["topic"]
+        ha_device_name = self.config.config["mqtt"]["ha_discovery"]["device_name"]
+        psmqtt_ver = PsmqttApp.read_version_file()
+
+        # FIXME: these 3 info below should somehow be linked to the HW device from which 
+        #        the information has been extracted, so we need somehow to read them from the
+        #        computer where psmqtt runs (considering the option that psmqtt runs inside docker)
+        underlying_hw = {
+            "manufacturer": "PSMQTT",
+            "model": "TODO",
+            "sw_version": "1.0", 
+            "hw_version": "1.0"
+        }
+        num_msgs = 0
+        for t in self.all_task_list:
+            assert isinstance(t, Task)
+            payload = t.get_ha_discovery_payload(ha_device_name, psmqtt_ver, underlying_hw)
+            if payload is not None:
+                topic = t.get_ha_discovery_topic(ha_discovery_topic, ha_device_name)
+                self.mqtt_client.publish(topic, payload)
+                num_msgs += 1
+        logging.info(f"Published a total of {num_msgs} MQTT discovery messages under the topic prefix '{ha_discovery_topic}' with device '{ha_device_name}'")
 
     def setup(self) -> int:
         '''
@@ -178,7 +209,7 @@ class PsmqttApp:
             os.environ["COLUMNS"] = "120"  # avoid too many line wraps
         args = parser.parse_args()
         if args.version:
-            print(f"Version: {self.read_version_file()}")
+            print(f"Version: {PsmqttApp.read_version_file()}")
             return 0
 
         # fix for error 'No handlers could be found for logger "recurrent"'
@@ -202,6 +233,9 @@ class PsmqttApp:
         #
         # create MqttClient
         #
+        ha_status_topic = ""
+        if self.config.config["mqtt"]["ha_discovery"]["enabled"]:
+            ha_status_topic = self.config.config["mqtt"]["ha_discovery"]["topic"] + "/status"
         self.mqtt_client = MqttClient(
             self.config.config["mqtt"]["clientid"],
             self.config.config["mqtt"]["clean_session"],
@@ -209,7 +243,8 @@ class PsmqttApp:
             self.config.config["mqtt"]["request_topic"],
             self.config.config["mqtt"]["qos"],
             self.config.config["mqtt"]["retain"],
-            self.config.config["mqtt"]["reconnect_period_sec"])
+            self.config.config["mqtt"]["reconnect_period_sec"],
+            ha_status_topic)
 
         #
         # parse schedule
@@ -242,12 +277,22 @@ class PsmqttApp:
             task_list = []
             j = 0
             for t in sch["tasks"]:
-                task_list.append(Task(t["task"], t["params"], t["topic"], t["formatter"], i, j))
+                task_list.append(Task(
+                    t["task"], 
+                    t["params"], 
+                    t["topic"], 
+                    t["formatter"], 
+                    t["ha_discovery"], 
+                    self.config.config["mqtt"]["publish_topic_prefix"],
+                    i, j))
                 j += 1
 
             # include this in our scheduler:
             self.scheduler.enter(delay_sec, 1, PsmqttApp.on_task_timer, (self, parsed_rrule, task_list))
             i += 1
+
+            # store task instances also locally:
+            self.all_task_list.extend(task_list)
 
         # add periodic log
         try:
@@ -285,6 +330,8 @@ class PsmqttApp:
             # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
             # so, if and when the MQTT broker will be available, the connection will be established
 
+        last_ha_discovery_messages_connection_id = MqttClient.CONN_ID_INVALID
+
         # block the main thread on the MQTT client loop
         keep_running = True
         exit_after = self.config.config["options"]["exit_after_num_tasks"]
@@ -292,12 +339,24 @@ class PsmqttApp:
             try:
                 self.mqtt_client.loop_start()
                 while True:
-                    if exit_after > 0 and Task.num_total_tasks() >= exit_after:
-                        logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks())
+                    if exit_after > 0 and Task.num_total_tasks_executed() >= exit_after:
+                        logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks_executed())
                         keep_running = False
                         break
 
-                    # FIXME: add check here for "HA started" flag -- if true send all discovery messages
+                    if self.config.config["mqtt"]["ha_discovery"]["enabled"]:
+                        curr_conn_id = self.mqtt_client.get_connection_id()
+                        if curr_conn_id != last_ha_discovery_messages_connection_id:
+                            # looks like a new MQTT connection to the broker has (recently) been estabilished;
+                            # send out MQTT discovery messages
+                            logging.warning(f"New connection to the MQTT broker detected (id={curr_conn_id}), sending out MQTT discovery messages...")
+                            self.publish_ha_discovery_messages()
+                            last_ha_discovery_messages_connection_id = curr_conn_id
+
+                        if self.mqtt_client.get_and_reset_ha_discovery_messages_requested_flag():
+                            # MQTT discovery messages have been requested...
+                            logging.warning("Detected the notification that Home Assistant just started, sending out MQTT discovery messages...")
+                            self.publish_ha_discovery_messages()
 
                     time.sleep(0.5)
 
@@ -317,6 +376,8 @@ class PsmqttApp:
 
         # log status one last time
         PsmqttApp.log_status()
+
+        logging.warning("Exiting gracefully")
 
         return 0
 
