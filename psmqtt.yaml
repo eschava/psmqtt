@@ -52,6 +52,16 @@ mqtt:
   # if not provided, it defaults to "psmqtt/<hostname>/"
   #publish_topic_prefix: 
 
+  ha_discovery:
+    # ha_discovery.enabled: if set to true, psmqtt will publish a "homeassistant" MQTT discovery topic
+    # for each task having the 'ha_discovery' configuration parameters set.
+    # This will enable HomeAssistant to immediately recognize as sensors the information published by psmqtt
+    # (see https://www.home-assistant.io/integrations/sensor.mqtt/)
+    enabled: true
+
+    # ha_discovery.topic: defines the topic that psmqtt will publish its "homeassistant" MQTT discovery topics;
+    topic: homeassistant
+    
 options:
   # exit_after_num_tasks: this configuration parameter is used to simulate the "psmqtt-publish.py" script variant that was
   # provided in the past by psmqtt project; if exit_after_num_tasks=N, psmqtt will gracefully exit after
@@ -63,42 +73,87 @@ schedule:
   # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
   # the "cron" expression is a human-friendly expression, see https://github.com/kvh/recurrent/tree/master
   # for example of supported syntaxes
-  - cron: "every 1 second"
+  - cron: "every 10 seconds"
     tasks:
       # each task is defined by
       # * "task": the name (see PSMQTT docs for full list of available task handlers);
       # * "params": optional task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
       # * "topic": optional MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
       # * "formatter": optional formatter expression, which is a Jinja2 expression
+      # see "Usage docs" for more details
 
-      # simple task, no parameter, no formatter:
-      - task: cpu_percent
-        params: [ "total" ]
-
-      # simple tasks with 1 or 2 parameters:
-      - task: virtual_memory
-        params: [ percent ]
-      #- task: sensors_temperatures
-      #  params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
-      - task: smart
-        params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
-      - task: smart
-        params: [ /dev/sda, "*" ]
-        #topic: "sda_info"
-        topic: "/sda_smart_status/*"
-      - task: smart
-        params: [ /dev/sda, "tests/0" ]
-        topic: "sda_info_last_test"
-
-      # task requesting to publish virtual_memory percentage into a topic named "foobar"
+      # simple task requesting to publish virtual_memory percentage into a topic named "foobar"
       - task: virtual_memory
         params: [ percent ]
         topic: foobar
-      
+
+      # task with 2 parameters, no formatter, no HA discovery message configuration:
+      - task: sensors_temperatures
+        params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
+        
+      # task with 1 parameter, no formatter, HA discovery message configuration:
+      - task: cpu_percent
+        params: [ total ]
+        ha_discovery:
+          name: "CPU Percentage"
+          platform: sensor
+          device_class: None  # could not find a good one at https://www.home-assistant.io/integrations/sensor/#device-class
+          expire_after: 30
+          icon: mdi:speedometer
+
+      # task with 1 parameter, no formatter, HA discovery message configuration:
+      - task: virtual_memory
+        params: [ percent ]
+        ha_discovery:
+          name: "Memory Percentage"
+          platform: sensor
+          device_class: None  # could not find a good one at https://www.home-assistant.io/integrations/sensor/#device-class
+          expire_after: 30
+          icon: mdi:memory
+
+      # task with 2 parameters, no formatter, HA discovery message configuration:
+      - task: smart
+        params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
+        ha_discovery:
+          name: "NVMe0 Temperature"
+          platform: sensor
+          device_class: temperature
+          expire_after: 30
+          icon: mdi:thermometer
+
+      # task requesting ALL available SMART attributes of a specific disk to be published as individual topics
+      - task: smart
+        params: [ /dev/sda, "*" ]
+        topic: "/sda_smart_status/*"
+        # ha_discovery not supported for messages with wildcards 
+
+      # task requesting ALL available SMART attributes of a specific disk to be published as a single topic with JSON payload
+      - task: smart
+        params: [ /dev/sda, "+" ]
+        topic: "/sda_smart_status"
+        # ha_discovery not supported for messages with wildcards 
+
+      # task requesting to publish the result of the last SMART test, complete with HA discovery message configuration:
+      - task: smart
+        params: [ /dev/sda, "test[0]" ]
+        topic: "sda_info_last_test"
+        ha_discovery:
+          name: "NVMe0 "
+          platform: sensor
+          device_class: temperature
+          expire_after: 30
+          icon: mdi:thermometer
+
   - cron: "every 60 minutes"
     tasks:
       - task: disk_usage
         params: [ percent, "/" ]
+        ha_discovery:
+          name: "Root Disk Usage"
+          platform: sensor
+          device_class: None
+          expire_after: 5400 # 90 minutes
+          icon: mdi:harddisk
     
   - cron: "every 3 hours"
     tasks:
