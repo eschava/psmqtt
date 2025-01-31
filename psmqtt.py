@@ -263,6 +263,7 @@ class PsmqttApp:
             logging.debug(f"SCHEDULE#{i}: {len(sch['tasks'])} tasks: {sch['tasks']}")
 
             # parse the cron expression
+            # FIXME: we should introduce a Schedule class to contain this code
             r = RecurringEvent()
             parsed_rrule = r.parse(sch["cron"])
             if not r.is_recurring:
@@ -272,6 +273,7 @@ class PsmqttApp:
             # compute how many secs in the future this needs to run
             assert isinstance(parsed_rrule, str)
             delay_sec = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
+            logging.info(f"SCHEDULE#{i}: First run will happen immediately, then every {delay_sec} seconds")
 
             # instantiate each task associated with this schedule
             task_list = []
@@ -288,7 +290,8 @@ class PsmqttApp:
                 j += 1
 
             # include this in our scheduler:
-            self.scheduler.enter(delay_sec, 1, PsmqttApp.on_task_timer, (self, parsed_rrule, task_list))
+            first_time_delay_sec = i + 1
+            self.scheduler.enter(first_time_delay_sec, 1, PsmqttApp.on_task_timer, (self, parsed_rrule, task_list))
             i += 1
 
             # store task instances also locally:
