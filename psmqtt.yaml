@@ -102,7 +102,6 @@ schedule:
           name: "CPU Percentage"
           unit_of_measurement: "%"
           platform: sensor
-          device_class: None  # could not find a good one at https://www.home-assistant.io/integrations/sensor/#device-class
           expire_after: 30
           icon: mdi:speedometer
 
@@ -113,7 +112,6 @@ schedule:
           name: "Memory Percentage"
           unit_of_measurement: "%"
           platform: sensor
-          device_class: None  # could not find a good one at https://www.home-assistant.io/integrations/sensor/#device-class
           expire_after: 30
           icon: mdi:memory
 
@@ -148,7 +146,6 @@ schedule:
         ha_discovery:
           name: "SDA SMART Test"
           platform: sensor
-          device_class: None
           expire_after: 30
           icon: mdi:clock
 
@@ -159,7 +156,6 @@ schedule:
         ha_discovery:
           name: "Root Disk Usage"
           platform: sensor
-          device_class: None
           expire_after: 5400 # 90 minutes
           icon: mdi:harddisk
     

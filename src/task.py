@@ -162,6 +162,10 @@ class Task:
         if self.topic.is_multitopic():
             raise Exception(f"Task '{self.task_friendly_name}' has HA discovery configured but the topic contains the wildcard '*' character, so this is a multi-result task. HA discovery options are not supported on multi-result tasks.")
 
+        # required parameters
+        if self.ha_discovery["name"] is None or self.ha_discovery["name"] == '':
+            raise Exception(f"Task '{self.task_friendly_name}' has invalid HA discovery 'name' property.")
+
         msg = {
             "dev": {
                 "ids": device_name,
@@ -176,14 +180,19 @@ class Task:
                 "sw": psmqtt_ver,
                 "url": "https://github.com/eschava/psmqtt"
             },
-            "device_class": self.ha_discovery["device_class"],
-            "unit_of_measurement": self.ha_discovery["unit_of_measurement"],
             "unique_id": self.get_ha_unique_id(device_name),
             "state_topic": self.topic.get_topic(),
             "name": self.ha_discovery["name"],
             "expire_after": self.ha_discovery["expire_after"],
-            "icon": self.ha_discovery["icon"],
         }
+
+        if self.ha_discovery["icon"]:
+            msg["icon"] = self.ha_discovery["icon"]
+        if self.ha_discovery["device_class"]:
+            msg["device_class"] = self.ha_discovery["device_class"]
+        if self.ha_discovery["unit_of_measurement"]:
+            msg["unit_of_measurement"] = self.ha_discovery["unit_of_measurement"]
+
         return json.dumps(msg)
 
     def get_ha_discovery_topic(self, ha_topic:str, device_name:str) -> str:
