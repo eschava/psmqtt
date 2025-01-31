@@ -122,9 +122,11 @@ class TaskHandlers:
 
         value = handler.handle(params)
         if formatter is not None:
+            logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) BEFORE FORMATTING => {value}")
             value = Formatter.format(formatter, value)
-
-        logging.debug("get_value(%s with params %s) => %s provided by %s", handlerName, params, value, handler)
+            logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) AFTER FORMATTING with {formatter} => {value}")
+        else:
+            logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) provided by {handler} => {value}")
         return value
 
     @staticmethod

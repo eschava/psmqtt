@@ -141,7 +141,7 @@ schedule:
       # task requesting to publish the result of the last SMART test, complete with HA discovery message configuration:
       - task: smart
         params: [ /dev/sda, "test[0]" ]
-        formatter: "{{x.hours}}"
+        formatter: "{{hours}}"
         topic: "sda_info_last_test"
         ha_discovery:
           name: "SDA SMART Test"
@@ -155,8 +155,8 @@ schedule:
         ha_discovery:
           name: "SDA SMART Status"
           platform: binary_sensor
-          payload_on: "PASS"
-          payload_off: "FAIL"
+          payload_on: FAIL  # the "on" condition indicates a problem, so associate it with the "FAIL" status of SMART test
+          payload_off: PASS
           device_class: problem
           expire_after: 90
           icon: mdi:harddisk
