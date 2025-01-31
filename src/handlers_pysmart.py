@@ -7,7 +7,7 @@ from typing import (
 )
 
 from .handlers_base import BaseHandler, Payload
-from .utils import string_from_dict_optionally, string_from_dict
+from .utils import string_from_dict_optionally
 
 class SmartCommandHandler(BaseHandler):
     '''
