@@ -144,7 +144,8 @@ class Task:
         Returns a reasonable-unique ID to be used inside HA discovery messages
         '''
 
-        concatenated = "".join(self.params)
+        nonEmptyParams = [str(x) for x in self.params if x != '']
+        concatenated = "".join(nonEmptyParams)
         hash_object = hashlib.sha256(concatenated.encode())
         hash_hex = hash_object.hexdigest()
         return f"{device_name}-{self.task_name}-{hash_hex[:12]}"

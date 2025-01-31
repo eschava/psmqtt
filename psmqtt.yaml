@@ -100,6 +100,7 @@ schedule:
         params: [ total ]
         ha_discovery:
           name: "CPU Percentage"
+          unit_of_measurement: "%"
           platform: sensor
           device_class: None  # could not find a good one at https://www.home-assistant.io/integrations/sensor/#device-class
           expire_after: 30
@@ -110,6 +111,7 @@ schedule:
         params: [ percent ]
         ha_discovery:
           name: "Memory Percentage"
+          unit_of_measurement: "%"
           platform: sensor
           device_class: None  # could not find a good one at https://www.home-assistant.io/integrations/sensor/#device-class
           expire_after: 30
@@ -120,6 +122,7 @@ schedule:
         params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
         ha_discovery:
           name: "NVMe0 Temperature"
+          unit_of_measurement: "°C"
           platform: sensor
           device_class: temperature
           expire_after: 30
@@ -140,13 +143,14 @@ schedule:
       # task requesting to publish the result of the last SMART test, complete with HA discovery message configuration:
       - task: smart
         params: [ /dev/sda, "test[0]" ]
+        formatter: "{{x.hours}}"
         topic: "sda_info_last_test"
         ha_discovery:
-          name: "NVMe0 "
+          name: "SDA SMART Test"
           platform: sensor
-          device_class: temperature
+          device_class: None
           expire_after: 30
-          icon: mdi:thermometer
+          icon: mdi:clock
 
   - cron: "every 60 minutes"
     tasks:

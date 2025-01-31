@@ -60,3 +60,5 @@ class TestTask(unittest.TestCase):
                 0, 0)
             topic = task._topic_from_task(t["prefix"])
             self.assertEqual(topic.get_topic(), t["expected_topic_name"])
+
+    # TODO unit tests for HA discovery
