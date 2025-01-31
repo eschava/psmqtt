@@ -23,7 +23,7 @@ class Config:
             "battery", "battery_charging", "carbon_monoxide", "cold", "connectivity",
             "door", "garage_door", "gas", "heat", "light", "lock", "moisture", "motion",
             "moving", "occupancy", "opening", "plug", "power", "presence", "problem",
-            "running", "safety", "smoke", "sound", "tamper", "update", "vibration", "window"        ],
+            "running", "safety", "smoke", "sound", "tamper", "update", "vibration", "window"],
         # see https://www.home-assistant.io/integrations/sensor/#device-class
         "sensor": ['date', 'enum', 'timestamp', 'apparent_power', 'aqi', 'area',
                     'atmospheric_pressure', 'battery', 'blood_glucose_concentration',
