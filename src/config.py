@@ -17,17 +17,26 @@ class Config:
     rest of the application the data as a dictionary.
     '''
     HA_SUPPORTED_PLATFORMS = ["sensor", "binary_sensor"]
-    HA_SUPPORTED_DEVICE_CLASSES = ['date', 'enum', 'timestamp', 'apparent_power', 'aqi', 'area',
-                                    'atmospheric_pressure', 'battery', 'blood_glucose_concentration',
-                                    'carbon_monoxide', 'carbon_dioxide', 'conductivity', 'current',
-                                    'data_rate', 'data_size', 'distance', 'duration', 'energy', 'energy_storage',
-                                    'frequency', 'gas', 'humidity', 'illuminance', 'irradiance', 'moisture',
-                                    'monetary', 'nitrogen_dioxide', 'nitrogen_monoxide', 'nitrous_oxide',
-                                    'ozone', 'ph', 'pm1', 'pm10', 'pm25', 'power_factor', 'power', 'precipitation',
-                                    'precipitation_intensity', 'pressure', 'reactive_power', 'signal_strength',
-                                    'sound_pressure', 'speed', 'sulphur_dioxide', 'temperature', 'volatile_organic_compounds',
-                                    'volatile_organic_compounds_parts', 'voltage', 'volume', 'volume_storage',
-                                    'volume_flow_rate', 'water', 'weight', 'wind_speed']
+    HA_SUPPORTED_DEVICE_CLASSES = {
+        # see https://www.home-assistant.io/integrations/binary_sensor/#device-class
+        "binary_sensor": [
+            "battery", "battery_charging", "carbon_monoxide", "cold", "connectivity",
+            "door", "garage_door", "gas", "heat", "light", "lock", "moisture", "motion",
+            "moving", "occupancy", "opening", "plug", "power", "presence", "problem",
+            "running", "safety", "smoke", "sound", "tamper", "update", "vibration", "window"        ],
+        # see https://www.home-assistant.io/integrations/sensor/#device-class
+        "sensor": ['date', 'enum', 'timestamp', 'apparent_power', 'aqi', 'area',
+                    'atmospheric_pressure', 'battery', 'blood_glucose_concentration',
+                    'carbon_monoxide', 'carbon_dioxide', 'conductivity', 'current',
+                    'data_rate', 'data_size', 'distance', 'duration', 'energy', 'energy_storage',
+                    'frequency', 'gas', 'humidity', 'illuminance', 'irradiance', 'moisture',
+                    'monetary', 'nitrogen_dioxide', 'nitrogen_monoxide', 'nitrous_oxide',
+                    'ozone', 'ph', 'pm1', 'pm10', 'pm25', 'power_factor', 'power', 'precipitation',
+                    'precipitation_intensity', 'pressure', 'reactive_power', 'signal_strength',
+                    'sound_pressure', 'speed', 'sulphur_dioxide', 'temperature', 'volatile_organic_compounds',
+                    'volatile_organic_compounds_parts', 'voltage', 'volume', 'volume_storage',
+                    'volume_flow_rate', 'water', 'weight', 'wind_speed']
+    }
 
     def __init__(self):
         self.config = None
@@ -189,13 +198,15 @@ class Config:
             if h["name"] == '':
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.name' attribute in configuration file: empty")
 
+            # optional parameters:
+
             if "platform" not in h:
                 h["platform"] = "sensor"
             elif h["platform"] not in Config.HA_SUPPORTED_PLATFORMS:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.platform' attribute in configuration file: {h['platform']}. Expected one of {Config.HA_SUPPORTED_PLATFORMS}")
             if "device_class" not in h:
                 h["device_class"] = None
-            elif h["device_class"] not in Config.HA_SUPPORTED_DEVICE_CLASSES:
+            elif h["device_class"] not in Config.HA_SUPPORTED_DEVICE_CLASSES[h["platform"]]:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.device_class' attribute in configuration file: {h['device_class']}. Expected one of {Config.HA_SUPPORTED_DEVICE_CLASSES}")
 
             if "unit_of_measurement" not in h:
@@ -207,6 +218,12 @@ class Config:
                 # FIXME: it would be nice if psmqtt autocomputed the right expiry time based on the
                 #        'cron' expression of the associated schedule
                 h["expire_after"] = 0
+
+            if "payload_on" not in h:
+                h["payload_on"] = None
+            if "payload_off" not in h:
+                h["payload_off"] = None
+
             t["ha_discovery"] = h
 
         return t

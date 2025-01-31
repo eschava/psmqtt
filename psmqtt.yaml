@@ -149,6 +149,18 @@ schedule:
           expire_after: 30
           icon: mdi:clock
 
+      # task requesting to publish the overall SMART status, complete with HA discovery message configuration:
+      - task: smart
+        params: [ /dev/sda, smart_status ]
+        ha_discovery:
+          name: "SDA SMART Status"
+          platform: binary_sensor
+          payload_on: "PASS"
+          payload_off: "FAIL"
+          device_class: problem
+          expire_after: 90
+          icon: mdi:harddisk
+
   - cron: "every 60 minutes"
     tasks:
       - task: disk_usage

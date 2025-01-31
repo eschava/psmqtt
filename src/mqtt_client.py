@@ -200,7 +200,7 @@ class MqttClient:
         elif msg.topic == self.ha_status_topic:
             mqtt_payload = msg.payload.decode("UTF-8")
             if mqtt_payload == "online":
-                logging.info("HomeAssistant status changed to 'online'. Sending out MQTT discovery messages.")
+                logging.info("HomeAssistant status changed to 'online'. Need to publish MQTT discovery messages.")
                 self._ha_discovery_messages_requested = True
             elif mqtt_payload == "offline":
                 # this is typically not a good news, unless it's a planned maintainance

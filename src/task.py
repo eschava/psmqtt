@@ -192,6 +192,10 @@ class Task:
             msg["device_class"] = self.ha_discovery["device_class"]
         if self.ha_discovery["unit_of_measurement"]:
             msg["unit_of_measurement"] = self.ha_discovery["unit_of_measurement"]
+        if self.ha_discovery["payload_on"]:
+            msg["payload_on"] = self.ha_discovery["payload_on"]
+        if self.ha_discovery["payload_off"]:
+            msg["payload_off"] = self.ha_discovery["payload_off"]
 
         return json.dumps(msg)
 
