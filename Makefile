@@ -3,10 +3,21 @@
 format:
 	black .
 
-lint:
+lint: lint-python lint-yaml lint-yaml-with-schema
+
+lint-python:
 	ruff check src/
 	flake8 -v
+
+lint-yaml:
 	@yq . -e psmqtt.yaml >/dev/null && echo "valid psmqtt.yaml file" || ( echo "Invalid YAML file psmqtt.yaml. Fix syntax." ; exit 2 )
+	@yq . -e integration_tests/integration-tests-psmqtt.yaml >/dev/null && echo "valid integration_tests/integration-tests-psmqtt.yaml file" || ( echo "Invalid YAML file integration_tests/integration-tests-psmqtt.yaml. Fix syntax." ; exit 2 )
+
+lint-yaml-with-schema:
+	# use "pip install yamale" if you don't have the "yamale" CLI utility
+	yamale -s schema/psmqtt.schema.yaml psmqtt.yaml 
+	@# integration test file contains some placeholders that won't pass the validation:
+	@#yamale -s schema/psmqtt.schema.yaml integration_tests/integration-tests-psmqtt.yaml
 
 docker:
 	docker build -t psmqtt:latest --build-arg USERNAME=root .

@@ -31,16 +31,28 @@ class TestFormatter(unittest.TestCase):
         self.assertEqual("1.2 MB", Formatter.format("{{a/1000000}} MB", {"a": 1200000}))
         self.assertEqual("1 MB", Formatter.format("{{a|MB}}", {"a": 1200000}))
 
-    def test_format_uptime(self) -> None:
+    def test_format_uptime_str(self) -> None:
         import time
         n = int(time.time())
-        self.assertEqual("0 min", Formatter.format("{{x|uptime}}", n))
-        self.assertEqual("1 min", Formatter.format("{{x|uptime}}", n - 60))
-        self.assertEqual("1:00", Formatter.format("{{x|uptime}}", n - 1*60*60))
-        self.assertEqual("1:40", Formatter.format("{{x|uptime}}", n - 1*60*60 - 40*60))
-        self.assertEqual("1 day, 0 min", Formatter.format("{{x|uptime}}", n - 24*60*60))
-        self.assertEqual("1 day, 40 min", Formatter.format("{{x|uptime}}", n - 24*60*60 - 40*60))
-        self.assertEqual("1 day, 1:40", Formatter.format("{{x|uptime}}", n - 25*60*60 - 40*60))
-        self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60))
-        self.assertEqual("2 days, 1:39", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60+30))
-        self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime}}", n - 49*60*60 - 40*60-30))
+        self.assertEqual("0 min", Formatter.format("{{x|uptime_str}}", n))
+        self.assertEqual("1 min", Formatter.format("{{x|uptime_str}}", n - 60))
+        self.assertEqual("1:00", Formatter.format("{{x|uptime_str}}", n - 1*60*60))
+        self.assertEqual("1:40", Formatter.format("{{x|uptime_str}}", n - 1*60*60 - 40*60))
+        self.assertEqual("1 day, 0 min", Formatter.format("{{x|uptime_str}}", n - 24*60*60))
+        self.assertEqual("1 day, 40 min", Formatter.format("{{x|uptime_str}}", n - 24*60*60 - 40*60))
+        self.assertEqual("1 day, 1:40", Formatter.format("{{x|uptime_str}}", n - 25*60*60 - 40*60))
+        self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime_str}}", n - 49*60*60 - 40*60))
+        self.assertEqual("2 days, 1:39", Formatter.format("{{x|uptime_str}}", n - 49*60*60 - 40*60+30))
+        self.assertEqual("2 days, 1:40", Formatter.format("{{x|uptime_str}}", n - 49*60*60 - 40*60-30))
+
+    def test_format_uptime_sec(self) -> None:
+        import time
+        n = int(time.time())
+
+        # "uptime_sec" should in theory product 0 secs of uptime, but indeed it takes some
+        # time to do the computation so, in some rare cases, it might round the
+        # time difference up to "1" sec, so we pass the test with both "0" and "1" outputs:
+        self.assertIn(Formatter.format("{{x|uptime_sec}}", n), ["0", "1"])
+
+        # same as above: we accept +/-1sec of skew:
+        self.assertIn(Formatter.format("{{x|uptime_sec}}", n - 60), ["59", "60", "61"])

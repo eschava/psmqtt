@@ -149,8 +149,13 @@ schedule:
     tasks:
       - task: disk_usage
         params: [ percent, "/" ]
+
   - cron: "every 5 seconds"
     tasks:
       - task: boot_time
-        formatter: "{{x|uptime}}"
+        formatter: "{{x|uptime_sec}}"
         topic: uptime
+    tasks:
+      - task: boot_time
+        formatter: "{{x|uptime_str}}"
+        topic: uptime2

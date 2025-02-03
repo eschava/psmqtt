@@ -7,7 +7,7 @@ from typing import (
 )
 
 from .handlers_base import BaseHandler, Payload
-from .utils import string_from_dict_optionally, string_from_dict
+from .utils import string_from_dict_optionally
 
 class SmartCommandHandler(BaseHandler):
     '''
@@ -28,25 +28,27 @@ class SmartCommandHandler(BaseHandler):
         if len(params) != 1 and len(params) != 2:
             raise Exception(f"{self.name}: Exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
 
-        dev = params[0]
-        param = params[1] if len(params) == 2 else ''
+        device = params[0]
+        field = params[1] if len(params) == 2 else ''
 
         #if BaseHandler.is_wildcard(dev) and BaseHandler.is_wildcard(param):
         #    raise Exception(f"{self.name}: Cannot list all SMART fields from all disks into the same task")
 
-        info = self.get_value(dev)
+        info = self.get_value(device)
         #logging.debug(f"{info}")
 
-        if param == '':
+        if field == '':
             return string_from_dict_optionally(info, True)
-        elif BaseHandler.is_join_wildcard(param):
+        elif BaseHandler.is_join_wildcard(field):
             return string_from_dict_optionally(info, True)
-        elif BaseHandler.is_regular_wildcard(param):
+        elif BaseHandler.is_regular_wildcard(field):
             return string_from_dict_optionally(info, False)
-        val = info.get(param, None)
+
+        # specific field requested
+        val = info.get(field, None)
         if val is not None:
             return val
-        raise Exception(f"{self.name}: Parameter '{param}' is not supported for device '{dev}")
+        raise Exception(f"{self.name}: Parameter '{field}' is not supported for device '{device}")
 
     def get_value(self, dev: str) -> Payload:
         '''
@@ -79,7 +81,7 @@ class SmartCommandHandler(BaseHandler):
             sorted_test_list = smart_data.tests
         idx = 0
         for t in sorted_test_list:
-            info[f"test[{idx}]"] = string_from_dict(t.__getstate__())
+            info[f"test[{idx}]"] = dict(t.__getstate__())
             idx += 1
 
         # delete fields that are useless after the flattening of SMART attributes and SMART tests just done:

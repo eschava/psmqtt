@@ -413,7 +413,9 @@ numbered.
 psmqtt provides some Jinja2 filters:
 
 * `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
-* `uptime` to format `boot_time` as a human friendly uptime string representation.
+* `uptime_str` to format `boot_time` as a human friendly uptime string representation (e.g., the output string might look like 
+"30 days, 5:18").
+* `uptime_sec` to format `boot_time` as a number of seconds elapsed since last boot.
 
 Examples:
 
@@ -434,7 +436,7 @@ Examples:
     formatter: "{{x[0]+x[1]}}"
 
   - task: boot_time
-    formatter: "{{x|uptime}}"
+    formatter: "{{x|uptime_str}}"
 
 ```
 
@@ -557,6 +559,6 @@ schedule:
   - cron: "every 3 hours"
     tasks:
       - task: boot_time
-        formatter: "{{x|uptime}}"
+        formatter: "{{x|uptime_str}}"
 ```
 
