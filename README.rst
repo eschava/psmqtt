@@ -12,8 +12,8 @@ thanks to the support for `MQTT discovery messages <https://www.home-assistant.i
 
 * `paho-mqtt <https://github.com/eclipse/paho.mqtt.python>`_ to communicate with the MQTT broker;
 * `psutil <https://github.com/giampaolo/psutil>`_ to collect metrics;
-* `pySMART <https://github.com/truenas/py-SMART>`_ to collect SMART data;
-* `recurrent <https://github.com/kvh/recurrent>`_ to describe reporting schedule.
+* `pySMART <https://github.com/truenas/py-SMART>`_ to collect SMART data from HDDs/SSDs;
+* `recurrent <https://github.com/kvh/recurrent>`_ to describe scheduling expressions;
 * `jinja2 <https://github.com/alex-foundation/jinja2>`_ to format the data.
 
 ============
@@ -31,13 +31,13 @@ However alternative installation methods are available for Linux, FreeBSD and Wi
 Configuration and usage
 =======================
 
-Please check the `Usage page <doc/usage.md>`_
+Please check the `Usage page <doc/usage.md>`_.
 
 ============
 Known issues
 ============
 
-See `Known issues <doc/known-problems.md>`_
+See `Known issues <doc/known-problems.md>`_.
 
 =======
 Support
