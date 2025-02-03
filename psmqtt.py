@@ -217,9 +217,13 @@ class PsmqttApp:
         self.scheduler = sched.scheduler(time.time, time.sleep)
         i = 0
         for sch in schedule:
-            new_schedule = Schedule(sch['cron'],
-                                    sch['tasks'],
-                                    i)
+            try:
+                new_schedule = Schedule(sch['cron'],
+                                        sch['tasks'],
+                                        i)
+            except ValueError as e:
+                logging.error(f"Cannot parse schedule #{i}: {e}. Aborting.")
+                return 4
 
             # upon startup psmqtt will immediately run all scheduling rules, just
             # scattered 100ms one from each other:

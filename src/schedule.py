@@ -31,7 +31,7 @@ class Schedule:
         r = RecurringEvent()
         self.parsed_rrule = r.parse(cron)
         if not r.is_recurring:
-            raise Exception(f"Invalid cron expression '{cron}'. Please fix the syntax in the configuration file. Aborting.")
+            raise ValueError(f"Invalid cron expression '{cron}'. Please fix the syntax in the configuration file.")
 
         assert isinstance(self.parsed_rrule, str)
 
