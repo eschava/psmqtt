@@ -233,7 +233,7 @@ Here follows the reference documentation for all required tasks and their parame
   * Task name: `disk_usage`
     * Short description: Disk usage for a particular drive. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_usage )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `total`, `used`, `free`, `percent`.
-    * **REQUIRED**: `<param2>`: The name of the drive for which disk usage must be published, e.g. `/dev/md0` or `/dev/sda1`.
+    * **REQUIRED**: `<param2>`: The path where disk usage must be measured, e.g. `/`, `/var` or `/home/<username>`.
   * Task name: `disk_io_counters`
     * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, etc.
