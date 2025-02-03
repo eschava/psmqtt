@@ -5,8 +5,8 @@ Summary
 **PSMQTT** is a cross-platform utility for reporting system and processes
 metrics (CPU, memory, disks, network, S.M.A.R.T. disk data, etc) to an MQTT broker.
 
-It integrates seamlessly with `HomeAssistant <https://www.home-assistant.io/>`
-thanks to the support for `MQTT discovery messages <https://www.home-assistant.io/integrations/mqtt/#discovery-messages>`.
+It integrates seamlessly with `HomeAssistant <https://www.home-assistant.io/>`_
+thanks to the support for `MQTT discovery messages <https://www.home-assistant.io/integrations/mqtt/#discovery-messages>`_
 
 **PSMQTT**  is written in Python and is based on:
 
