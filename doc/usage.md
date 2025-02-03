@@ -555,6 +555,14 @@ For the `icon` field, you can use online resources for [searching Material Desig
 Check also the [default psmqtt.yaml](../psmqtt.yaml) for some examples
 or the psmqtt configuration examples later in this document.
 
+Note that PSMQTT will publish MQTT discovery messages in 2 cases:
+
+1. when an HomeAssistant restart is detected;
+2. at PSMQTT startup
+
+This policy optimizes network traffic (reducing it to the minimal) but ensures that HomeAssistant
+is always instantly updated on any PSMQTT sensor that is enriched with the `ha_discovery` metadata.
+
 
 ## <a name='SendingMQTTrequests'></a>Sending MQTT requests
 
