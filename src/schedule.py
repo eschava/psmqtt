@@ -20,6 +20,7 @@ class Schedule:
     def __init__(self,
             cron:str,
             tasks_dict:Dict[str,Any],
+            mqtt_topic_prefix:str,
             schedule_rule_idx:int) -> None:
         self.cron_expr = cron
         self.schedule_rule_idx = schedule_rule_idx
@@ -45,7 +46,7 @@ class Schedule:
                      t["topic"],
                      t["formatter"],
                     t["ha_discovery"],
-                    self.config.config["mqtt"]["publish_topic_prefix"],
+                    mqtt_topic_prefix,
                      self.schedule_rule_idx, j))
             j += 1
 

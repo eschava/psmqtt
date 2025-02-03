@@ -155,7 +155,6 @@ schedule:
       - task: boot_time
         formatter: "{{x|uptime_sec}}"
         topic: uptime
-    tasks:
       - task: boot_time
         formatter: "{{x|uptime_str}}"
         topic: uptime2

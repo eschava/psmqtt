@@ -254,6 +254,7 @@ class PsmqttApp:
             try:
                 new_schedule = Schedule(sch['cron'],
                                         sch['tasks'],
+                                        self.config.config["mqtt"]["publish_topic_prefix"],
                                         i)
             except ValueError as e:
                 logging.error(f"Cannot parse schedule #{i}: {e}. Aborting.")
