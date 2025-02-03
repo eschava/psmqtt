@@ -73,11 +73,12 @@ def test_basic_publish():
             print(f"  Total messages in topic: {msg_count} msgs")
             print(f"  Last payload in topic: {last_payload}")
 
-            expected_msg_count = math.floor(test_duration_sec/t['frequency_sec'])
+            # the 1+ is because psmqtt at startup will publish on each topic immediately; then will start the scheduler:
+            expected_msg_count = 1 + math.floor(test_duration_sec/t['frequency_sec'])
             expected_msg_count_min = expected_msg_count - 1
             expected_msg_count_max = expected_msg_count + 2
             print(f"  Expected scheduling period sec: {t['frequency_sec']}")
-            print(f"  Expected number of messages: {expected_msg_count_min}-{expected_msg_count_max}")
+            print(f"  Expected number of messages: {expected_msg_count}, accepting range {expected_msg_count_min}-{expected_msg_count_max}")
 
             # some tolerance to deal with jitter during the test:
             assert msg_count >= expected_msg_count_min and msg_count <= expected_msg_count_max

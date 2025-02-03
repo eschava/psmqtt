@@ -86,7 +86,9 @@ class PSMQTTContainer(DockerContainer):
             return -1
 
     def print_logs(self) -> str:
-        print("** psmqtt LOGS [STDOUT]:")
-        print(self.get_logs()[0].decode())
-        print("** psmqtt LOGS [STDERR]:")
-        print(self.get_logs()[1].decode())
+        stdout = self.get_logs()[0].decode()
+        stderr = self.get_logs()[1].decode()
+        if stdout != "":
+            print(f"** psmqtt LOGS [STDOUT]:\n{stdout}\n")
+        if stderr != "":
+            print(f"** psmqtt LOGS [STDERR]:\n{stderr}\n")

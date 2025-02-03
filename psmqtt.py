@@ -20,6 +20,7 @@ import sched
 import socket
 import logging
 import sys
+import platform
 from threading import Thread
 import time
 from typing import List
@@ -168,14 +169,11 @@ class PsmqttApp:
         ha_device_name = self.config.config["mqtt"]["ha_discovery"]["device_name"]
         psmqtt_ver = PsmqttApp.read_version_file()
 
-        # FIXME: these 3 info below should somehow be linked to the HW device from which
-        #        the information has been extracted, so we need somehow to read them from the
-        #        computer where psmqtt runs (considering the option that psmqtt runs inside docker)
         underlying_hw = {
-            "manufacturer": "PSMQTT",
-            "model": "TODO",
-            "sw_version": "1.0",
-            "hw_version": "1.0"
+            "manufacturer": platform.system(),  # the OS name like 'Linux', 'Darwin', 'Java', 'Windows'
+            "model": platform.platform(terse=True),  # on Linux this is a condensed summary of "uname -a"
+            "sw_version": platform.version(),  # on Linux this is the output of "uname -v"
+            "hw_version": platform.machine()  # this is actually something like "x86_64"
         }
         num_msgs = 0
         for t in self.all_task_list:

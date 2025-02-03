@@ -167,7 +167,7 @@ class Task:
             raise Exception(f"Task '{self.task_friendly_name}' has invalid HA discovery 'name' property.")
 
         msg = {
-            "dev": {
+            "device": {
                 "ids": device_name,
                 "name": device_name,
                 "mf": underlying_hw["manufacturer"],
@@ -175,7 +175,7 @@ class Task:
                 "sw": underlying_hw["sw_version"],
                 "hw": underlying_hw["hw_version"],
             },
-            "o": {
+            "origin": {
                 "name":"psmqtt",
                 "sw": psmqtt_ver,
                 "url": "https://github.com/eschava/psmqtt"
@@ -186,6 +186,7 @@ class Task:
             "expire_after": self.ha_discovery["expire_after"],
         }
 
+        # optional parameters
         if self.ha_discovery["icon"]:
             msg["icon"] = self.ha_discovery["icon"]
         if self.ha_discovery["device_class"]:
