@@ -171,9 +171,22 @@ class PsmqttApp:
         }
         num_msgs = 0
         for sch in self.schedule_list:
+
+            expire_time_sec = sch.get_max_interval_sec()
+            if expire_time_sec == -1:
+                # failed to compute... proceed without "expire_after"
+                expire_time_sec = None
+            else:
+                # expire the sensor in HomeAssistant after a duration equal to 1.5 the usual interval;
+                # also apply a lower bound of 10sec; this is a reasonable way to avoid that a single MQTT
+                # message not delivered turns the entity into "not available" inside HomeAssistant;
+                # on the other hand, if psmqtt goes down or the MQTT broker goes down, the entity at some
+                # point will be unavailable so the user will know that something is wrong.
+                expire_time_sec = max(10,expire_time_sec * 1.5)
+
             for t in sch.get_tasks():
                 assert isinstance(t, Task)
-                payload = t.get_ha_discovery_payload(ha_device_name, psmqtt_ver, underlying_hw)
+                payload = t.get_ha_discovery_payload(ha_device_name, psmqtt_ver, underlying_hw, expire_time_sec)
                 if payload is not None:
                     topic = t.get_ha_discovery_topic(ha_discovery_topic, ha_device_name)
                     self.mqtt_client.publish(topic, payload)

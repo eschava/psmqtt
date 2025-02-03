@@ -150,7 +150,7 @@ class Task:
         hash_hex = hash_object.hexdigest()
         return f"{device_name}-{self.task_name}-{hash_hex[:12]}"
 
-    def get_ha_discovery_payload(self, device_name:str, psmqtt_ver:str, underlying_hw:Dict[str,str]) -> str:
+    def get_ha_discovery_payload(self, device_name:str, psmqtt_ver:str, underlying_hw:Dict[str,str], default_expire_after:int) -> str:
         '''
         Returns an HomeAssistant MQTT discovery message associated with this task.
         This method is only available for single-valued tasks, having their "ha_discovery" metadata
@@ -183,7 +183,6 @@ class Task:
             "unique_id": self.get_ha_unique_id(device_name),
             "state_topic": self.topic.get_topic(),
             "name": self.ha_discovery["name"],
-            "expire_after": self.ha_discovery["expire_after"],
         }
 
         # optional parameters
@@ -197,6 +196,10 @@ class Task:
             msg["payload_on"] = self.ha_discovery["payload_on"]
         if self.ha_discovery["payload_off"]:
             msg["payload_off"] = self.ha_discovery["payload_off"]
+        if self.ha_discovery["expire_after"]:
+            msg["expire_after"] = self.ha_discovery["expire_after"]
+        elif default_expire_after:
+            msg["expire_after"] = default_expire_after
 
         return json.dumps(msg)
 

@@ -25,13 +25,10 @@ class Schedule:
         self.cron_expr = cron
         self.schedule_rule_idx = schedule_rule_idx
 
-        logging.debug(f"SCHEDULE#{schedule_rule_idx}: Periodicity: {cron}")
-        logging.debug(f"SCHEDULE#{schedule_rule_idx}: {len(tasks_dict)} tasks: {tasks_dict}")
-
         # parse the cron expression
-        r = RecurringEvent()
-        self.parsed_rrule = r.parse(cron)
-        if not r.is_recurring:
+        self.recurrent_event = RecurringEvent()
+        self.parsed_rrule = self.recurrent_event.parse(cron)
+        if not self.recurrent_event.is_recurring:
             raise ValueError(f"Invalid cron expression '{cron}'. Please fix the syntax in the configuration file.")
 
         assert isinstance(self.parsed_rrule, str)
@@ -50,11 +47,37 @@ class Schedule:
                      self.schedule_rule_idx, j))
             j += 1
 
+        # summary of the whole instance:
+        logging.info(f"SCHEDULE#{schedule_rule_idx}: Periodicity: {cron}; Max interval: {self.get_max_interval_sec()}sec; Contains {len(tasks_dict)} tasks: {tasks_dict}")
+
     def get_next_occurrence(self) -> float:
-        # compute how many secs in the future this needs to run
+        '''
+        Compute how many secs in the future this schedule needs to run and returns it
+        '''
         # NOTE: we need reparse rule each time (see #10)
         now = datetime.datetime.now()
         return (rrulestr(self.parsed_rrule).after(now) - now).total_seconds()
+
+    def get_max_interval_sec(self) -> int:
+        '''
+        This function attempts to find the max possible interval between 2 occurrences of the
+        "cron expression" provided to the ctor.
+        Returns -1 if fails to find the max possible interval.
+        '''
+        if self.recurrent_event.interval is None or self.recurrent_event.freq is None:
+            return -1
+        frequency_multiplier_sec = {
+            'secondly':  1,
+            'minutely': 60,
+            'hourly': 60 * 60,
+            'daily': 24 * 60 * 60,
+            'weekly': 7 * 24 * 60 * 60,
+            'monthly': 31 * 7 * 24 * 60 * 60,  # take the worst case
+            'yearly': 365 * 31 * 7 * 24 * 60 * 60,  # take the worst case
+        }
+        if self.recurrent_event.freq not in frequency_multiplier_sec:
+            return -1
+        return int(self.recurrent_event.interval) * frequency_multiplier_sec[self.recurrent_event.freq]
 
     def get_tasks(self) -> List[Task]:
         return self.task_list

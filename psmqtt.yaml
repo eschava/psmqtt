@@ -102,7 +102,6 @@ schedule:
           name: "CPU Percentage"
           platform: sensor
           unit_of_measurement: "%"
-          expire_after: 30
           icon: mdi:speedometer
 
       # task with 1 parameter, no formatter, HA discovery message configuration:
@@ -112,7 +111,6 @@ schedule:
           name: "Memory Percentage"
           platform: sensor
           unit_of_measurement: "%"
-          expire_after: 30
           icon: mdi:memory
 
       # task with 2 parameters, no formatter, HA discovery message configuration:
@@ -123,7 +121,6 @@ schedule:
           platform: sensor
           device_class: temperature
           unit_of_measurement: "°C"
-          expire_after: 30
           icon: mdi:thermometer
 
       # task requesting ALL available SMART attributes of a specific disk to be published as individual topics
@@ -148,7 +145,6 @@ schedule:
           platform: sensor
           device_class: duration
           unit_of_measurement: "hours"
-          expire_after: 30
           icon: mdi:clock
 
       # task requesting to publish the overall SMART status, complete with HA discovery message configuration:
@@ -160,7 +156,6 @@ schedule:
           payload_on: FAIL  # the "on" condition indicates a problem, so associate it with the "FAIL" status of SMART test
           payload_off: PASS
           device_class: problem
-          expire_after: 90
           icon: mdi:harddisk
 
   - cron: "every 60 minutes"
@@ -171,7 +166,6 @@ schedule:
           name: "Root Disk Usage"
           platform: sensor
           unit_of_measurement: "%"
-          expire_after: 5400 # 90 minutes
           icon: mdi:harddisk
     
   - cron: "every 3 hours"
@@ -185,5 +179,4 @@ schedule:
           platform: sensor
           device_class: duration
           unit_of_measurement: "seconds"
-          expire_after: 18000 # 5hours
           icon: mdi:calendar
