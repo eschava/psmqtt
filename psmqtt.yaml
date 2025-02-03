@@ -179,7 +179,7 @@ schedule:
 
       # task with a Jinja2 formatter; single or double-quoting is necessary
       - task: boot_time
-        formatter: "{{x|uptime_str}}"
+        formatter: "{{x|uptime_sec}}"
         ha_discovery:
           name: "Uptime"
           platform: sensor
