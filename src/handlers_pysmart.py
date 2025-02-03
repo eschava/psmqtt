@@ -48,7 +48,7 @@ class SmartCommandHandler(BaseHandler):
         val = info.get(field, None)
         if val is not None:
             return val
-        raise Exception(f"{self.name}: Parameter '{field}' is not supported for device '{device}")
+        raise Exception(f"{self.name}: Parameter '{field}' is not supported for device '{device}'")
 
     def get_value(self, dev: str) -> Payload:
         '''
