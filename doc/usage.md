@@ -15,11 +15,11 @@
 		* [Category Other system info](#category-other)
 		* [Category Processes](#category-processes)
 		* [Useful Tasks](#useful-tasks)
-	* [Formatting](#Formatting)
-	* [MQTT Topic](#MQTTTopic)
-	* [HomeAssistant Discovery Messages](#HomeAssistantDiscoveryMessages)
-* [Sending MQTT requests](#SendingMQTTrequests)
-* [Example configs](#Exampleconfigs)
+	* [Formatting](#formatting)
+	* [MQTT Topic](#mqtt-topic)
+	* [HomeAssistant Discovery Messages](#homeassistant-discovery-messages)
+* [Sending MQTT requests](#sending-mqtt-requests)
+* [Example configs](#example-configs)
 
 <!-- vscode-markdown-toc-config
 	numbering=false
