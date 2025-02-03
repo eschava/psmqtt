@@ -17,7 +17,9 @@
 		* [Useful Tasks](#useful-tasks)
 	* [Formatting](#Formatting)
 	* [MQTT Topic](#MQTTTopic)
+	* [HomeAssistant Discovery Messages](#HomeAssistantDiscoveryMessages)
 * [Sending MQTT requests](#SendingMQTTrequests)
+* [Example configs](#Exampleconfigs)
 
 <!-- vscode-markdown-toc-config
 	numbering=false
@@ -101,14 +103,17 @@ schedule:
         params: [ <param1>, <param2>, <param3>, ... ]
         formatter: <formatting rule>
         topic: <MQTT topic>
+        ha_discovery:
+          <HomeAssistant discovery options>
 ```
 
-Each of the following section describes in details the parameters:
+Each of the following section describes in details the YAML portions that define each "scheduling expression":
 
 1. `<human-friendly CRON expression>`: [CRON expression](#cron-expression)
 2. `<task name>` and `<param1>`, `<param2>`, `<param3>`, ...: [Tasks](#tasks)
 3. `<formatting rule>`: [Formatting](#formatting)
 4. `<MQTT topic>`: [MQTT Topic](#mqtt-topic)
+5. `<HomeAssistant discovery options>`: [HomeAssistant Discovery Messages](#homeassistant-discovery-messages)
 
 
 ### <a name='CRONexpression'></a>CRON expression
@@ -491,6 +496,19 @@ If the wildcard `*` character is used in the task parameters but the MQTT topic 
 or does not contain the wildcard `*` character itself, then an error will be emitted (check psmqtt logs).
 
 
+### <a name='HomeAssistantDiscoveryMessages'></a>HomeAssistant Discovery Messages
+
+The `<HomeAssistant discovery options>` specification in each [task definition](#Configurationfile) is optional.
+If it is specified, psmqtt will generate MQTT messages that follow the [Home Assistant MQTT discovery message specs](https://www.home-assistant.io/integrations/mqtt/#discovery-messages).
+
+These messages are extremehely useful to quickly setup connect **PSMQTT** and **Home Assistant** (HA) together,
+since HA will automatically detect the presence of PSMQTT "sensors".
+
+
+
+
+
+
 ## <a name='SendingMQTTrequests'></a>Sending MQTT requests
 
 The [psmqtt.yaml](../psmqtt.yaml) file supports a configuration named "request_topic":
@@ -516,7 +534,7 @@ the task will be executed immediately when received and will be interpreted like
 other task in the configuration file.
 
 
-## <a name='ExampleConfigs'></a>Example configs
+## <a name='Exampleconfigs'></a>Example configs
 
 The following `psmqtt.yaml` is an example intended to be used as reference for some
 syntax rules explained in this document:
