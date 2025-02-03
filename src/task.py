@@ -150,7 +150,7 @@ class Task:
         hash_hex = hash_object.hexdigest()
         return f"{device_name}-{self.task_name}-{hash_hex[:12]}"
 
-    def get_ha_discovery_payload(self, device_name:str, psmqtt_ver:str, underlying_hw:Dict[str,str], default_expire_after:int) -> str:
+    def get_ha_discovery_payload(self, device_name:str, psmqtt_ver:str, device_dict:Dict[str,str], default_expire_after:int) -> str:
         '''
         Returns an HomeAssistant MQTT discovery message associated with this task.
         This method is only available for single-valued tasks, having their "ha_discovery" metadata
@@ -167,14 +167,7 @@ class Task:
             raise Exception(f"Task '{self.task_friendly_name}' has invalid HA discovery 'name' property.")
 
         msg = {
-            "device": {
-                "ids": device_name,
-                "name": device_name,
-                "mf": underlying_hw["manufacturer"],
-                "mdl": underlying_hw["model"],
-                "sw": underlying_hw["sw_version"],
-                "hw": underlying_hw["hw_version"],
-            },
+            "device": device_dict,
             "origin": {
                 "name":"psmqtt",
                 "sw": psmqtt_ver,

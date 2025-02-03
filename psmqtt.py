@@ -26,6 +26,7 @@ from src.config import Config
 from src.mqtt_client import MqttClient
 from src.task import Task
 from src.schedule import Schedule
+from src.utils import get_mac_address
 
 class SchedulerThread(Thread):
 
@@ -163,11 +164,15 @@ class PsmqttApp:
         ha_device_name = self.config.config["mqtt"]["ha_discovery"]["device_name"]
         psmqtt_ver = PsmqttApp.read_version_file()
 
-        underlying_hw = {
-            "manufacturer": platform.system(),  # the OS name like 'Linux', 'Darwin', 'Java', 'Windows'
+        device_dict = {
+            "ids": ha_device_name,
+            "name": ha_device_name,
+            "manufacturer": "eschava/psmqtt",
+            "sw_version": platform.system(),  # the OS name like 'Linux', 'Darwin', 'Java', 'Windows'
+            "hw_version": platform.machine(),  # this is actually something like "x86_64"
             "model": platform.platform(terse=True),  # on Linux this is a condensed summary of "uname -a"
-            "sw_version": platform.version(),  # on Linux this is the output of "uname -v"
-            "hw_version": platform.machine()  # this is actually something like "x86_64"
+            "configuration_url": "https://github.com/eschava/psmqtt",
+            "connections": [["mac", get_mac_address()]],
         }
         num_msgs = 0
         for sch in self.schedule_list:
@@ -186,7 +191,7 @@ class PsmqttApp:
 
             for t in sch.get_tasks():
                 assert isinstance(t, Task)
-                payload = t.get_ha_discovery_payload(ha_device_name, psmqtt_ver, underlying_hw, expire_time_sec)
+                payload = t.get_ha_discovery_payload(ha_device_name, psmqtt_ver, device_dict, expire_time_sec)
                 if payload is not None:
                     topic = t.get_ha_discovery_topic(ha_discovery_topic, ha_device_name)
                     self.mqtt_client.publish(topic, payload)

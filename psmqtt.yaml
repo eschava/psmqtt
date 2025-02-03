@@ -170,13 +170,12 @@ schedule:
     
   - cron: "every 3 hours"
     tasks:
-
       # task with a Jinja2 formatter; single or double-quoting is necessary
       - task: boot_time
-        formatter: "{{x|uptime_sec}}"
+        formatter: "{{x|iso8601_str}}"
         ha_discovery:
           name: "Uptime"
           platform: sensor
-          device_class: duration
-          unit_of_measurement: "seconds"
+          device_class: timestamp
           icon: mdi:calendar
+          value_template: "{{ as_datetime(value) }}"
