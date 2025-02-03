@@ -15,9 +15,11 @@
 		* [Category Other system info](#category-other)
 		* [Category Processes](#category-processes)
 		* [Useful Tasks](#useful-tasks)
-	* [Formatting](#Formatting)
-	* [MQTT Topic](#MQTTTopic)
-* [Sending MQTT requests](#SendingMQTTrequests)
+	* [Formatting](#formatting)
+	* [MQTT Topic](#mqtt-topic)
+	* [HomeAssistant Discovery Messages](#homeassistant-discovery-messages)
+* [Sending MQTT requests](#sending-mqtt-requests)
+* [Example configs](#example-configs)
 
 <!-- vscode-markdown-toc-config
 	numbering=false
@@ -101,14 +103,17 @@ schedule:
         params: [ <param1>, <param2>, <param3>, ... ]
         formatter: <formatting rule>
         topic: <MQTT topic>
+        ha_discovery:
+          <HomeAssistant discovery options>
 ```
 
-Each of the following section describes in details the parameters:
+Each of the following section describes in details the YAML portions that define each "scheduling expression":
 
 1. `<human-friendly CRON expression>`: [CRON expression](#cron-expression)
 2. `<task name>` and `<param1>`, `<param2>`, `<param3>`, ...: [Tasks](#tasks)
 3. `<formatting rule>`: [Formatting](#formatting)
 4. `<MQTT topic>`: [MQTT Topic](#mqtt-topic)
+5. `<HomeAssistant discovery options>`: [HomeAssistant Discovery Messages](#homeassistant-discovery-messages)
 
 
 ### <a name='CRONexpression'></a>CRON expression
@@ -233,7 +238,7 @@ Here follows the reference documentation for all required tasks and their parame
   * Task name: `disk_usage`
     * Short description: Disk usage for a particular drive. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_usage )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `total`, `used`, `free`, `percent`.
-    * **REQUIRED**: `<param2>`: The name of the drive for which disk usage must be published, e.g. `/dev/md0` or `/dev/sda1`.
+    * **REQUIRED**: `<param2>`: The path where disk usage must be measured, e.g. `/`, `/var` or `/home/<username>`.
   * Task name: `disk_io_counters`
     * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, etc.
@@ -413,9 +418,10 @@ numbered.
 psmqtt provides some Jinja2 filters:
 
 * `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
-* `uptime_str` to format `boot_time` as a human friendly uptime string representation (e.g., the output string might look like 
+* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like 
 "30 days, 5:18").
-* `uptime_sec` to format `boot_time` as a number of seconds elapsed since last boot.
+* `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
+* `iso8601_str`  to format Linux epochs (mostly the output of the `boot_time` task) as an [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp; this is particularly useful to create HomeAssistant sensors with a `timestamp` device class.
 
 Examples:
 
@@ -490,6 +496,74 @@ If the wildcard `*` character is used in the task parameters but the MQTT topic 
 or does not contain the wildcard `*` character itself, then an error will be emitted (check psmqtt logs).
 
 
+### <a name='HomeAssistantDiscoveryMessages'></a>HomeAssistant Discovery Messages
+
+The `<HomeAssistant discovery options>` specification in each [task definition](#Configurationfile) is optional.
+If it is specified, psmqtt will generate MQTT messages that follow the [Home Assistant MQTT discovery message specs](https://www.home-assistant.io/integrations/mqtt/#discovery-messages).
+
+These messages are extremehely useful to quickly setup connect **PSMQTT** and **Home Assistant** (HA) together,
+since HA will automatically detect the presence of PSMQTT "sensors".
+
+If you want to configure MQTT discovery messages for HA, you should:
+
+1. Ensure to enable the feature 
+
+```
+mqtt:
+  ha_discovery:
+    enabled: true
+```
+
+2. For each task specify as bare minimum the `ha_discovery.name` and `ha_discovery.platform` properties:
+
+```
+- task: cpu_times_percent
+  params: [ "*" ]
+  topic: "cpu/*"
+  ha_discovery:
+    name: "CPU Usage Percentage"
+    platform: sensor
+```
+
+Consider that the `ha_discovery.name` will be the human-friendly name of the HA entity;
+`ha_discovery.platform` can be either `sensor` or `binary_sensor`.
+Most of psmqtt tasks produce `sensor`s but there are a few exceptions, e.g. the `power_plugged` field of
+the `sensors_battery` task (which is either "true" or "false") or the `smart_status` field of the `smart` task
+(which is either "PASS" or "FAIL").
+
+Additional HA discovery messages that you might want to set to improve the look&feel of
+the HA entities are:
+
+```
+  ha_discovery:
+    name: <some friendly name>
+    platform: sensor|binary_sensor
+    device_class: temperature|duration|timestamp|problem|...
+    icon: mdi:<whatever>
+    unit_of_measurement: %|bytes|...
+    expire_after: <an integer number of seconds>
+    payload_on: <useful only for binary_sensor>
+    payload_off: <useful only for binary_sensor>
+    value_template: <tell HA how to render the number>
+```
+
+See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
+[MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
+
+For the `icon` field, you can use online resources for [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
+
+Check also the [default psmqtt.yaml](../psmqtt.yaml) for some examples
+or the psmqtt configuration examples later in this document.
+
+Note that PSMQTT will publish MQTT discovery messages in 2 cases:
+
+1. when an HomeAssistant restart is detected;
+2. at PSMQTT startup
+
+This policy optimizes network traffic (reducing it to the minimal) but ensures that HomeAssistant
+is always instantly updated on any PSMQTT sensor that is enriched with the `ha_discovery` metadata.
+
+
 ## <a name='SendingMQTTrequests'></a>Sending MQTT requests
 
 The [psmqtt.yaml](../psmqtt.yaml) file supports a configuration named "request_topic":
@@ -515,7 +589,7 @@ the task will be executed immediately when received and will be interpreted like
 other task in the configuration file.
 
 
-## <a name='ExampleConfigs'></a>Example configs
+## <a name='Exampleconfigs'></a>Example configs
 
 The following `psmqtt.yaml` is an example intended to be used as reference for some
 syntax rules explained in this document:
@@ -538,27 +612,66 @@ schedule:
     tasks:
       - task: cpu_percent
         params: [ total ]
+        ha_discovery:
+          name: "CPU Percentage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:speedometer
       - task: virtual_memory
         params: [ percent ]
+        ha_discovery:
+          name: "Memory Percentage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:memory
 
       # cpu temp
       - task: sensors_temperatures
         params: [ rtk_thermal, 0 ]
+        ha_discovery:
+          name: "CPU Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
 
       # temperatures for 2 HDD in RAID from S.M.A.R.T data
       - task: smart
         params: [ "/dev/sdc", temperature ]
+        ha_discovery:
+          name: "HDD1 Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
       - task: smart
         params: [ "/dev/sdd", temperature ]
+        ha_discovery:
+          name: "HDD2 Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
       
   - cron: "every 1 hour"
     tasks:
       - task: disk_usage
         params: [ percent, "/mnt/md0" ]
+        ha_discovery:
+          name: "RAID Array Disk Usage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:harddisk
     
   - cron: "every 3 hours"
     tasks:
       - task: boot_time
-        formatter: "{{x|uptime_str}}"
+        formatter: "{{x|iso8601_str}}"
+        ha_discovery:
+          name: "Uptime"
+          platform: sensor
+          device_class: timestamp
+          icon: mdi:calendar
+          value_template: "{{ as_datetime(value) }}"
 ```
 

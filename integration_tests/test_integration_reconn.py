@@ -13,7 +13,7 @@ def test_mqtt_reconnection():
 
     broker = MosquittoContainerEnhanced()
     broker.start()
-    with PSMQTTContainer(broker, loglevel="WARN") as container:
+    with PSMQTTContainer(config_file="integration-tests-psmqtt1.yaml", broker=broker, loglevel="WARN") as container:
         time.sleep(1)  # give time to the PSMQTTContainer to fully start
         if not container.is_running():
             print("Container under test has stopped running while broker was still running?? test failed.")

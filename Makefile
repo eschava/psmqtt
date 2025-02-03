@@ -9,9 +9,16 @@ lint-python:
 	ruff check src/
 	flake8 -v
 
+
+YAML_FILES:=\
+	psmqtt.yaml \
+	integration_tests/integration-tests-psmqtt1.yaml \
+	integration_tests/integration-tests-psmqtt2-with-ha-discovery.yaml
+
 lint-yaml:
-	@yq . -e psmqtt.yaml >/dev/null && echo "valid psmqtt.yaml file" || ( echo "Invalid YAML file psmqtt.yaml. Fix syntax." ; exit 2 )
-	@yq . -e integration_tests/integration-tests-psmqtt.yaml >/dev/null && echo "valid integration_tests/integration-tests-psmqtt.yaml file" || ( echo "Invalid YAML file integration_tests/integration-tests-psmqtt.yaml. Fix syntax." ; exit 2 )
+	@for yfile in $(YAML_FILES); do \
+		yq . -e $${yfile} >/dev/null && echo "Valid syntax for YAML file: $${yfile}" || ( echo "Invalid YAML file $${yfile}. Fix syntax." ; exit 2 ) \
+	done
 
 lint-yaml-with-schema:
 	# use "pip install yamale" if you don't have the "yamale" CLI utility

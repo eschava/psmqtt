@@ -14,7 +14,7 @@ logging:
   report_status_period_sec: int(required=False)
 ---
 mqtt:
-  broker: include('broker')
+  broker: include('mqtt_broker')
   clientid: str(required=False)
   clean_session: bool(required=False)
   qos: int(required=False)
@@ -22,15 +22,21 @@ mqtt:
   reconnect_period_sec: int(required=False)
   request_topic: str(required=False)
   publish_topic_prefix: str(required=False)
+  ha_discovery: include('mqtt_ha_discovery',required=False)
 ---
-options:
-  exit_after_num_tasks: int(required=False)
+mqtt_ha_discovery:
+  enabled: bool(required=False)
+  topic: str(required=False)
+  device_name: str(required=False)
 ---
-broker:
+mqtt_broker:
   host: str()
   port: int()
   username: str(required=False)
   password: str(required=False)
+---
+options:
+  exit_after_num_tasks: int(required=False)
 ---
 cron_tasks: 
   cron: str()
@@ -41,3 +47,15 @@ task_def:
   params: list(int(),str(),required=False)
   topic: str(required=False)
   formatter: str(required=False)
+  ha_discovery: include('task_ha_discovery',required=False)
+---
+task_ha_discovery:
+  name: str()
+  platform: str(required=False)
+  device_class: str(required=False)
+  icon: str(required=False)
+  unit_of_measurement: str(required=False)
+  expire_after: int(required=False)
+  payload_on: str(required=False)
+  payload_off: str(required=False)
+  value_template: str(required=False)

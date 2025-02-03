@@ -2,6 +2,7 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import json
+import uuid
 from typing import Any, Dict, List, Union, NamedTuple
 
 def list_from_array_of_namedtuples(
@@ -37,3 +38,10 @@ def string_from_dict(d:Dict[Any,Any]) -> str:
 
 def string_from_list_optionally(lst:List[Any], join:bool) -> Union[List[Any], str]:
     return json.dumps(lst) if join else lst
+
+def get_mac_address():
+    # TODO we should try to get the MAC address of the specific network interface used
+    # by the TCP connection to the MQTT broker...
+    mac_num = uuid.getnode()
+    mac = '-'.join((('%012X' % mac_num)[i:i+2] for i in range(0, 12, 2)))
+    return mac
