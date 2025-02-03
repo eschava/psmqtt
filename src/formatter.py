@@ -17,7 +17,7 @@ def gb(value:int) -> str:
     return str(value // 1024 / 1024 // 1024) + " GB"
 
 
-def uptime(boot_time:float) -> str:
+def uptime_str(boot_time:float) -> str:
     upt = time.time() - boot_time
 
     retval = ""
@@ -38,7 +38,7 @@ def uptime(boot_time:float) -> str:
 
     return retval
 
-def uptimesec(boot_time: float) -> int:
+def uptime_sec(boot_time: float) -> int:
     upt = time.time() - boot_time
     return round(upt)
 
@@ -48,12 +48,14 @@ def register_filters() -> Environment:
     env.filters['KB'] = kb
     env.filters['MB'] = mb
     env.filters['GB'] = gb
-    env.filters['uptime'] = uptime
-    env.filters['uptimesec'] = uptimesec
+    env.filters['uptime_str'] = uptime_str
+    env.filters['uptime_sec'] = uptime_sec
     return env
 
 class Formatter:
     '''
+    Provides formatters to be applied to the task outputs before they get published
+    to the MQTT broker
     '''
     env = register_filters()
 
