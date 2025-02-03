@@ -504,9 +504,56 @@ If it is specified, psmqtt will generate MQTT messages that follow the [Home Ass
 These messages are extremehely useful to quickly setup connect **PSMQTT** and **Home Assistant** (HA) together,
 since HA will automatically detect the presence of PSMQTT "sensors".
 
+If you want to configure MQTT discovery messages for HA, you should:
 
+1. Ensure to enable the feature 
 
+```
+mqtt:
+  ha_discovery:
+    enabled: true
+```
 
+2. For each task specify as bare minimum the `ha_discovery.name` and `ha_discovery.platform` properties:
+
+```
+- task: cpu_times_percent
+  params: [ "*" ]
+  topic: "cpu/*"
+  ha_discovery:
+    name: "CPU Usage Percentage"
+    platform: sensor
+```
+
+Consider that the `ha_discovery.name` will be the human-friendly name of the HA entity;
+`ha_discovery.platform` can be either `sensor` or `binary_sensor`.
+Most of psmqtt tasks produce `sensor`s but there are a few exceptions, e.g. the `power_plugged` field of
+the `sensors_battery` task (which is either "true" or "false") or the `smart_status` field of the `smart` task
+(which is either "PASS" or "FAIL").
+
+Additional HA discovery messages that you might want to set to improve the look&feel of
+the HA entities are:
+
+```
+  ha_discovery:
+    name: <some friendly name>
+    platform: sensor|binary_sensor
+    device_class: temperature|duration|timestamp|problem|...
+    icon: mdi:<whatever>
+    unit_of_measurement: %|bytes|...
+    expire_after: <an integer number of seconds>
+    payload_on: <useful only for binary_sensor>
+    payload_off: <useful only for binary_sensor>
+    value_template: <tell HA how to render the number>
+```
+
+See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
+[MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
+
+For the `icon` field, you can use online resources for [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
+
+Check also the [default psmqtt.yaml](../psmqtt.yaml) for some examples
+or the psmqtt configuration examples later in this document.
 
 
 ## <a name='SendingMQTTrequests'></a>Sending MQTT requests
@@ -557,27 +604,66 @@ schedule:
     tasks:
       - task: cpu_percent
         params: [ total ]
+        ha_discovery:
+          name: "CPU Percentage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:speedometer
       - task: virtual_memory
         params: [ percent ]
+        ha_discovery:
+          name: "Memory Percentage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:memory
 
       # cpu temp
       - task: sensors_temperatures
         params: [ rtk_thermal, 0 ]
+        ha_discovery:
+          name: "CPU Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
 
       # temperatures for 2 HDD in RAID from S.M.A.R.T data
       - task: smart
         params: [ "/dev/sdc", temperature ]
+        ha_discovery:
+          name: "HDD1 Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
       - task: smart
         params: [ "/dev/sdd", temperature ]
+        ha_discovery:
+          name: "HDD2 Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
       
   - cron: "every 1 hour"
     tasks:
       - task: disk_usage
         params: [ percent, "/mnt/md0" ]
+        ha_discovery:
+          name: "RAID Array Disk Usage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:harddisk
     
   - cron: "every 3 hours"
     tasks:
       - task: boot_time
-        formatter: "{{x|uptime_str}}"
+        formatter: "{{x|iso8601_str}}"
+        ha_discovery:
+          name: "Uptime"
+          platform: sensor
+          device_class: timestamp
+          icon: mdi:calendar
+          value_template: "{{ as_datetime(value) }}"
 ```
 
