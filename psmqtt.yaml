@@ -63,7 +63,7 @@ schedule:
   # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
   # the "cron" expression is a human-friendly expression, see https://github.com/kvh/recurrent/tree/master
   # for example of supported syntaxes
-  - cron: "asdfasfdasfadsfads every 1 second"
+  - cron: "every 1 second"
     tasks:
       # each task is defined by
       # * "task": the name (see PSMQTT docs for full list of available task handlers);
