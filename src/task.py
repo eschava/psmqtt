@@ -179,16 +179,13 @@ class Task:
         }
 
         # optional parameters
-        if self.ha_discovery["icon"]:
-            msg["icon"] = self.ha_discovery["icon"]
-        if self.ha_discovery["device_class"]:
-            msg["device_class"] = self.ha_discovery["device_class"]
-        if self.ha_discovery["unit_of_measurement"]:
-            msg["unit_of_measurement"] = self.ha_discovery["unit_of_measurement"]
-        if self.ha_discovery["payload_on"]:
-            msg["payload_on"] = self.ha_discovery["payload_on"]
-        if self.ha_discovery["payload_off"]:
-            msg["payload_off"] = self.ha_discovery["payload_off"]
+        # FIXME: should we add also "availability_topic", "payload_available", "payload_not_available" ?
+        optional_parameters = ["icon", "device_class", "unit_of_measurement", "payload_on", "payload_off"]
+        for o in optional_parameters:
+            if o in self.ha_discovery and self.ha_discovery[o]:
+                msg[o] = self.ha_discovery[o]
+
+        # expire_after is populated with user preference or a meaningful default value:
         if self.ha_discovery["expire_after"]:
             msg["expire_after"] = self.ha_discovery["expire_after"]
         elif default_expire_after:

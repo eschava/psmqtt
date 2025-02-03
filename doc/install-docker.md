@@ -95,6 +95,9 @@ services:
     image: ghcr.io/eschava/psmqtt:latest-root
     restart: unless-stopped
     stop_grace_period: 10s
+    # setting the correct hostname will make it possible for PSMQTT to select a sensible
+    # default MQTT topic prefix (and also name correctly Home Assistant devices)
+    hostname: name-of-the-host
     cap_add:
       # SYS_RAWIO allows to monitor SMART counters
       - SYS_RAWIO
@@ -109,5 +112,14 @@ services:
       # a volume mapping is necessary for each "disk_usage" task:
       - "/:/host/root:ro"
       - "/usr/share/hassio/media/frigate:/host/frigate:ro"
-    hostname: "mastermind"
 ```
+
+You can save the YAML example above as `docker-compose.yml` on your machine and then use
+
+```sh
+docker compose up -d
+docker logs -f psmqtt-psmqtt-1
+```
+
+to start **PSMQTT** and check its logs.
+

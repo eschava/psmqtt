@@ -14,12 +14,12 @@ class Schedule:
     '''
     Defines a psmqtt SCHEDULING RULE, whose main properties are:
     * "cron" which defines how frequently this rule will run
-    " "tasks" which is a list of Task classes
+    " "ts a list of Task classes
     '''
 
     def __init__(self,
             cron:str,
-            tasks_dict:Dict[str,Any],
+            tasks_dict:List[Dict[str,Any]],
             mqtt_topic_prefix:str,
             schedule_rule_idx:int) -> None:
         self.cron_expr = cron

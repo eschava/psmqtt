@@ -194,6 +194,7 @@ class PsmqttApp:
                 payload = t.get_ha_discovery_payload(ha_device_name, psmqtt_ver, device_dict, expire_time_sec)
                 if payload is not None:
                     topic = t.get_ha_discovery_topic(ha_discovery_topic, ha_device_name)
+                    logging.info(f"Publishing an MQTT discovery messages on topic '{topic}'")
                     self.mqtt_client.publish(topic, payload)
                     num_msgs += 1
         logging.info(f"Published a total of {num_msgs} MQTT discovery messages under the topic prefix '{ha_discovery_topic}' for the device '{ha_device_name}'. The HomeAssistant MQTT integration should now be showing {num_msgs} sensors for the device '{ha_device_name}'.")

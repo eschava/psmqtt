@@ -1,0 +1,62 @@
+#
+# PSMQTT configuration file for INTEGRATION TESTS
+#
+
+logging:
+  level: __LOGLEVEL_PLACEHOLDER__
+  report_status_period_sec: 1
+
+mqtt:
+  broker:
+    host: __MQTT_BROKER_IP_PLACEHOLDER__
+    port: __MQTT_BROKER_PORT_PLACEHOLDER__
+    # for local testing:
+    #host: localhost
+    #port: 1883
+  
+  clientid: psmqtt-integration-test-client2
+  clean_session: false
+  qos: 0
+  retain: false
+  request_topic: "psmqtt/request/"
+  # use default auto-computed topic prefix which will include the hostname == docker container ID;
+  # this will make sure that the results of the tests are isolated one from the other
+  # in case we want to run multiple integration tests in parallel
+  #publish_topic_prefix: 
+
+  ha_discovery:
+    enabled: true
+    topic: homeassistant
+
+schedule:
+  - cron: "every 1 second"
+    tasks:
+
+      # a case with a super-minimalistic ha_discovery, just name and platform:
+      - task: cpu_times
+        params: [ iowait ]
+        ha_discovery:
+          name: "CPU IOWait Time"
+          platform: sensor
+
+      # fully-specified ha_discovery:
+      - task: virtual_memory
+        params: [ percent ]
+        ha_discovery:
+          name: "Memory Percentage"
+          platform: sensor
+          device_class: "data_rate" # this is not exact but we don't care here, it's just for testing
+          icon: mdi:memory
+          unit_of_measurement: "%"
+          expire_after: 10
+          payload_on: ON-PAYLOAD  # this makes sense only for binary_sensors but let's check it anyhow
+          payload_off: OFF-PAYLOAD  # this makes sense only for binary_sensors but let's check it anyhow
+          value_template: "{{ value }}"
+
+      - task: disk_usage
+        params: [ percent, "/" ]
+        ha_discovery:
+          name: "Root Disk Usage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:harddisk

@@ -12,9 +12,7 @@ class PSMQTTContainer(DockerContainer):
     Specialization of DockerContainer to test PSMQTT docker image
     """
 
-    CONFIG_FILE = "integration-tests-psmqtt.yaml"
-
-    def __init__(self, broker: MosquittoContainerEnhanced, loglevel: str) -> None:
+    def __init__(self, config_file:str, broker: MosquittoContainerEnhanced, loglevel: str) -> None:
         super().__init__(image="psmqtt:latest")
 
         # IMPORTANT: to link with the MQTT broker we want to use the IP address internal to the docker network,
@@ -23,7 +21,7 @@ class PSMQTTContainer(DockerContainer):
         broker_container = broker.get_wrapped_container()
         broker_ip = broker.get_docker_client().bridge_ip(broker_container.id)
         broker_port = MosquittoContainerEnhanced.MQTT_PORT
-        config_file = self._prepare_config_file(broker_ip, broker_port, loglevel)
+        config_file = self._prepare_config_file(config_file, broker_ip, broker_port, loglevel)
 
         # bind-mount the generated, transient, config file to the standard location of config file within PSMQTT container
         self.with_volume_mapping(config_file, "/opt/psmqtt/conf/psmqtt.yaml", mode="ro")
@@ -37,11 +35,11 @@ class PSMQTTContainer(DockerContainer):
         print(f"Watching for internal errors in the PSMQTT container on topic: {self.internal_mqtt_topics['num_errors']}")
         broker.watch_topics(list(self.internal_mqtt_topics.values()))
 
-    def _prepare_config_file(self, broker_ip: str, broker_port: int, loglevel: str) -> str:
+    def _prepare_config_file(self, config_file:str, broker_ip: str, broker_port: int, loglevel: str) -> str:
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-        original_cfgfile = os.path.join(TEST_DIR, self.CONFIG_FILE)
+        original_cfgfile = os.path.join(TEST_DIR, config_file)
 
-        temp_cfgfile = os.path.join(tempfile.mkdtemp(), self.CONFIG_FILE)
+        temp_cfgfile = os.path.join(tempfile.mkdtemp(), config_file)
         shutil.copy(original_cfgfile, temp_cfgfile)
 
         with open(temp_cfgfile, 'r+') as f:  # Open for reading and writing

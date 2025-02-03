@@ -1,6 +1,6 @@
 import pytest
 import time
-import math
+import json
 
 from integration_tests.psmqtt_container import PSMQTTContainer
 from integration_tests.mosquitto_container import MosquittoContainerEnhanced
@@ -31,19 +31,41 @@ def setup(request):
 # TESTS
 
 @pytest.mark.integration
-def test_basic_publish():
+def test_ha_discovery():
 
-    with PSMQTTContainer(config_file="integration-tests-psmqtt1.yaml", broker=broker, loglevel="DEBUG") as container:
+    with PSMQTTContainer(config_file="integration-tests-psmqtt2-with-ha-discovery.yaml", broker=broker, loglevel="DEBUG") as container:
 
-        tprefix = container.get_mqtt_topic_prefix()
+        tprefix = container.get_short_id()
         topics_under_test = [
-            # cpu_percent gets published every 1sec:
-            {"topic_name": f"{tprefix}/cpu_percent", "expected_payload": "FLOATING_POINT_NUMBER", "frequency_sec": 1},
-            {"topic_name": f"{tprefix}/virtual_memory/percent", "expected_payload": "FLOATING_POINT_NUMBER", "frequency_sec": 1},
-            # disk_usage gets published every 3sec:
-            {"topic_name": f"{tprefix}/disk_usage/percent/|", "expected_payload": "FLOATING_POINT_NUMBER", "frequency_sec": 3},
-            # uptime gets published every 5sec:
-            {"topic_name": f"{tprefix}/uptime", "expected_payload": "STRING", "frequency_sec": 5},
+            # first task
+            {
+                "topic_name": f"homeassistant/sensor/{tprefix}/{tprefix}-cpu_times-71ebde4492f9/config",
+                "expected_payload": "VALID_JSON"
+            },
+            {
+                "topic_name": f"psmqtt/{tprefix}/cpu_times/iowait",
+                "expected_payload": "FLOATING_POINT_NUMBER"
+            },
+
+            # second task
+            {
+                "topic_name": f"homeassistant/sensor/{tprefix}/{tprefix}-virtual_memory-fd86717aca41/config",
+                "expected_payload": "VALID_JSON"
+            },
+            {
+                "topic_name": f"psmqtt/{tprefix}/virtual_memory/percent",
+                "expected_payload": "FLOATING_POINT_NUMBER"
+            },
+
+            # third task
+            {
+                "topic_name": f"homeassistant/sensor/{tprefix}/{tprefix}-disk_usage-4ee49bfef1f0/config",
+                "expected_payload": "VALID_JSON"
+            },
+            {
+                "topic_name": f"psmqtt/{tprefix}/disk_usage/percent/|",
+                "expected_payload": "FLOATING_POINT_NUMBER"
+            },
         ]
 
         time.sleep(1)  # give time to the PSMQTTContainer to fully start
@@ -54,12 +76,7 @@ def test_basic_publish():
 
         broker.watch_topics([t["topic_name"] for t in topics_under_test])
         container.watch_for_internal_errors(broker)
-
-        # the integration test config contains a configuration to print the boot_time every 5sec,
-        # so wait a bit more to reduce test flakyness:
-        test_duration_sec = 8
-
-        time.sleep(test_duration_sec)
+        time.sleep(3)
         container.print_logs()
 
         # check there were no internal psmqtt errors
@@ -73,20 +90,21 @@ def test_basic_publish():
             print(f"  Total messages in topic: {msg_count} msgs")
             print(f"  Last payload in topic: {last_payload}")
 
-            # the 1+ is because psmqtt at startup will publish on each topic immediately; then will start the scheduler:
-            expected_msg_count = 1 + math.floor(test_duration_sec/t['frequency_sec'])
-            expected_msg_count_min = expected_msg_count - 1
-            expected_msg_count_max = expected_msg_count + 2
-            print(f"  Expected scheduling period sec: {t['frequency_sec']}")
-            print(f"  Expected number of messages: {expected_msg_count}, accepting range {expected_msg_count_min}-{expected_msg_count_max}")
-
-            # some tolerance to deal with jitter during the test:
-            assert msg_count >= expected_msg_count_min and msg_count <= expected_msg_count_max
+            # assert we received something
+            assert msg_count > 0
 
             # check payload
             if t["expected_payload"] == "FLOATING_POINT_NUMBER":
                 assert isinstance(float(last_payload), float)
-            # no validation otherwise
+            elif t["expected_payload"] == "VALID_JSON":
+                # check JSON
+                assert isinstance(last_payload, str)
+                try:
+                    json.loads(last_payload)
+                except ValueError:
+                    assert False
+            else:
+                assert False
 
             print("\n")
 
