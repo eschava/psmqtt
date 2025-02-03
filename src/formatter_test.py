@@ -56,3 +56,10 @@ class TestFormatter(unittest.TestCase):
 
         # same as above: we accept +/-1sec of skew:
         self.assertIn(Formatter.format("{{x|uptime_sec}}", n - 60), ["59", "60", "61"])
+
+    def test_format_iso8601_str(self) -> None:
+        epoch_time = 1706985600  # Example timestamp
+        self.assertEqual("2024-02-03T18:40:00+00:00", Formatter.format("{{x|iso8601_str}}", epoch_time))
+
+        epoch_time = 1686757139
+        self.assertEqual("2023-06-14T15:38:59+00:00", Formatter.format("{{x|iso8601_str}}", epoch_time))

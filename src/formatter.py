@@ -2,6 +2,7 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import time
+from datetime import datetime, timezone
 from typing import Any, Optional, Text, Tuple
 from jinja2 import Environment
 
@@ -17,8 +18,8 @@ def gb(value:int) -> str:
     return str(value // 1024 / 1024 // 1024) + " GB"
 
 
-def uptime_str(boot_time:float) -> str:
-    upt = time.time() - boot_time
+def uptime_str(linux_epoch_sec:float) -> str:
+    upt = time.time() - linux_epoch_sec
 
     retval = ""
     days = int(upt / (60 * 60 * 24))
@@ -38,9 +39,12 @@ def uptime_str(boot_time:float) -> str:
 
     return retval
 
-def uptime_sec(boot_time: float) -> int:
-    upt = time.time() - boot_time
+def uptime_sec(linux_epoch_sec: float) -> int:
+    upt = time.time() - linux_epoch_sec
     return round(upt)
+
+def iso8601_str(linux_epoch_sec: float) -> str:
+    return datetime.fromtimestamp(linux_epoch_sec, tz=timezone.utc).isoformat()
 
 
 def register_filters() -> Environment:
@@ -50,6 +54,7 @@ def register_filters() -> Environment:
     env.filters['GB'] = gb
     env.filters['uptime_str'] = uptime_str
     env.filters['uptime_sec'] = uptime_sec
+    env.filters['iso8601_str'] = iso8601_str
     return env
 
 class Formatter:

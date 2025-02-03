@@ -413,9 +413,10 @@ numbered.
 psmqtt provides some Jinja2 filters:
 
 * `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
-* `uptime_str` to format `boot_time` as a human friendly uptime string representation (e.g., the output string might look like 
+* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like 
 "30 days, 5:18").
-* `uptime_sec` to format `boot_time` as a number of seconds elapsed since last boot.
+* `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
+* `iso8601_str`  to format Linux epochs (mostly the output of the `boot_time` task) as an [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp; this is particularly useful to create HomeAssistant sensors with a `timestamp` device class.
 
 Examples:
 

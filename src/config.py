@@ -209,20 +209,12 @@ class Config:
             elif h["device_class"] not in Config.HA_SUPPORTED_DEVICE_CLASSES[h["platform"]]:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.device_class' attribute in configuration file: {h['device_class']}. Expected one of {Config.HA_SUPPORTED_DEVICE_CLASSES}")
 
-            if "unit_of_measurement" not in h:
-                h["unit_of_measurement"] = None
-            if "icon" not in h:
-                h["icon"] = None
-            if "expire_after" not in h:
-                # expiry disabled
-                # FIXME: it would be nice if psmqtt autocomputed the right expiry time based on the
-                #        'cron' expression of the associated schedule
-                h["expire_after"] = 0
-
-            if "payload_on" not in h:
-                h["payload_on"] = None
-            if "payload_off" not in h:
-                h["payload_off"] = None
+            # more optionals without defaults
+            optional_params = ["unit_of_measurement", "icon", "expire_after", "payload_on", "payload_off", "value_template"]
+            for o in optional_params:
+                if o not in h:
+                    # create the key but set its value to None
+                    h[o] = None
 
             t["ha_discovery"] = h
 

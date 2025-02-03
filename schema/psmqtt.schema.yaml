@@ -58,3 +58,4 @@ task_ha_discovery:
   expire_after: int(required=False)
   payload_on: str(required=False)
   payload_off: str(required=False)
+  value_template: str(required=False)
