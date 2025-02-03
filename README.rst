@@ -6,15 +6,15 @@ Summary
 metrics (CPU, memory, disks, network, S.M.A.R.T. disk data, etc) to an MQTT broker.
 
 It integrates seamlessly with `HomeAssistant <https://www.home-assistant.io/>`_
-thanks to the support for `MQTT discovery messages <https://www.home-assistant.io/integrations/mqtt/#discovery-messages>`_
+thanks to the support for `MQTT discovery messages <https://www.home-assistant.io/integrations/mqtt/#discovery-messages>`_.
 
 **PSMQTT**  is written in Python and is based on:
 
-* `paho-mqtt <https://github.com/eclipse/paho.mqtt.python>` to communicate with the MQTT broker;
-* `psutil <https://github.com/giampaolo/psutil>` to collect metrics;
-* `pySMART <https://github.com/truenas/py-SMART>` to collect SMART data;
-* `recurrent <https://github.com/kvh/recurrent>` to describe reporting schedule.
-* `jinja2 <https://github.com/alex-foundation/jinja2>` to format the data.
+* `paho-mqtt <https://github.com/eclipse/paho.mqtt.python>`_ to communicate with the MQTT broker;
+* `psutil <https://github.com/giampaolo/psutil>`_ to collect metrics;
+* `pySMART <https://github.com/truenas/py-SMART>`_ to collect SMART data;
+* `recurrent <https://github.com/kvh/recurrent>`_ to describe reporting schedule.
+* `jinja2 <https://github.com/alex-foundation/jinja2>`_ to format the data.
 
 ============
 Installation
