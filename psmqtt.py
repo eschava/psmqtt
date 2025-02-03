@@ -12,8 +12,6 @@
 #    values to the broker
 #
 
-from datetime import datetime
-from dateutil.rrule import rrulestr
 import argparse
 import os
 import sched
@@ -22,12 +20,11 @@ import logging
 import sys
 from threading import Thread
 import time
-from typing import List
-from recurrent import RecurringEvent
 
 from src.config import Config
 from src.mqtt_client import MqttClient
 from src.task import Task
+from src.schedule import Schedule
 
 class SchedulerThread(Thread):
 
@@ -71,7 +68,7 @@ class PsmqttApp:
         self.last_logged_status = (None, None, None)
 
     @staticmethod
-    def on_task_timer(app: 'PsmqttApp', parsed_rrule: str, tasks: List[Task]) -> None:
+    def on_schedule_timer(app: 'PsmqttApp', schedule: Schedule) -> None:
         '''
         Takes a list of tasks to be run immediately.
         The list must contain dictionary items, each having "task", "params", "topic" and "formatter" fields.
@@ -88,13 +85,14 @@ class PsmqttApp:
             ]
         '''
 
-        logging.debug("PsmqttApp.on_task_timer(%s, %d tasks)", parsed_rrule, len(tasks))
+        task_list = schedule.get_tasks()
+        logging.debug("PsmqttApp.on_schedule_timer(%s, %d tasks)", schedule.parsed_rrule, len(task_list))
 
         # support for the "exit_after" feature
         exit_after = app.config.config["options"]["exit_after_num_tasks"]
         reschedule = True
 
-        for task in tasks:
+        for task in task_list:
             # main entrypoint for TASK execution:
             task.run_task(app.mqtt_client)
 
@@ -102,13 +100,9 @@ class PsmqttApp:
                 reschedule = False
                 break
 
-        # need reparse rule (see #10)
-        now = datetime.now()
-        delay = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
-
         # add next timer task
         if reschedule:
-            app.scheduler.enter(delay, 1, PsmqttApp.on_task_timer, (app, parsed_rrule, tasks))
+            app.scheduler.enter(schedule.get_next_occurrence(), 1, PsmqttApp.on_schedule_timer, (app, schedule))
         return
 
     @staticmethod
@@ -221,32 +215,22 @@ class PsmqttApp:
             return 3
 
         self.scheduler = sched.scheduler(time.time, time.sleep)
-        now = datetime.now()
         i = 0
         for sch in schedule:
-            logging.debug(f"SCHEDULE#{i}: Periodicity: {sch['cron']}")
-            logging.debug(f"SCHEDULE#{i}: {len(sch['tasks'])} tasks: {sch['tasks']}")
-
-            # parse the cron expression
-            r = RecurringEvent()
-            parsed_rrule = r.parse(sch["cron"])
-            if not r.is_recurring:
-                logging.error(f"Invalid cron expression '{sch["cron"]}'. Please fix the syntax in the configuration file. Aborting.")
+            try:
+                new_schedule = Schedule(sch['cron'],
+                                        sch['tasks'],
+                                        i)
+            except ValueError as e:
+                logging.error(f"Cannot parse schedule #{i}: {e}. Aborting.")
                 return 4
 
-            # compute how many secs in the future this needs to run
-            assert isinstance(parsed_rrule, str)
-            delay_sec = (rrulestr(parsed_rrule).after(now) - now).total_seconds()
-
-            # instantiate each task associated with this schedule
-            task_list = []
-            j = 0
-            for t in sch["tasks"]:
-                task_list.append(Task(t["task"], t["params"], t["topic"], t["formatter"], i, j))
-                j += 1
+            # upon startup psmqtt will immediately run all scheduling rules, just
+            # scattered 100ms one from each other:
+            first_time_delay_sec = i + 0.1
 
             # include this in our scheduler:
-            self.scheduler.enter(delay_sec, 1, PsmqttApp.on_task_timer, (self, parsed_rrule, task_list))
+            self.scheduler.enter(first_time_delay_sec, 1, PsmqttApp.on_schedule_timer, (self, new_schedule))
             i += 1
 
         # add periodic log

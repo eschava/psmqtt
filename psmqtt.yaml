@@ -84,10 +84,10 @@ schedule:
         params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
       - task: smart
         params: [ /dev/sda, "*" ]
-        #topic: "sda_info"
         topic: "/sda_smart_status/*"
       - task: smart
-        params: [ /dev/sda, "tests/0" ]
+        params: [ /dev/sda, "test[0]" ]
+        formatter: "{{status}}"
         topic: "sda_info_last_test"
 
       # task requesting to publish virtual_memory percentage into a topic named "foobar"
@@ -105,4 +105,4 @@ schedule:
 
       # task with a Jinja2 formatter; single or double-quoting is necessary
       - task: boot_time
-        formatter: "{{x|uptime}}"
+        formatter: "{{x|uptime_sec}}"
