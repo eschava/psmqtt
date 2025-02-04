@@ -609,7 +609,10 @@ the `expire_after` property of the sensors; that means that in case PSMQTT stops
 a time longer than the expected frequency, then the sensor’s state becomes `unavailable`. This offers another way
 to monitor whether PSMQTT is working as intended from HomeAssistant.
 
-Finally, PSMQTT is also configuring the [MQTT Last Will](https://www.hivemq.com/blog/mqtt-essentials-part-9-last-will-and-testament/) message on the (fixed) topic **psmqtt/COMPUTER_NAME/psmqtt_status**
+Finally, PSMQTT is also configuring the [MQTT Last Will](https://www.hivemq.com/blog/mqtt-essentials-part-9-last-will-and-testament/) message on the (fixed) topic **psmqtt/COMPUTER_NAME/psmqtt_status**.
+Whenever PSMQTT goes online the payload `online` is published on that topic, with a retained message.
+Whenever PSMQTT goes offline the payload `offline` is published on that topic, with a retained message.
+This allows any other MQTT client to always immediately retrieve the actual status of a PSMQTT client: online/connected or offline/disconnected.
 
 ## <a name='Exampleconfigs'></a>Example configs
 
