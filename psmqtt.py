@@ -121,7 +121,7 @@ class PsmqttApp:
         new_status = (Task.num_errors, Task.num_success, MqttClient.num_disconnects)
         if new_status != app.last_logged_status:
             # publish status on MQTT
-            status_topic = app.status_topic
+            status_topic = app.mqtt_client.get_psmqtt_status_topic()
             app.mqtt_client.publish(status_topic + "/num_tasks_errors", Task.num_errors)
             app.mqtt_client.publish(status_topic + "/num_tasks_success", Task.num_success)
             app.mqtt_client.publish(status_topic + "/num_mqtt_disconnects", MqttClient.num_disconnects)
@@ -298,9 +298,7 @@ class PsmqttApp:
             return 5
 
         if log_period_sec > 0:
-            self.status_topic = app.mqtt_client.topic_prefix + "psmqtt_status"
-            logging.info(f"PSMQTT status will be published on topic {self.status_topic} every {log_period_sec}sec")
-
+            logging.info(f"PSMQTT status will be published on topic {self.mqtt_client.get_psmqtt_status_topic()} every {log_period_sec}sec")
             self.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([self]))
         #else: logging of the status has been disabled
 
