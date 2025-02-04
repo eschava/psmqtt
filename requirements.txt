@@ -8,5 +8,5 @@ types-paho-mqtt==1.6.0.20240321
 pySMART==1.4.1
 # testcontainers>=4.6.0 is required, since 4.6.0 introduced MosquittoContainer
 testcontainers==4.9.1
-pyyaml==6.0.1
+pyyaml==6.0.2
 yamale==6.0.0
