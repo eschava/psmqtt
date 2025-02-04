@@ -24,6 +24,12 @@ class MqttClient:
     # Constant value indicating the absence of a connection to the broker from get_connection_id()
     CONN_ID_INVALID = 0
 
+    # Constant values indicating the last-will MQTT topic & payload
+    PSMQTT_STATUS_TOPIC = "psmqtt_status"
+
+    NEW_CONN_PAYLOAD = "online"
+    LAST_WILL_PAYLOAD = "offline"
+
     def __init__(self,
             client_id:str,
             clean_session:bool,
@@ -35,6 +41,8 @@ class MqttClient:
             ha_status_topic:str) -> None:
 
         self.topic_prefix = topic_prefix
+        assert len(self.topic_prefix) > 0 and self.topic_prefix[-1] == "/"
+
         self.request_topic = request_topic
         self.qos = qos
         self.retain = retain
@@ -58,7 +66,8 @@ class MqttClient:
         self._mqttc.on_disconnect = self.on_disconnect
         self._mqttc.on_publish = self.on_publish
 
-        self._mqttc.will_set('clients/psmqtt', payload="Adios!", qos=0, retain=False)
+        # for sudden disconnection, send a last-will message
+        self._mqttc.will_set(self.get_psmqtt_status_topic(), payload=MqttClient.LAST_WILL_PAYLOAD, qos=0, retain=True)
         return
 
     def connect(self,
@@ -131,6 +140,12 @@ class MqttClient:
         self._ha_discovery_messages_requested = False
         return ret
 
+    def get_psmqtt_status_topic(self) -> str:
+        '''
+        Returns the topic used to publish metrics related to PSMQTT itself
+        '''
+        return self.topic_prefix + MqttClient.PSMQTT_STATUS_TOPIC
+
     # ---------------------------------------------------------------------------- #
     #                                   Callbacks                                  #
     # These will execute in the Paho secondary thread startd via loop_start()      #
@@ -156,6 +171,9 @@ class MqttClient:
             logging.warning(f"Connected to MQTT broker with result_code={result_code}")
         else:
             logging.info("Successfully connected to MQTT broker")
+
+        # update our status:
+        self._mqttc.publish(self.get_psmqtt_status_topic(), MqttClient.NEW_CONN_PAYLOAD, qos=self.qos, retain=True)
 
         if self.request_topic != '':
             topic = self.request_topic
