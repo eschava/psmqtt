@@ -19,6 +19,7 @@
 	* [MQTT Topic](#mqtt-topic)
 	* [HomeAssistant Discovery Messages](#homeassistant-discovery-messages)
 * [Sending MQTT requests](#sending-mqtt-requests)
+* [Monitoring PSMQTT](#monitoring-psmqtt)
 * [Example configs](#example-configs)
 
 <!-- vscode-markdown-toc-config
@@ -587,6 +588,26 @@ E.g. to force psmqtt to run the task:
 it's possible to send the YAML string above on the topic **psmqtt/COMPUTER_NAME/request**;
 the task will be executed immediately when received and will be interpreted like any
 other task in the configuration file.
+
+
+## <a name='MonitoringPSMQTT'></a>Monitoring PSMQTT
+
+PSMQTT provides some observability feature about itself in 2 forms:
+* logs: each disconnection from MQTT broker, network issue or any failure in executing a configured task is obviously reported in the logs;
+* in the **psmqtt/COMPUTER_NAME/psmqtt_status** topic, where 3 metrics are published: `num_tasks_errors`, `num_tasks_success` and `num_mqtt_disconnects`; this feature is enabled by the configuration key `report_status_period_sec`:
+
+```
+logging:
+  report_status_period_sec: 10
+```
+
+Of course another way to monitor whether PSMQTT is working correctly is to check whether the output MQTT topics
+are updated on the expected frequency.
+
+If the HomeAssistant integration MQTT discovery messages are used, also note that PSMQTT will automatically configure
+the `expire_after` property of the sensors; that means that in case PSMQTT stops updating the sensor main topic for
+a time longer than the expected frequency, then the sensor’s state becomes `unavailable`. This offers another way
+to monitor whether PSMQTT is working as intended from HomeAssistant.
 
 
 ## <a name='Exampleconfigs'></a>Example configs
