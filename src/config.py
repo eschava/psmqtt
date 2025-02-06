@@ -10,6 +10,7 @@ from yamale import YamaleError
 
 import socket
 from .handlers_all import TaskHandlers
+from .ha_units import HomeAssistantMeasurementUnits
 
 class Config:
     '''
@@ -208,6 +209,9 @@ class Config:
                 h["device_class"] = None
             elif h["device_class"] not in Config.HA_SUPPORTED_DEVICE_CLASSES[h["platform"]]:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.device_class' attribute in configuration file: {h['device_class']}. Expected one of {Config.HA_SUPPORTED_DEVICE_CLASSES}")
+
+            if "unit_of_measurement" in h and h["unit_of_measurement"] not in HomeAssistantMeasurementUnits.get_all_constants():
+                raise ValueError(f"{t['task']}: Invalid 'ha_discovery.unit_of_measurement' attribute in configuration file: {h['device_class']}. Expected one of {HomeAssistantMeasurementUnits.get_all_constants()}")
 
             # more optionals without defaults
             optional_params = ["unit_of_measurement", "icon", "expire_after", "payload_on", "payload_off", "value_template"]
