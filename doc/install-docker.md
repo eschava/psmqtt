@@ -17,7 +17,7 @@ In the next sections a few use cases are analyzed.
 
 ## Measuring disk usage from Docker
 
-In case you want to use the [disk_usage](./usage.md#category-disks) task to report the disk usage
+In case you want to use the [disk_usage task](./usage.md#category-disks) to report the disk usage
 at some path, you will need to bind-mount that particular path using `--volume` option.
 E.g. if you want to measure the disk usage of the root folder `/` you can use:
 
@@ -43,7 +43,8 @@ and in your `psmqtt.yaml` use e.g.:
 
 ## Accessing SMART counters from Docker
 
-In case you want to publish to the MQTT broker the SMART data for some hard drive,
+In case you want to publish to the MQTT broker the SMART data for some hard drive using the 
+[smart task](./usage.md#category-disks),
 you will need to launch the docker container with the `--cap-add SYS_RAWIO` flag and also
 provide all hard drive devices using `--device` flags.
 Finally, instead of selecting the `latest` tag, the `latest-root` tag must be selected:
@@ -73,6 +74,27 @@ docker run -d -v /home/user/psmqtt.yaml:/opt/psmqtt/conf/psmqtt.yaml \
 Note the use of the `latest-root` tag instead of the `latest` tag: it's a docker image where
 the psmqtt Python utility runs as root. This is necessary in order to access the SMART data of the hard drives.
 
+## Accessing Network Interfaces from Docker
+
+In case you want to monitor network-related I/O counters using the 
+[net_io_counters task](./usage.md#category-network),
+you probably want to measure the network I/O that is happening on the physical network interfaces,
+rather than the `eth0` interface that is created by Docker inside the PSMQTT docker container.
+To achieve that, you will need to remove the Docker network isolation using the `--network=host` flag:
+
+```sh
+docker run -d -v <your config file>:/opt/psmqtt/conf/psmqtt.yaml \
+    --hostname $(hostname) \
+    --network=host \
+    --name psmqtt \
+    ghcr.io/eschava/psmqtt:latest
+```
+
+Also note that Docker (and also other software programs) will create a lot of `veth` devices 
+and the network traffic on these interfaces is typically not what you want to monitor. So it's strongly
+suggested that you add a network interface card selector for the `net_io_counters` task declared in your
+`psmqtt.yaml`.
+
 ## Verify psmqtt behavior
 
 First of all, verify the logs of the psmqtt docker:
@@ -95,9 +117,9 @@ services:
     image: ghcr.io/eschava/psmqtt:latest-root
     restart: unless-stopped
     stop_grace_period: 10s
-    # setting the correct hostname will make it possible for PSMQTT to select a sensible
-    # default MQTT topic prefix (and also name correctly Home Assistant devices)
-    hostname: name-of-the-host
+    # setting the network_mode to "host" will allow PSMQTT to monitor traffic
+    # on the physical network interfaces (eth0, enp0s0f0 and similar...)
+    network_mode: "host"
     cap_add:
       # SYS_RAWIO allows to monitor SMART counters
       - SYS_RAWIO

@@ -26,6 +26,13 @@ Then:
 
 ```sh
 sudo cp psmqtt.service /etc/systemd/system
+```
+
+If you are interested in monitoring SMART counters, you will need to edit the `/etc/systemd/system/psmqtt.service` file
+and set `User=root` instead of `User=nobody`.
+Then:
+
+```sh
 sudo systemctl enable psmqtt.service
 sudo systemctl start psmqtt.service
 ```
