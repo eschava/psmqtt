@@ -213,7 +213,7 @@ class MqttClient:
         if msg.topic.startswith(self.request_topic):
             #task = msg.topic[len(self.request_topic):]
             # FIXME: deserialize from the payload the YAML that defines the TASK
-            #        and run it
+            #        and run it -- see https://github.com/eschava/psmqtt/issues/70
             logging.error("Feature not yet implemented. Please raise a github issue if you need it.")
         elif msg.topic == self.ha_status_topic:
             mqtt_payload = msg.payload.decode("UTF-8")
