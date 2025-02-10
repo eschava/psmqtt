@@ -349,12 +349,12 @@ class PsmqttApp:
                     break
                 if self.config.config["mqtt"]["ha_discovery"]["enabled"]:
                     curr_conn_id = self.mqtt_client.get_connection_id()
-                    if curr_conn_id != last_ha_discovery_messages_connection_id:
+                    if curr_conn_id != self.last_ha_discovery_messages_connection_id:
                         # looks like a new MQTT connection to the broker has (recently) been estabilished;
                         # send out MQTT discovery messages
                         logging.warning(f"New connection to the MQTT broker detected (id={curr_conn_id}), sending out MQTT discovery messages...")
                         self.publish_ha_discovery_messages()
-                        last_ha_discovery_messages_connection_id = curr_conn_id
+                        self.last_ha_discovery_messages_connection_id = curr_conn_id
 
                     if self.mqtt_client.get_and_reset_ha_discovery_messages_requested_flag():
                         # MQTT discovery messages have been requested...
@@ -363,7 +363,6 @@ class PsmqttApp:
 
                         # see https://github.com/eschava/psmqtt/issues/79
                         self.run_all_tasks()
-
 
     def run(self) -> int:
         # start a secondary thread running the scheduler
@@ -381,7 +380,7 @@ class PsmqttApp:
             # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
             # so, if and when the MQTT broker will be available, the connection will be established
 
-        last_ha_discovery_messages_connection_id = MqttClient.CONN_ID_INVALID
+        self.last_ha_discovery_messages_connection_id = MqttClient.CONN_ID_INVALID
 
         # block the main thread on the MQTT client loop
         self.keep_running = True
@@ -389,7 +388,7 @@ class PsmqttApp:
             try:
                 # restart the MQTT client secondary thread in case it was never started or failed for some reason
                 self.mqtt_client.loop_start()
-                
+
                 # run till an exception is thrown:
                 self._core_loop()
 
