@@ -78,9 +78,11 @@ class PSMQTTContainer(DockerContainer):
 
     def get_num_internal_errors(self, broker: MosquittoContainerEnhanced) -> int:
         last_value = broker.get_last_payload_received_in_watched_topic(self.internal_mqtt_topics["num_errors"])
+        print(f"Number of PSMQTT internal errors from topic [{self.internal_mqtt_topics['num_errors']}] is: {last_value}")
         try:
             return int(last_value)
         except ValueError:
+            # weird, could be an empty string?
             return -1
 
     def print_logs(self) -> str:

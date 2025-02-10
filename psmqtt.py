@@ -19,7 +19,6 @@ import socket
 import logging
 import sys
 import platform
-from threading import Thread
 import time
 
 from src.config import Config
@@ -28,36 +27,6 @@ from src.task import Task
 from src.schedule import Schedule
 from src.utils import get_mac_address
 
-class SchedulerThread(Thread):
-
-    def __init__(self, scheduler:sched.scheduler):
-        super().__init__(daemon=True)
-        self.scheduler = scheduler
-        self.keep_running = True
-        return
-
-    def start(self) -> None:
-        logging.info("Starting the psmqtt scheduler")
-        super().start()
-
-    def run(self) -> None:
-        while self.keep_running:
-            delay_sec = self.scheduler.run(blocking=False)
-
-            time_waited = 0
-            while delay_sec > 0 and time_waited < delay_sec:
-                time.sleep(0.5)
-                time_waited += 0.5
-                if not self.keep_running:
-                    break
-        return
-
-    def stop(self) -> None:
-        self.keep_running = False
-        logging.info("Stopping the psmqtt scheduler")
-        super().join()
-        logging.info("Stopped the psmqtt scheduler")
-
 class PsmqttApp:
 
     def __init__(self) -> None:
@@ -65,7 +34,6 @@ class PsmqttApp:
         self.config = None  # instance of Config
         self.mqtt_client = None  # instance of MqttClient
         self.scheduler = None  # instance of sched.scheduler
-        self.scheduler_thread = None  # instance of SchedulerThread
 
         self.last_logged_status = (None, None, None)
         self.schedule_list = []  # list of Schedule instances
@@ -154,10 +122,11 @@ class PsmqttApp:
             logging.error(f"Version file '{filename}' not found in the current directory.")
             return "N/A"
 
-    def publish_ha_discovery_messages(self):
+    def publish_ha_discovery_messages(self) -> int:
         '''
         Publish MQTT discovery messages for HomeAssistant, from all tasks that have been decorated
-        with the "ha_discovery" metadata
+        with the "ha_discovery" metadata.
+        Returns the number of MQTT discovery messages published.
         '''
 
         ha_discovery_topic = self.config.config["mqtt"]["ha_discovery"]["topic"]
@@ -198,6 +167,21 @@ class PsmqttApp:
                     self.mqtt_client.publish(topic, payload)
                     num_msgs += 1
         logging.info(f"Published a total of {num_msgs} MQTT discovery messages under the topic prefix '{ha_discovery_topic}' for the device '{ha_device_name}'. The HomeAssistant MQTT integration should now be showing {num_msgs} sensors for the device '{ha_device_name}'.")
+        return num_msgs
+
+    def run_all_tasks(self) -> int:
+        '''
+        Run all tasks immediately, disregarding the schedule.
+        Returns the number of tasks that were run.
+        '''
+        num_tasks = 0
+        for sch in self.schedule_list:
+            for task in sch.get_tasks():
+                task.run_task(self.mqtt_client)
+                num_tasks += 1
+
+        logging.info(f"Executed {num_tasks} tasks.")
+        return num_tasks
 
     def setup(self) -> int:
         '''
@@ -302,16 +286,57 @@ class PsmqttApp:
             self.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([self]))
         #else: logging of the status has been disabled
 
-        # store the scheduler into its own thread:
-        self.scheduler_thread = SchedulerThread(self.scheduler)
-
         # success
         return 0
 
-    def run(self) -> int:
-        # start a secondary thread running the scheduler
-        self.scheduler_thread.start()
+    def _core_loop(self) -> None:
+        '''
+        Runs the logic of PSMQTT application.
+        Every "sleep quantum" the app wakes up and checks whether
+        * it's time to run a scheduled task
+        * MQTT dicovery messages were requested
+        * etc
 
+        This function exits only in case: an exception is thrown or the total number
+        of tasks executed reaches the limit set in the configuration file.
+        '''
+        sleep_quantum_sec = 0.5
+        exit_after = self.config.config["options"]["exit_after_num_tasks"]
+
+        while self.keep_running:
+            # execute all tasks waiting in the queue
+            delay_for_next_task_sec = self.scheduler.run(blocking=False)
+
+            # execute a sliced wait, so we reuse this thread to check for other occurrences
+            # (instead of resorting to a multithread Python app)
+            time_waited_sec = 0
+            while delay_for_next_task_sec > 0 and time_waited_sec < delay_for_next_task_sec:
+                time.sleep(sleep_quantum_sec)
+                time_waited_sec += sleep_quantum_sec
+
+                if exit_after > 0 and Task.num_total_tasks_executed() >= exit_after:
+                    logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks_executed())
+                    self.keep_running = False
+                    break
+                if self.config.config["mqtt"]["ha_discovery"]["enabled"]:
+                    curr_conn_id = self.mqtt_client.get_connection_id()
+                    if curr_conn_id != self.last_ha_discovery_messages_connection_id:
+                        # looks like a new MQTT connection to the broker has (recently) been estabilished;
+                        # send out MQTT discovery messages
+                        logging.warning(f"New connection to the MQTT broker detected (id={curr_conn_id}), sending out MQTT discovery messages...")
+                        self.publish_ha_discovery_messages()
+                        self.last_ha_discovery_messages_connection_id = curr_conn_id
+
+                    if self.mqtt_client.get_and_reset_ha_discovery_messages_requested_flag():
+                        # MQTT discovery messages have been requested...
+                        logging.warning("Detected notification that Home Assistant just (re)started; phase 1: publishing MQTT discovery messages...")
+                        self.publish_ha_discovery_messages()
+
+                        # see https://github.com/eschava/psmqtt/issues/79
+                        logging.warning("Detected notification that Home Assistant just (re)started; phase 2: publishing all sensor values (regardless of their schedule)...")
+                        self.run_all_tasks()
+
+    def run(self) -> int:
         # estabilish a connection to the MQTT broker
         try:
             self.mqtt_client.connect(
@@ -324,49 +349,28 @@ class PsmqttApp:
             # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
             # so, if and when the MQTT broker will be available, the connection will be established
 
-        last_ha_discovery_messages_connection_id = MqttClient.CONN_ID_INVALID
+        self.last_ha_discovery_messages_connection_id = MqttClient.CONN_ID_INVALID
 
         # block the main thread on the MQTT client loop
-        keep_running = True
-        exit_after = self.config.config["options"]["exit_after_num_tasks"]
-        while keep_running:
+        self.keep_running = True
+        while self.keep_running:
             try:
+                # restart the MQTT client secondary thread in case it was never started or failed for some reason
                 self.mqtt_client.loop_start()
-                while True:
-                    if exit_after > 0 and Task.num_total_tasks_executed() >= exit_after:
-                        logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks_executed())
-                        keep_running = False
-                        break
 
-                    if self.config.config["mqtt"]["ha_discovery"]["enabled"]:
-                        curr_conn_id = self.mqtt_client.get_connection_id()
-                        if curr_conn_id != last_ha_discovery_messages_connection_id:
-                            # looks like a new MQTT connection to the broker has (recently) been estabilished;
-                            # send out MQTT discovery messages
-                            logging.warning(f"New connection to the MQTT broker detected (id={curr_conn_id}), sending out MQTT discovery messages...")
-                            self.publish_ha_discovery_messages()
-                            last_ha_discovery_messages_connection_id = curr_conn_id
+                # run till an exception is thrown:
+                self._core_loop()
 
-                        if self.mqtt_client.get_and_reset_ha_discovery_messages_requested_flag():
-                            # MQTT discovery messages have been requested...
-                            logging.warning("Detected the notification that Home Assistant just started, sending out MQTT discovery messages...")
-                            self.publish_ha_discovery_messages()
-
-                    time.sleep(0.5)
-
+            # try to recover from exceptions:
             except socket.error:
                 logging.error("socket.error caught, sleeping for 5 sec...")
                 time.sleep(self.config.config["mqtt"]["reconnect_period_sec"])
-
             except KeyboardInterrupt:
                 logging.warning("KeyboardInterrupt caught, exiting")
                 break
 
         # gracefully stop the event loop of MQTT client
         self.mqtt_client.loop_stop()
-
-        # stop the scheduler thread as well
-        self.scheduler_thread.stop()
 
         # log status one last time
         PsmqttApp.log_status()
