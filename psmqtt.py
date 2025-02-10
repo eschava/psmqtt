@@ -19,7 +19,6 @@ import socket
 import logging
 import sys
 import platform
-from threading import Thread
 import time
 
 from src.config import Config
