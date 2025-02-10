@@ -28,36 +28,6 @@ from src.task import Task
 from src.schedule import Schedule
 from src.utils import get_mac_address
 
-class SchedulerThread(Thread):
-
-    def __init__(self, scheduler:sched.scheduler):
-        super().__init__(daemon=True)
-        self.scheduler = scheduler
-        self.keep_running = True
-        return
-
-    def start(self) -> None:
-        logging.info("Starting the psmqtt scheduler")
-        super().start()
-
-    def run(self) -> None:
-        while self.keep_running:
-            delay_sec = self.scheduler.run(blocking=False)
-
-            time_waited = 0
-            while delay_sec > 0 and time_waited < delay_sec:
-                time.sleep(0.5)
-                time_waited += 0.5
-                if not self.keep_running:
-                    break
-        return
-
-    def stop(self) -> None:
-        self.keep_running = False
-        logging.info("Stopping the psmqtt scheduler")
-        super().join()
-        logging.info("Stopped the psmqtt scheduler")
-
 class PsmqttApp:
 
     def __init__(self) -> None:
@@ -65,7 +35,6 @@ class PsmqttApp:
         self.config = None  # instance of Config
         self.mqtt_client = None  # instance of MqttClient
         self.scheduler = None  # instance of sched.scheduler
-        self.scheduler_thread = None  # instance of SchedulerThread
 
         self.last_logged_status = (None, None, None)
         self.schedule_list = []  # list of Schedule instances
@@ -310,9 +279,6 @@ class PsmqttApp:
             self.scheduler.enter(log_period_sec, 1, PsmqttApp.on_log_timer, tuple([self]))
         #else: logging of the status has been disabled
 
-        # store the scheduler into its own thread:
-        self.scheduler_thread = SchedulerThread(self.scheduler)
-
         # success
         return 0
 
@@ -341,8 +307,6 @@ class PsmqttApp:
                 time.sleep(sleep_quantum_sec)
                 time_waited_sec += sleep_quantum_sec
 
-                #if not self.keep_running:
-                #    break
                 if exit_after > 0 and Task.num_total_tasks_executed() >= exit_after:
                     logging.warning("exiting after executing %d tasks as requested in the configuration file", Task.num_total_tasks_executed())
                     self.keep_running = False
@@ -358,16 +322,14 @@ class PsmqttApp:
 
                     if self.mqtt_client.get_and_reset_ha_discovery_messages_requested_flag():
                         # MQTT discovery messages have been requested...
-                        logging.warning("Detected the notification that Home Assistant just (re)started, sending out MQTT discovery messages...")
+                        logging.warning("Detected notification that Home Assistant just (re)started; phase 1: publishing MQTT discovery messages...")
                         self.publish_ha_discovery_messages()
 
                         # see https://github.com/eschava/psmqtt/issues/79
+                        logging.warning("Detected notification that Home Assistant just (re)started; phase 2: publishing all sensor values (regardless of their schedule)...")
                         self.run_all_tasks()
 
     def run(self) -> int:
-        # start a secondary thread running the scheduler
-        #self.scheduler_thread.start()
-
         # estabilish a connection to the MQTT broker
         try:
             self.mqtt_client.connect(
@@ -402,9 +364,6 @@ class PsmqttApp:
 
         # gracefully stop the event loop of MQTT client
         self.mqtt_client.loop_stop()
-
-        # stop the scheduler thread as well
-        #self.scheduler_thread.stop()
 
         # log status one last time
         PsmqttApp.log_status()
