@@ -122,10 +122,11 @@ class PsmqttApp:
             logging.error(f"Version file '{filename}' not found in the current directory.")
             return "N/A"
 
-    def publish_ha_discovery_messages(self):
+    def publish_ha_discovery_messages(self) -> int:
         '''
         Publish MQTT discovery messages for HomeAssistant, from all tasks that have been decorated
-        with the "ha_discovery" metadata
+        with the "ha_discovery" metadata.
+        Returns the number of MQTT discovery messages published.
         '''
 
         ha_discovery_topic = self.config.config["mqtt"]["ha_discovery"]["topic"]
@@ -166,14 +167,21 @@ class PsmqttApp:
                     self.mqtt_client.publish(topic, payload)
                     num_msgs += 1
         logging.info(f"Published a total of {num_msgs} MQTT discovery messages under the topic prefix '{ha_discovery_topic}' for the device '{ha_device_name}'. The HomeAssistant MQTT integration should now be showing {num_msgs} sensors for the device '{ha_device_name}'.")
+        return num_msgs
 
-    def run_all_tasks(self) -> None:
+    def run_all_tasks(self) -> int:
         '''
         Run all tasks immediately, disregarding the schedule.
+        Returns the number of tasks that were run.
         '''
+        num_tasks = 0
         for sch in self.schedule_list:
             for task in sch.get_tasks():
                 task.run_task(self.mqtt_client)
+                num_tasks += 1
+
+        logging.info(f"Executed {num_tasks} tasks.")
+        return num_tasks
 
     def setup(self) -> int:
         '''
