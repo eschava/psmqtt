@@ -38,7 +38,12 @@ class Config:
                     'volatile_organic_compounds_parts', 'voltage', 'volume', 'volume_storage',
                     'volume_flow_rate', 'water', 'weight', 'wind_speed']
     }
+
+    # see https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics
     HA_SUPPORTED_STATE_CLASSES = ["measurement", "total", "total_increasing"]
+
+    # see https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics
+    HA_UNSUPPORTED_DEVICE_CLASSES_FOR_MEASUREMENTS = ["date", "enum", "energy", "gas", "monetary", "timestamp", "volume", "water"]
 
     def __init__(self):
         self.config = None
@@ -217,8 +222,11 @@ class Config:
 
             if "state_class" not in h:
                 # "measurement" is a good default since most of psutil/pySMART tasks represent measurements
-                # of bytes, percentages, temperatures, etc
-                h["state_class"] = "measurement"
+                # of bytes, percentages, temperatures, etc.
+                # We just make sure to never add "state_class" to some types of "device_class"es that will
+                # trigger errors on the HomeAssistant side...
+                if h["device_class"] not in Config.HA_UNSUPPORTED_DEVICE_CLASSES_FOR_MEASUREMENTS:
+                    h["state_class"] = "measurement"
             elif "state_class" in h and h["state_class"] not in Config.HA_SUPPORTED_STATE_CLASSES:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.state_class' attribute in configuration file: {h['state_class']}. Expected one of {Config.HA_SUPPORTED_STATE_CLASSES}")
 
