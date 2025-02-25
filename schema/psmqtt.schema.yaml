@@ -59,3 +59,4 @@ task_ha_discovery:
   payload_on: str(required=False)
   payload_off: str(required=False)
   value_template: str(required=False)
+  state_class: str(required=False)

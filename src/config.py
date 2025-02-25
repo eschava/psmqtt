@@ -39,6 +39,12 @@ class Config:
                     'volume_flow_rate', 'water', 'weight', 'wind_speed']
     }
 
+    # see https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics
+    HA_SUPPORTED_STATE_CLASSES = ["measurement", "total", "total_increasing"]
+
+    # see https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics
+    HA_UNSUPPORTED_DEVICE_CLASSES_FOR_MEASUREMENTS = ["date", "enum", "energy", "gas", "monetary", "timestamp", "volume", "water"]
+
     def __init__(self):
         self.config = None
         self.schema = None
@@ -199,9 +205,10 @@ class Config:
             if h["name"] == '':
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.name' attribute in configuration file: empty")
 
-            # optional parameters:
+            # optional parameters with defaults:
 
             if "platform" not in h:
+                # most of psutil/pySMART tasks are sensors, so "sensor" is a good deafult:
                 h["platform"] = "sensor"
             elif h["platform"] not in Config.HA_SUPPORTED_PLATFORMS:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.platform' attribute in configuration file: {h['platform']}. Expected one of {Config.HA_SUPPORTED_PLATFORMS}")
@@ -213,7 +220,18 @@ class Config:
             if "unit_of_measurement" in h and h["unit_of_measurement"] not in HomeAssistantMeasurementUnits.get_all_constants():
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.unit_of_measurement' attribute in configuration file: {h['unit_of_measurement']}. Expected one of {HomeAssistantMeasurementUnits.get_all_constants()}")
 
-            # more optionals without defaults
+            if "state_class" not in h:
+                # "measurement" is a good default since most of psutil/pySMART tasks represent measurements
+                # of bytes, percentages, temperatures, etc.
+                # We just make sure to never add "state_class" to some types of "device_class"es that will
+                # trigger errors on the HomeAssistant side...
+                if h["device_class"] not in Config.HA_UNSUPPORTED_DEVICE_CLASSES_FOR_MEASUREMENTS:
+                    h["state_class"] = "measurement"
+            elif "state_class" in h and h["state_class"] not in Config.HA_SUPPORTED_STATE_CLASSES:
+                raise ValueError(f"{t['task']}: Invalid 'ha_discovery.state_class' attribute in configuration file: {h['state_class']}. Expected one of {Config.HA_SUPPORTED_STATE_CLASSES}")
+
+            # optional parameters without defaults:
+
             optional_params = ["unit_of_measurement", "icon", "expire_after", "payload_on", "payload_off", "value_template"]
             for o in optional_params:
                 if o not in h:

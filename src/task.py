@@ -180,7 +180,7 @@ class Task:
 
         # optional parameters
         # FIXME: should we add also "availability_topic", "payload_available", "payload_not_available" ?
-        optional_parameters = ["icon", "device_class", "unit_of_measurement", "payload_on", "payload_off"]
+        optional_parameters = ["icon", "device_class", "state_class", "unit_of_measurement", "payload_on", "payload_off"]
         for o in optional_parameters:
             if o in self.ha_discovery and self.ha_discovery[o]:
                 msg[o] = self.ha_discovery[o]
