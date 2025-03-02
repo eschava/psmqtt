@@ -22,14 +22,14 @@ class DiskCountersIO(MethodCommandHandler):
         if len(params) != 1 and len(params) != 2:
             raise Exception(f"{self.name}: Exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
 
-        disk = params[0]
-        counter = params[1] if len(params) == 2 else ''
+        field_selector = params[0]
+        disk = params[1] if len(params) == 2 else ''
 
-        all_params = BaseHandler.is_wildcard(counter)
-        params_join = BaseHandler.is_join_wildcard(counter)
+        all_params = BaseHandler.is_wildcard(field_selector)
+        params_join = BaseHandler.is_join_wildcard(field_selector)
 
         total = False
-        if BaseHandler.is_regular_wildcard(disk):
+        if BaseHandler.is_regular_wildcard(disk) or disk == '':
             total = True
         elif BaseHandler.is_join_wildcard(disk):
             total = True
@@ -46,9 +46,9 @@ class DiskCountersIO(MethodCommandHandler):
 
         assert isinstance(result, tuple)
         assert hasattr(result, '_fields')
-        if counter in result._fields:
-            return getattr(result, counter)
-        raise Exception(f"{self.name}: Element '{counter}' is not supported")
+        if field_selector in result._fields:
+            return getattr(result, field_selector)
+        raise Exception(f"{self.name}: Element '{field_selector}' is not supported")
 
     def get_value(self, total:bool, disk:str) -> NamedTuple:
         result = psutil.disk_io_counters(perdisk=not total)
@@ -72,7 +72,7 @@ class DiskUsageCommandHandler(MethodCommandHandler):
         if len(params) != 2:
             raise Exception(f"{self.name}: Exactly 2 parameters are required; found {len(params)} parameters instead: {params}")
 
-        param = params[0]
+        field_selector = params[0]
         disk = params[1]
 
         if disk == '':
@@ -81,11 +81,11 @@ class DiskUsageCommandHandler(MethodCommandHandler):
 
         tup = self.get_value(disk)
         assert isinstance(tup, tuple)
-        if BaseHandler.is_wildcard(param):
-            return string_from_dict_optionally(tup._asdict(), BaseHandler.is_join_wildcard(param))
-        elif param in tup._fields:
-            return getattr(tup, param)
-        raise Exception(f"{self.name}: Parameter '{param}' is not supported")
+        if BaseHandler.is_wildcard(field_selector):
+            return string_from_dict_optionally(tup._asdict(), BaseHandler.is_join_wildcard(field_selector))
+        elif field_selector in tup._fields:
+            return getattr(tup, field_selector)
+        raise Exception(f"{self.name}: Parameter '{field_selector}' is not supported")
 
     # noinspection PyMethodMayBeStatic
     def get_value(self, disk:str) -> NamedTuple:

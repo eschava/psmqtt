@@ -244,12 +244,12 @@ Here follows the reference documentation for all required tasks and their parame
     * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, etc.
       Check full reference for all available fields
-    * **REQUIRED**: `<param2>`: The wildcard `*` or `+` to select all partitions or an index `0`, `1`, `2`, etc to select a specific partition.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all partitions/disks or the name of a specific drive e.g. `/dev/md0` or `/dev/sda`. If not provided, then the total disk I/O counters are produced in output (according to the field selected with `<param1>`).
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
   * Task name: `smart`
     * Short description: Self-Monitoring, Analysis and Reporting Technology System (SMART) counters built into most modern ATA/SATA, SCSI/SAS and NVMe disks. [ Full reference ]( https://www.smartmontools.org/wiki/TocDoc )
     * **REQUIRED**: `<param1>`: The name of a specific drive e.g. `/dev/md0` or `/dev/sda`.
-    * **REQUIRED**: `<param2>`: The wildcard `*` or `+` to select all S.M.A.R.T. attributes or a field name like 
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all S.M.A.R.T. attributes or a field name like 
       `interface`, `is_ssd`, `model`, `name`, `path`, `rotation_rate`, `serial`, `smart_capable`, `smart_enabled`, `smart_status`, `temperature`, `test_capabilities`.
       All SMART attributes are reported in fields named `attribute_raw[ATTRIBUTE_NAME]`. The availability of specific
       attributes depends on the disk vendor and disk model. E.g. a typical SMART attribute name would be `Power_On_Hours`

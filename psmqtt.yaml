@@ -112,6 +112,9 @@ schedule:
           platform: sensor
           unit_of_measurement: "%"
           icon: mdi:memory
+      - task: disk_io_counters
+        params: [ "*" ]
+      
 
       # task with 2 parameters, no formatter, HA discovery message configuration:
       - task: smart
