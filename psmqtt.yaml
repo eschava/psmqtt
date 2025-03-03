@@ -113,12 +113,16 @@ schedule:
           unit_of_measurement: "%"
           icon: mdi:memory
       - task: disk_io_counters
-        params: [ "*" ]
-      
+        params: [ "read_bytes", "/dev/sda" ]
+        ha_discovery:
+          name: "SDA Read Bytes"
+          platform: sensor
+          device_class: data_size
+          unit_of_measurement: "B"
 
       # task with 2 parameters, no formatter, HA discovery message configuration:
       - task: smart
-        params: [ /dev/nvme0, temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
+        params: [ "/dev/nvme0", temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
         ha_discovery:
           name: "NVMe0 Temperature"
           platform: sensor
@@ -128,31 +132,31 @@ schedule:
 
       # task requesting ALL available SMART attributes of a specific disk to be published as individual topics
       - task: smart
-        params: [ /dev/sda, "*" ]
+        params: [ "/dev/sda", "*" ]
         topic: "/sda_smart_status/*"
         # ha_discovery not supported for messages with wildcards 
 
       # task requesting ALL available SMART attributes of a specific disk to be published as a single topic with JSON payload
       - task: smart
-        params: [ /dev/sda, "+" ]
+        params: [ "/dev/sda", "+" ]
         topic: "/sda_smart_status"
         # ha_discovery not supported for messages with wildcards 
 
       # task requesting to publish the result of the last SMART test, complete with HA discovery message configuration:
       - task: smart
-        params: [ /dev/sda, "test[0]" ]
+        params: [ "/dev/sda", "test[0]" ]
         formatter: "{{hours}}"
         topic: "sda_info_last_test"
         ha_discovery:
           name: "SDA SMART Test"
           platform: sensor
           device_class: duration
-          unit_of_measurement: "hours"
+          unit_of_measurement: "h"
           icon: mdi:clock
 
       # task requesting to publish the overall SMART status, complete with HA discovery message configuration:
       - task: smart
-        params: [ /dev/sda, smart_status ]
+        params: [ "/dev/sda", smart_status ]
         ha_discovery:
           name: "SDA SMART Status"
           platform: binary_sensor

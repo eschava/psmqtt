@@ -11,7 +11,7 @@ from .formatter import Formatter
 
 from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
 from .handlers_psutil_processes import ProcessesCommandHandler, ProcessPropertiesCommandHandler, ProcessMethodCommandHandler, ProcessMethodIndexCommandHandler, ProcessMethodTupleCommandHandler
-from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIO, SensorsTemperaturesCommandHandler
+from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIOCommandHandler, SensorsTemperaturesCommandHandler
 from .handlers_pysmart import SmartCommandHandler
 
 class TaskHandlers:
@@ -49,7 +49,7 @@ class TaskHandlers:
 
         'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
         'disk_usage': DiskUsageCommandHandler(),
-        'disk_io_counters': DiskCountersIO('disk_io_counters'),
+        'disk_io_counters': DiskCountersIOCommandHandler(),
         'smart': SmartCommandHandler(),
 
         # NETWORK
@@ -112,21 +112,33 @@ class TaskHandlers:
     @staticmethod
     def get_value(handlerName: str, params: list[str], formatter: str) -> Payload:
         '''
-        Main module API.
-        Given a task definition, retrieves the sensor value via the corresponding Task/Handler and
-        formats that sensor value with the corresponding formatter.
+        Invokes the handler identified by the provided 'handlerName' with the given 'params';
+        the handle will retrieves the sensor value(s), filter them and returns it/them.
+
+        Then this function formats the output(s) invoking the 'formatter'.
+
+        This is the main API for TaskHandlers.
         '''
-        handler = TaskHandlers.handlers.get(handlerName, None)
-        if handler is None:
+        if handlerName not in TaskHandlers.handlers:
             raise Exception(f"Task '{handlerName}' is not supported")
 
+        # invoke the handler to read the sensor values
+        handler = TaskHandlers.handlers[handlerName]
         value = handler.handle(params)
+
+        # if we get here, the reading was successful
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            is_seq = isinstance(value, list) or isinstance(value, dict)
+            desc = f"multiple results ({len(value)})" if is_seq else "single result"
+            logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) produced {desc}:\n{value}")
+
         if formatter is not None:
-            logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) BEFORE FORMATTING => {value}")
             value = Formatter.format(formatter, value)
             logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) AFTER FORMATTING with {formatter} => {value}")
-        else:
-            logging.debug(f"TaskHandlers.get_value(task '{handlerName}' with params {params}) provided by {handler} => {value}")
+
+        # the value must be one of the types declared inside "Payload"
+        assert isinstance(value, str) or isinstance(value, int) or isinstance(value, float) or isinstance(value, list) or isinstance(value, dict) or isinstance(value, tuple)
+
         return value
 
     @staticmethod

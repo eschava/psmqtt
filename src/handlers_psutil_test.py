@@ -17,11 +17,14 @@ from .handlers_psutil import (
 @pytest.mark.unit
 class TestHandlers(unittest.TestCase):
 
+    
+
+
     def test_disk_usage_command_handler(self) -> None:
         disk: Optional[str] = '/'
         handler = type("TestHandler", (DiskUsageCommandHandler, object),
                        {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})()
-        # normal execution
+        # normal execution: read field "a" from the fake tuple returned for disk "/"
         self.assertEqual(10, handler.handle(['a', '/']))
         self.assertEqual({'a': 10, 'b': 20}, handler.handle(['*', '/']))
         self.assertEqual('{"a": 10, "b": 20}', handler.handle(['+', '/']))
@@ -51,7 +54,6 @@ class TestHandlers(unittest.TestCase):
     def test_DiskUsageCommandHandler(self) -> None:
         handler = DiskUsageCommandHandler()
         val = handler.get_value('/')
-        #print(val)
         self.assertIsInstance(val, tuple)
         return
 

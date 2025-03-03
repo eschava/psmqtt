@@ -9,12 +9,13 @@ from typing import (
 from .handlers_base import BaseHandler, MethodCommandHandler, Payload
 from .utils import string_from_dict_optionally
 
-class DiskCountersIO(MethodCommandHandler):
+class DiskCountersIOCommandHandler(MethodCommandHandler):
     '''
-    Used to handle psutil.disk_io_counters()
+    DiskCountersIOCommandHandler handles the output of psutil.disk_io_counters()
+    https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
     '''
-    def __init__(self, name:str):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__('disk_io_counters')
 
     def handle(self, params: list[str]) -> Payload:
         assert isinstance(params, list)
@@ -22,45 +23,70 @@ class DiskCountersIO(MethodCommandHandler):
         if len(params) != 1 and len(params) != 2:
             raise Exception(f"{self.name}: Exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
 
+        # first parameter is the field to select "read_bytes", "write_bytes", etc.
         field_selector = params[0]
+        join_fields = BaseHandler.is_join_wildcard(field_selector)
+
+        # second parameter (if given) is the disk name, or a wildcard to select all disks
         disk = params[1] if len(params) == 2 else ''
 
-        all_params = BaseHandler.is_wildcard(field_selector)
-        params_join = BaseHandler.is_join_wildcard(field_selector)
+        perdisk = disk != ''
+        if BaseHandler.is_join_wildcard(disk):
+            perdisk = True
+            join_fields = True
 
-        total = False
-        if BaseHandler.is_regular_wildcard(disk) or disk == '':
-            total = True
-        elif BaseHandler.is_join_wildcard(disk):
-            total = True
-            params_join = True
+        if BaseHandler.is_wildcard(field_selector) and BaseHandler.is_wildcard(disk):
+            raise Exception(f"{self.name}: Two wildcard parameters were provided but only one of the two can be a wildcard")
 
-        result = self.get_value(total, disk)
-        #if not isinstance(result, tuple):
-        #    raise Exception(f"Expected a tuple, got: {type(result)}")
+        result = self.get_value(perdisk, disk)
 
-        if all_params:  # not total
-            assert isinstance(result, tuple)
-            assert hasattr(result, '_asdict')
-            return string_from_dict_optionally(result._asdict(), params_join)
+        if isinstance(result, tuple):
+            if BaseHandler.is_wildcard(field_selector):
+                assert hasattr(result, '_asdict')
+                return string_from_dict_optionally(result._asdict(), join_fields)
+            elif field_selector in result._fields:
+                return getattr(result, field_selector)
+            else:
+                raise Exception(f"{self.name}: Field '{field_selector}' is not supported")
 
-        assert isinstance(result, tuple)
-        assert hasattr(result, '_fields')
-        if field_selector in result._fields:
-            return getattr(result, field_selector)
-        raise Exception(f"{self.name}: Element '{field_selector}' is not supported")
+        elif isinstance(result, dict):
+            if BaseHandler.is_wildcard(field_selector):
+                return string_from_dict_optionally(result, join_fields)
+            else:
+                # select an individual field inside the namedtuple associated with each key in the dictionary:
+                filtereddict = {k: getattr(v, field_selector) for k,v in result.items()}
+                #for
+                return filtereddict
 
-    def get_value(self, total:bool, disk:str) -> NamedTuple:
-        result = psutil.disk_io_counters(perdisk=not total)
+        else:
+            raise Exception(f"{self.name}: Unexpected result type: {type(result)}")
+
+    def get_value(self, perdisk:bool, disk:str) -> NamedTuple:
+
+        result = psutil.disk_io_counters(perdisk=perdisk)
         # result is a namedtuple when perdisk=False or a dict when perdisk=True
-        if total:
+
+        disk_without_dev = disk.replace('/dev/', '')
+        if not perdisk:
+            # this is already a (named)tuple:
+            return result
+
+        # handle the case where result is a dict:
+        # the dictionary is indexed by the device name e.g. "/dev/sda" and contains a tuple
+        if disk_without_dev in result:
+            return result[disk_without_dev]
+        elif BaseHandler.is_wildcard(disk):
+            # just return the whole dictionary -- the caller might apply a field selector though
             return result
         else:
-            # the dictionary is indexed by just the device name e.g. "sda" and contains a tuple
-            return result[disk.replace("/dev/", "")]
+            avail_disks = ','.join(["/dev/" + x for x in result.keys()])
+            raise Exception(f"{self.name}: Disk '{disk}' is not valid. Available disks: {avail_disks}")
 
 
 class DiskUsageCommandHandler(MethodCommandHandler):
+    '''
+    DiskUsageCommandHandler handles the output of psutil.disk_usage()
+    '''
 
     def __init__(self) -> None:
         super().__init__('disk_usage')
@@ -93,6 +119,9 @@ class DiskUsageCommandHandler(MethodCommandHandler):
 
 
 class SensorsTemperaturesCommandHandler(MethodCommandHandler):
+    '''
+    SensorsTemperaturesCommandHandler handles the output of psutil.sensors_temperatures()
+    '''
 
     def __init__(self) -> None:
         super().__init__('sensors_temperatures')
@@ -144,6 +173,7 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
 
 class SensorsFansCommandHandler(MethodCommandHandler):
     '''
+    SensorsFansCommandHandler handles the output of psutil.sensors_fans()
     '''
     def __init__(self) -> None:
         super().__init__('sensors_fans')
