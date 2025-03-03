@@ -275,38 +275,38 @@ Here follows the reference documentation for all required tasks and their parame
 
   * Task name: `sensors_temperatures`
     * Short description: Hardware temperatures. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all available sensor types (e.g. `asus`, `coretemp`, `amdgpu`, etc).
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all available sensor types (e.g. `asus`, `coretemp`, `amdgpu`, etc; multi-valued task) or the name of a specific sensor type to select only that one (single-valued task).
       Try the following Python snippet on your prompt to see which temperature sensor types are detected by psutil library: `python3 -c 'import psutil, pprint; pprint.pprint(psutil.sensors_temperatures())'`
-    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all temperature sensors of the selected sensor type or a `label` value to select a specific sensor.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all temperature sensors of the selected sensor type (multi-valued task) or a `label` value to select a specific sensor  (single-valued task).
       E.g. you might want to use `Core 0` as label to publish only the temperature of the first logical core.
-    * **OPTIONAL**: `<param3>`: The wildcard `*` or `+` to select all temperature information available from the selected sensors or field name like `current`, `high`, `critical` 
-      to select only a specific information.
+    * **OPTIONAL**: `<param3>`: The wildcard `*` or `+` to select all temperature information available from the selected sensors (multi-valued task) or field name like `current`, `high`, `critical` 
+      to select only a specific information (single-valued task).
 
 #### <a name='CategoryFan'></a>Category Fan
 
   * Task name: `sensors_fans`
     * Short description: Hardware fans speed. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_fans )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all available sensor types (e.g. `asus`, etc).
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all available sensor types (e.g. `asus`, etc)
+      or the name of a specific sensor type to select only that one (single-valued task).
       Try the following Python snippet on your prompt to see which fan sensor types are detected by psutil library: `python3 -c 'import psutil, pprint; pprint.pprint(psutil.sensors_fans())'`
-    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all fan sensors of the selected sensor type or a `label` value to select a specific sensor.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all fan sensors of the selected sensor type (multi-valued task) or a `label` value to select a specific sensor (single-valued task).
       E.g. you might want to use `cpu_fan` as label to publish only the fan speed of the CPU.
-    * **OPTIONAL**: `<param3>`: The wildcard `*` or `+` to select all information available from the selected sensors or field name like `current` 
-      to select only a specific information.
+    * **OPTIONAL**: `<param3>`: The wildcard `*` or `+` to select all information available from the selected sensors (multi-valued task) or field name like `current` to select only a specific information (single-valued task).
 
 #### <a name='CategoryBattery'></a>Category Battery
 
   * Task name: `sensors_battery`
     * Short description: Battery status information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.sensors_battery )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `percent`, `secsleft`, `power_plugged`, etc.
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `percent`, `secsleft`, `power_plugged`, etc (single-valued task).
       Check full reference for all available fields and their meaning.
 
 #### <a name='CategoryOthersysteminfo'></a>Category Other system info
 
   * Task name: `users`
     * Short description: Users currently connected on the system. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.users )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields or a field name like `name`, `terminal`, `host`, `started`, etc.
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `name`, `terminal`, `host`, `started`, etc (single-valued task).
       Check full reference for all available fields and their meaning.
-    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all users or an index `0`, `1`, `2`, etc to select a specific user.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all users (multi-valued task) or an index `0`, `1`, `2`, etc to select a specific user (single-valued task).
   * Task name: `boot_time`
     * Short description: System boot time. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#boot_time.users )
     * **NO PARAMETES**
