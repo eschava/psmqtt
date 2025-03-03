@@ -11,7 +11,7 @@ from .formatter import Formatter
 
 from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
 from .handlers_psutil_processes import ProcessesCommandHandler, ProcessPropertiesCommandHandler, ProcessMethodCommandHandler, ProcessMethodIndexCommandHandler, ProcessMethodTupleCommandHandler
-from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIOCommandHandler, SensorsTemperaturesCommandHandler
+from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIOCommandHandler, DiskCountersIORateHandler, SensorsTemperaturesCommandHandler
 from .handlers_pysmart import SmartCommandHandler
 
 class TaskHandlers:
@@ -50,6 +50,7 @@ class TaskHandlers:
         'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
         'disk_usage': DiskUsageCommandHandler(),
         'disk_io_counters': DiskCountersIOCommandHandler(),
+        'disk_io_counters_rate': DiskCountersIORateHandler(),
         'smart': SmartCommandHandler(),
 
         # NETWORK
@@ -67,6 +68,7 @@ class TaskHandlers:
         'processes': ProcessesCommandHandler(),
 
         # OTHERS
+
         'users': IndexTupleCommandHandler('users'),
         'boot_time': ValueCommandHandler('boot_time'),
         'pids': IndexCommandHandler('pids'),

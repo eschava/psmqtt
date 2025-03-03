@@ -2,6 +2,7 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import psutil
+import time
 from typing import (
     NamedTuple,
 )
@@ -82,6 +83,61 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
             avail_disks = ','.join(["/dev/" + x for x in result.keys()])
             raise Exception(f"{self.name}: Disk '{disk}' is not valid. Available disks: {avail_disks}")
 
+
+class DiskCountersIORateHandler(BaseHandler):
+    '''
+    DiskCountersIORateHandler computes the rate of change of the disk I/O counters
+    '''
+    def __init__(self) -> None:
+        super().__init__('disk_io_counters_rate')
+        self.monotonic_counter_handler = DiskCountersIOCommandHandler()
+        self.last_values = None
+        self.last_timestamp = None
+        return
+
+    @staticmethod
+    def compute_rate_from_dicts(new_values: dict, last_values: dict, delta_time_seconds: float) -> dict:
+        # compute the rate of change of the counters
+        result = {}
+        for k in new_values.keys():
+            if k in last_values:
+                result[k] = (new_values[k] - last_values[k]) / delta_time_seconds
+            else:
+                result[k] = new_values[k]
+
+        return result
+
+    @staticmethod
+    def compute_rate_from_tuples(new_values: tuple, last_values: tuple, delta_time_seconds: float) -> dict:
+        return DiskCountersIORateHandler.compute_rate_from_dicts(new_values._asdict(), last_values._asdict(), delta_time_seconds)
+
+    def handle(self, params: list[str]) -> Payload:
+        if self.last_values is None:
+            self.last_values = self.monotonic_counter_handler.handle(params)
+            self.last_timestamp = time.time()
+            return self.last_values
+        else:
+            new_values = self.monotonic_counter_handler.handle(params)
+            new_timestamp = time.time()
+
+            delta_time_seconds = new_timestamp - self.last_timestamp
+
+            if isinstance(new_values, dict):
+                assert isinstance(self.last_values, dict)
+                result = DiskCountersIORateHandler.compute_rate_from_dicts(new_values, self.last_values, delta_time_seconds)
+            elif isinstance(new_values, tuple):
+                assert isinstance(self.last_values, tuple)
+                result = DiskCountersIORateHandler.compute_rate_from_tuples(new_values, self.last_values, delta_time_seconds)
+            elif isinstance(new_values, int):
+                assert isinstance(self.last_values, int)
+                result = (new_values - self.last_values) / delta_time_seconds
+
+            self.last_values = new_values
+            self.last_timestamp = new_timestamp
+            return result
+
+    def get_value(self) -> Payload:
+        return self.last_values
 
 class DiskUsageCommandHandler(MethodCommandHandler):
     '''
