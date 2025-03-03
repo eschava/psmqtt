@@ -2,6 +2,7 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import psutil
+import logging
 import time
 from typing import (
     NamedTuple,
@@ -121,6 +122,11 @@ class DiskCountersIORateHandler(BaseHandler):
             new_timestamp = time.time()
 
             delta_time_seconds = new_timestamp - self.last_timestamp
+            if delta_time_seconds <= 0.1:
+                # delta is too small... return the last value
+                return self.last_values
+
+            logging.debug(f"{self.name}: computing rate with delta_time_seconds={delta_time_seconds}")
 
             if isinstance(new_values, dict):
                 assert isinstance(self.last_values, dict)
@@ -131,6 +137,8 @@ class DiskCountersIORateHandler(BaseHandler):
             elif isinstance(new_values, int):
                 assert isinstance(self.last_values, int)
                 result = (new_values - self.last_values) / delta_time_seconds
+            else:
+                raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")
 
             self.last_values = new_values
             self.last_timestamp = new_timestamp
