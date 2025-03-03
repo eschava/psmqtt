@@ -389,13 +389,13 @@ schedule:
 
 configures PSMQTT to append the `%` symbol after CPU usage.
 
-For task providing many outputs (using wildcard `*`) all outputs are
-available by name if they are named.
-Unnamed outputs are available as `x`.
-When the task produces multiple unnamed outputs they are available as `x[1]`, `x[2]`, etc if they are
-numbered. 
+For multi-valued tasks (that use a wildcard `*`) all outputs are
+available:
+* by name if they are named.
+* as `x` if they are unnamed.
+* as `x[1]`, `x[2]`, etc if they are numbered. 
 
-psmqtt provides some Jinja2 filters:
+PSMQTT provides some Jinja2 filters:
 
 * `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
 * `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like 
@@ -430,7 +430,7 @@ Examples:
 ### <a name='MQTTTopic'></a>MQTT Topic
 
 The `<MQTT topic>` specification in each [task definition](#Configurationfile) is optional.
-If it is not specified, psmqtt will generate automatically an output MQTT topic 
+If it is not specified, PSMQTT will generate automatically an output MQTT topic 
 in the form **psmqtt/COMPUTER_NAME/<task-name>**.
 
 To customize the prefix **psmqtt/COMPUTER_NAME** you can use the `mqtt.publish_topic_prefix`
@@ -441,7 +441,7 @@ mqtt:
   publish_topic_prefix: my-prefix
 ```
 
-configures psmqtt to emit all outputs at **my-prefix/<task-name>**.
+configures PSMQTT to emit all outputs at **my-prefix/<task-name>**.
 
 It's important to note that when the task emits more than one output (**multi-valued task**) due to the use of the
 wildcard `*` character then the MQTT topic _must_ be specified and _must_ include the 
@@ -460,7 +460,7 @@ schedule:
 is producing 10 outputs on a Linux system: one for each of the `user`, `nice`, `system`,
 `idle`, `iowait`, `irq`, `softirq`, `steal`, `guest` and `guest_nice` fields emitted by psutil.
 These 10 outputs must be published on 10 different MQTT topics.
-The use of `cpu/*` as MQTT topic configures psmqtt to send the 10 outputs to the following 10 topics:
+The use of `cpu/*` as MQTT topic configures PSMQTT to send the 10 outputs to the following 10 topics:
 * **psmqtt/COMPUTER_NAME/cpu/user**
 * **psmqtt/COMPUTER_NAME/cpu/nice**
 * **psmqtt/COMPUTER_NAME/cpu/system**
@@ -479,7 +479,7 @@ or does not contain the wildcard `*` character itself, then an error will be emi
 ### <a name='HomeAssistantDiscoveryMessages'></a>HomeAssistant Discovery Messages
 
 The `<HomeAssistant discovery options>` specification in each [task definition](#Configurationfile) is optional.
-If it is specified, psmqtt will generate MQTT messages that follow the [Home Assistant MQTT discovery message specs](https://www.home-assistant.io/integrations/mqtt/#discovery-messages).
+If it is specified, PSMQTT will generate MQTT messages that follow the [Home Assistant MQTT discovery message specs](https://www.home-assistant.io/integrations/mqtt/#discovery-messages).
 
 These messages are extremehely useful to quickly setup connect **PSMQTT** and **Home Assistant** (HA) together,
 since HA will automatically detect the presence of PSMQTT "sensors".
@@ -504,12 +504,12 @@ mqtt:
     platform: sensor
 ```
 
-Please note that **PSMQTT** will error-out if the `ha_discovery` section is populated for a multi-result
+Please note that **PSMQTT** will error-out if the `ha_discovery` section is populated for a multi-valued
 task.
 
 Consider that the `ha_discovery.name` will be the human-friendly name of the HA entity;
 `ha_discovery.platform` can be either `sensor` or `binary_sensor`.
-Most of psmqtt tasks produce `sensor`s but there are a few exceptions, e.g. the `power_plugged` field of
+Most of PSMQTT tasks produce `sensor`s but there are a few exceptions, e.g. the `power_plugged` field of
 the `sensors_battery` task (which is either "true" or "false") or the `smart_status` field of the `smart` task
 (which is either "PASS" or "FAIL").
 
@@ -535,7 +535,7 @@ See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sens
 For the `icon` field, you can use online resources for [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
 
 Check also the [default psmqtt.yaml](../psmqtt.yaml) for some examples
-or the psmqtt configuration examples later in this document.
+or the PSMQTT configuration examples later in this document.
 
 Note that PSMQTT will publish MQTT discovery messages in 2 cases:
 
@@ -556,10 +556,10 @@ mqtt:
 ```
 
 This configuration allows you to specify an MQTT topic that will be **subscribed** 
-by psmqtt and used as **input** trigger for emitting measurements.
-This is an alternative way to use psmqtt compared to the use of cron expressions.
+by PSMQTT and used as **input** trigger for emitting measurements.
+This is an alternative way to use PSMQTT compared to the use of cron expressions.
 
-E.g. to force psmqtt to run the task:
+E.g. to force PSMQTT to run the task:
 ```
 - task: cpu_times_percent
   params: [ "*" ]
