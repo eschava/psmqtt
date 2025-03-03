@@ -12,7 +12,7 @@ For psmqtt development please install `mypy` and `flake8`:
 
 Just do:
 
-```
+```sh
 make unit-tests
 ```
 
@@ -27,7 +27,7 @@ New docker releases will be automatically published by the GitHub CI whenever a 
 Sometimes however it may be useful to publish a docker release manually.
 To push manually a new multi-arch docker version, use::
 
-```
+```sh
 docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8, --tag ghcr.io/eschava/psmqtt:1.0.2 --build-arg USERNAME=root --push .
 ```
 
