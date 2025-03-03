@@ -157,7 +157,7 @@ the value of the `system` field returned by the psutil [cpu_times_percent](https
 Each task can be either a 
 * **single-valued task**: i.e., a task producing a single output value;
 * **multi-valued task**: i.e., a task producing more than 1 output value; this is common when wildcard `*` parameters are used; in such case the MQTT topic associated with the task should actually be 
-an MQTT topic _prefix_ so that each task output will be published on a different topic.
+an MQTT topic _prefix_ so that each task output will be published on a different topic. See also [MQTT Topic](#mqtt-topic) for more information about MQTT topic configurations.
 
 As an example:
 
@@ -208,10 +208,10 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param1>`: The wildcard `*` or `+` to select all the CPUs (multi-valued task) or the CPU index `0`, `1`, `2`, etc to select a single CPU (single-valued task)
   * Task name: `cpu_times`
     * Short description: CPU times information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `user`, `nice`, `system`, etc. (single-valued task)
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `user`, `nice`, `system`, etc (single-valued task).
   * Task name: `cpu_times_percent`
     * Short description: CPU times in percentage. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.cpu_times_percent )
-    * **REQUIRED**: `<param1>`: The wildcard `*` or `+` to select all fields (multi-valued task) or a field name like `user`, `nice`, `system`, etc. (single-valued task)
+    * **REQUIRED**: `<param1>`: The wildcard `*` or `+` to select all fields (multi-valued task) or a field name like `user`, `nice`, `system`, etc (single-valued task).
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all CPUs (multi-valued task) or the CPU index `0`, `1`, `2`, etc to select a single CPU (single-valued task). 
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
@@ -223,18 +223,18 @@ Here follows the reference documentation for all required tasks and their parame
 
   * Task name: `virtual_memory`
     * Short description: Virtual memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.virtual_memory )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or one of  `total`, `available`, `percent`, etc. (single-valued task)
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or one of  `total`, `available`, `percent`, etc (single-valued task).
       Check full reference for all available fields
   * Task name: `swap_memory`
     * Short description: Swap memory information. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.swap_memory )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or one of  `total`, `used`, `free`, etc. (single-valued task)
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or one of  `total`, `used`, `free`, etc (single-valued task).
       Check full reference for all available fields
 
 #### <a name='CategoryDisks'></a>Category Disks
 
   * Task name: `disk_partitions`
     * Short description: List of mounted disk partitions. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_partitions )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `device`, `mountpoint`, `fstype`, `opts`. (single-valued task)
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `device`, `mountpoint`, `fstype`, `opts` (single-valued task).
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all partitions (multi-valued task) or an index `0`, `1`, `2`, etc to select a specific partition (single-valued task). 
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
   * Task name: `disk_usage`
@@ -243,9 +243,9 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param2>`: The path where disk usage must be measured, e.g. `/`, `/var` or `/home/<username>`.
   * Task name: `disk_io_counters`
     * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
-    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, etc. (single-valued task)
+    * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, etc (single-valued task).
       Check full reference for all available fields
-    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all partitions/disks (multi-valued task) or the name of a specific drive e.g. `/dev/md0` or `/dev/sda` to select just that partition/disk. If not provided, then the total disk I/O counters (e.g. total bytes read from all the partitions/disks) are produced in output, according to the field selected with `<param1>`.
+    * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all partitions/disks (multi-valued task) or the name of a specific drive e.g. `/dev/md0` or `/dev/sda` to select just that partition/disk. If not provided, then the total disk I/O counters (e.g. total bytes read from all the partitions/disks) are produced in output, according to the field(s) selected with `<param1>`.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
   * Task name: `smart`
     * Short description: Self-Monitoring, Analysis and Reporting Technology System (SMART) counters built into most modern ATA/SATA, SCSI/SAS and NVMe disks. [ Full reference ]( https://www.smartmontools.org/wiki/TocDoc )
@@ -443,7 +443,7 @@ mqtt:
 
 configures psmqtt to emit all outputs at **my-prefix/<task-name>**.
 
-It's important to note that when the task emits more than one output due to the use of the
+It's important to note that when the task emits more than one output (**multi-valued task**) due to the use of the
 wildcard `*` character then the MQTT topic _must_ be specified and _must_ include the 
 wildcard `*` character itself.
 As an example the task

@@ -17,9 +17,6 @@ from .handlers_psutil import (
 @pytest.mark.unit
 class TestHandlers(unittest.TestCase):
 
-    
-
-
     def test_disk_usage_command_handler(self) -> None:
         disk: Optional[str] = '/'
         handler = type("TestHandler", (DiskUsageCommandHandler, object),
