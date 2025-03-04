@@ -114,9 +114,22 @@ class DiskCountersIORateHandler(BaseHandler):
 
     def handle(self, params: list[str]) -> Payload:
         if self.last_values is None:
+            # this is the first sample being retrieved... just save the current values
+            # and we'll be able to compute the rate/delta of the next call
             self.last_values = self.monotonic_counter_handler.handle(params)
             self.last_timestamp = time.time()
-            return self.last_values
+
+            # we return zero(s) on this first sample to avoid pushing a HUGE absolute value
+            # which might decrease nearly to zero on the next sample
+            if isinstance(self.last_values, dict):
+                return {k: 0 for k in self.last_values.keys()}
+            elif isinstance(self.last_values, tuple):
+                return (0,) * len(self.last_values)
+            elif isinstance(self.last_values, int):
+                return 0
+            else:
+                raise Exception(f"{self.name}: Unexpected result type: {type(self.last_values)}")
+
         else:
             new_values = self.monotonic_counter_handler.handle(params)
             new_timestamp = time.time()
