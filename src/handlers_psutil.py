@@ -113,6 +113,10 @@ class DiskCountersIORateHandler(BaseHandler):
         return DiskCountersIORateHandler.compute_rate_from_dicts(new_values._asdict(), last_values._asdict(), delta_time_seconds)
 
     def handle(self, params: list[str]) -> Payload:
+
+        # TODO: this class might be used by multiple tasks... we need to hash "params" to ensure that
+        #       we keep track of the "last values" for each task separately
+
         if self.last_values is None:
             # this is the first sample being retrieved... just save the current values
             # and we'll be able to compute the rate/delta of the next call
@@ -122,13 +126,16 @@ class DiskCountersIORateHandler(BaseHandler):
             # we return zero(s) on this first sample to avoid pushing a HUGE absolute value
             # which might decrease nearly to zero on the next sample
             if isinstance(self.last_values, dict):
-                return {k: 0 for k in self.last_values.keys()}
+                result = {k: 0 for k in self.last_values.keys()}
             elif isinstance(self.last_values, tuple):
-                return (0,) * len(self.last_values)
+                result = (0,) * len(self.last_values)
             elif isinstance(self.last_values, int):
-                return 0
+                result = 0
             else:
                 raise Exception(f"{self.name}: Unexpected result type: {type(self.last_values)}")
+
+            logging.debug(f"{self.name}: producing first sample as zeroes: {result}")
+            return result
 
         else:
             new_values = self.monotonic_counter_handler.handle(params)
