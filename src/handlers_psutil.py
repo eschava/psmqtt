@@ -102,7 +102,7 @@ class DiskCountersIORateHandler(BaseHandler):
         result = {}
         for k in new_values.keys():
             if k in last_values:
-                result[k] = (new_values[k] - last_values[k]) / delta_time_seconds
+                result[k] = int((new_values[k] - last_values[k]) / delta_time_seconds)
             else:
                 result[k] = new_values[k]
 
@@ -156,7 +156,7 @@ class DiskCountersIORateHandler(BaseHandler):
                 result = DiskCountersIORateHandler.compute_rate_from_tuples(new_values, self.last_values, delta_time_seconds)
             elif isinstance(new_values, int):
                 assert isinstance(self.last_values, int)
-                result = (new_values - self.last_values) / delta_time_seconds
+                result = int((new_values - self.last_values) / delta_time_seconds)
             else:
                 raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")
 
