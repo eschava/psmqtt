@@ -11,9 +11,9 @@ from typing import (
 from .handlers_base import BaseHandler, MethodCommandHandler, Payload
 from .utils import string_from_dict_optionally
 
-class DiskCountersIOCommandHandler(MethodCommandHandler):
+class DiskIOCountersCommandHandler(MethodCommandHandler):
     '''
-    DiskCountersIOCommandHandler handles the output of psutil.disk_io_counters()
+    DiskIOCountersCommandHandler handles the output of psutil.disk_io_counters()
     https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
     '''
     def __init__(self):
@@ -85,13 +85,13 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
             raise Exception(f"{self.name}: Disk '{disk}' is not valid. Available disks: {avail_disks}")
 
 
-class DiskCountersIORateHandler(BaseHandler):
+class DiskIOCountersRateHandler(BaseHandler):
     '''
-    DiskCountersIORateHandler computes the rate of change of the disk I/O counters
+    DiskIOCountersRateHandler computes the rate of change of the disk I/O counters
     '''
     def __init__(self) -> None:
         super().__init__('disk_io_counters_rate')
-        self.monotonic_counter_handler = DiskCountersIOCommandHandler()
+        self.monotonic_counter_handler = DiskIOCountersCommandHandler()
         self.last_values = None
         self.last_timestamp = None
         return
@@ -110,7 +110,7 @@ class DiskCountersIORateHandler(BaseHandler):
 
     @staticmethod
     def compute_rate_from_tuples(new_values: tuple, last_values: tuple, delta_time_seconds: float) -> dict:
-        return DiskCountersIORateHandler.compute_rate_from_dicts(new_values._asdict(), last_values._asdict(), delta_time_seconds)
+        return DiskIOCountersRateHandler.compute_rate_from_dicts(new_values._asdict(), last_values._asdict(), delta_time_seconds)
 
     def handle(self, params: list[str]) -> Payload:
 
@@ -150,10 +150,10 @@ class DiskCountersIORateHandler(BaseHandler):
 
             if isinstance(new_values, dict):
                 assert isinstance(self.last_values, dict)
-                result = DiskCountersIORateHandler.compute_rate_from_dicts(new_values, self.last_values, delta_time_seconds)
+                result = DiskIOCountersRateHandler.compute_rate_from_dicts(new_values, self.last_values, delta_time_seconds)
             elif isinstance(new_values, tuple):
                 assert isinstance(self.last_values, tuple)
-                result = DiskCountersIORateHandler.compute_rate_from_tuples(new_values, self.last_values, delta_time_seconds)
+                result = DiskIOCountersRateHandler.compute_rate_from_tuples(new_values, self.last_values, delta_time_seconds)
             elif isinstance(new_values, int):
                 assert isinstance(self.last_values, int)
                 result = int((new_values - self.last_values) / delta_time_seconds)
