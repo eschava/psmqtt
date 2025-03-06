@@ -13,9 +13,9 @@ from .topic import Topic
 from .mqtt_client import MqttClient
 from .formatter import Formatter
 
-from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
+from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler
 from .handlers_psutil_processes import ProcessesCommandHandler
-from .handlers_psutil import DiskIOCountersCommandHandler, DiskIOCountersRateHandler, DiskUsageCommandHandler, SensorsFansCommandHandler, SensorsTemperaturesCommandHandler
+from .handlers_psutil import DiskIOCountersCommandHandler, DiskIOCountersRateHandler, DiskUsageCommandHandler, NetIOCountersCommandHandler, SensorsFansCommandHandler, SensorsTemperaturesCommandHandler
 from .handlers_pysmart import SmartCommandHandler
 
 class Task:
@@ -75,13 +75,7 @@ class Task:
 
         # NETWORK
 
-        'net_io_counters': type(
-            "NetIOCountersCommandHandler",
-            (NameOrTotalTupleCommandHandler, object),
-            {
-                "get_value": lambda self, total:
-                    psutil.net_io_counters(pernic=not total)
-            })('net_io_counters'),
+        'net_io_counters': NetIOCountersCommandHandler(),
 
         # PROCESSES
 

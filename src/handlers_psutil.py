@@ -2,13 +2,12 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import psutil
-import logging
 import time
 from typing import (
     NamedTuple,
 )
 
-from .handlers_base import BaseHandler, MethodCommandHandler, Payload
+from .handlers_base import BaseHandler, MethodCommandHandler, NameOrTotalTupleCommandHandler, Payload
 from .utils import string_from_dict_optionally
 from .handlers_base import TaskParam
 
@@ -88,7 +87,8 @@ class DiskIOCountersCommandHandler(MethodCommandHandler):
 
 class DiskIOCountersRateHandler(BaseHandler):
     '''
-    DiskIOCountersRateHandler computes the rate of change of the disk I/O counters
+    DiskIOCountersRateHandler computes the rate of change of the disk I/O counters.
+    This is often more useful than the monotonically-increasing raw disk I/O counters.
     '''
 
     MINIMAL_DELTA_TIME_SECONDS = 0.1
@@ -137,12 +137,11 @@ class DiskIOCountersRateHandler(BaseHandler):
             else:
                 raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")
 
-            logging.debug(f"{self.name}: producing first sample as zeroes for caller task {caller_task_id}: {result}")
+            #logging.debug(f"{self.name}: producing first sample as zeroes for caller task {caller_task_id}: {result}")
 
             # fall to the end of the function where we update internal state
-
         else:
-            # retrieve previous values / timestamp
+            # retrieve previous values / timestamp -- we know they are in the internal state
             old_values = self.last_values[caller_task_id]
             old_timestamp = self.last_timestamp[caller_task_id]
 
@@ -155,7 +154,7 @@ class DiskIOCountersRateHandler(BaseHandler):
                 # delta is too small... return the last value and skip any internal update
                 return old_values
 
-            logging.debug(f"{self.name}: computing rate with delta_time_seconds={delta_time_seconds} for caller task {caller_task_id}")
+            #logging.debug(f"{self.name}: computing rate with delta_time_seconds={delta_time_seconds} for caller task {caller_task_id}")
 
             if isinstance(new_values, dict):
                 assert isinstance(old_values, dict)
@@ -178,7 +177,7 @@ class DiskIOCountersRateHandler(BaseHandler):
         return result
 
     def get_value(self) -> Payload:
-        return self.last_values
+        raise Exception("This method should not be called")
 
 class DiskUsageCommandHandler(MethodCommandHandler):
     '''
@@ -213,6 +212,19 @@ class DiskUsageCommandHandler(MethodCommandHandler):
     # noinspection PyMethodMayBeStatic
     def get_value(self, disk:str) -> NamedTuple:
         return psutil.disk_usage(disk)
+
+
+class NetIOCountersCommandHandler(NameOrTotalTupleCommandHandler):
+    '''
+    NetIOCountersCommandHandler handles the output of psutil.net_io_counters()
+    '''
+
+    def __init__(self) -> None:
+        super().__init__('net_io_counters')
+        return
+
+    def get_value(self, total:bool) -> Payload:
+        return psutil.net_io_counters(pernic=not total)
 
 
 class SensorsTemperaturesCommandHandler(MethodCommandHandler):
