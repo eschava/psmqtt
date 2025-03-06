@@ -6,8 +6,9 @@ from typing import (
     NamedTuple,
 )
 
-from .handlers_base import BaseHandler, MethodCommandHandler, Payload
+from .handlers_base import MethodCommandHandler, Payload
 from .utils import string_from_dict_optionally
+from .task import TaskParam
 
 class DiskCountersIOCommandHandler(MethodCommandHandler):
     '''
@@ -25,23 +26,23 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
 
         # first parameter is the field to select "read_bytes", "write_bytes", etc.
         field_selector = params[0]
-        join_fields = BaseHandler.is_join_wildcard(field_selector)
+        join_fields = TaskParam.is_join_wildcard(field_selector)
 
         # second parameter (if given) is the disk name, or a wildcard to select all disks
         disk = params[1] if len(params) == 2 else ''
 
         perdisk = disk != ''
-        if BaseHandler.is_join_wildcard(disk):
+        if TaskParam.is_join_wildcard(disk):
             perdisk = True
             join_fields = True
 
-        if BaseHandler.is_wildcard(field_selector) and BaseHandler.is_wildcard(disk):
+        if TaskParam.is_wildcard(field_selector) and TaskParam.is_wildcard(disk):
             raise Exception(f"{self.name}: Two wildcard parameters were provided but only one of the two can be a wildcard")
 
         result = self.get_value(perdisk, disk)
 
         if isinstance(result, tuple):
-            if BaseHandler.is_wildcard(field_selector):
+            if TaskParam.is_wildcard(field_selector):
                 assert hasattr(result, '_asdict')
                 return string_from_dict_optionally(result._asdict(), join_fields)
             elif field_selector in result._fields:
@@ -50,7 +51,7 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
                 raise Exception(f"{self.name}: Field '{field_selector}' is not supported")
 
         elif isinstance(result, dict):
-            if BaseHandler.is_wildcard(field_selector):
+            if TaskParam.is_wildcard(field_selector):
                 return string_from_dict_optionally(result, join_fields)
             else:
                 # select an individual field inside the namedtuple associated with each key in the dictionary:
@@ -75,7 +76,7 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
         # the dictionary is indexed by the device name e.g. "/dev/sda" and contains a tuple
         if disk_without_dev in result:
             return result[disk_without_dev]
-        elif BaseHandler.is_wildcard(disk):
+        elif TaskParam.is_wildcard(disk):
             # just return the whole dictionary -- the caller might apply a field selector though
             return result
         else:
@@ -107,8 +108,8 @@ class DiskUsageCommandHandler(MethodCommandHandler):
 
         tup = self.get_value(disk)
         assert isinstance(tup, tuple)
-        if BaseHandler.is_wildcard(field_selector):
-            return string_from_dict_optionally(tup._asdict(), BaseHandler.is_join_wildcard(field_selector))
+        if TaskParam.is_wildcard(field_selector):
+            return string_from_dict_optionally(tup._asdict(), TaskParam.is_join_wildcard(field_selector))
         elif field_selector in tup._fields:
             return getattr(tup, field_selector)
         raise Exception(f"{self.name}: Parameter '{field_selector}' is not supported")
@@ -143,17 +144,17 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
         # psutil_dict is a Dict[str, List[NamedTuple]]
         assert isinstance(psutil_dict, dict)
 
-        if BaseHandler.is_wildcard(source):
+        if TaskParam.is_wildcard(source):
             d = {k: [i.current for i in v] for k, v in psutil_dict.items()}
-            return string_from_dict_optionally(d, BaseHandler.is_join_wildcard(source))
+            return string_from_dict_optionally(d, TaskParam.is_join_wildcard(source))
 
         elif source in psutil_dict:
             llist = psutil_dict[source]
             if label == '' and param == '':
                 return [i.current for i in llist]
-            elif BaseHandler.is_wildcard(label):
+            elif TaskParam.is_wildcard(label):
                 llist = [i._asdict() for i in llist]
-                return string_from_dict_optionally(llist, BaseHandler.is_join_wildcard(label))
+                return string_from_dict_optionally(llist, TaskParam.is_join_wildcard(label))
             else:
                 if isinstance(label, int):
                     temps = llist[label]
@@ -164,8 +165,8 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
                     raise Exception(f"{self.name}: Device '{label}' is not supported")
                 if param == '':
                     return temps.current
-                elif BaseHandler.is_wildcard(param):
-                    return string_from_dict_optionally(temps._asdict(), BaseHandler.is_join_wildcard(param))
+                elif TaskParam.is_wildcard(param):
+                    return string_from_dict_optionally(temps._asdict(), TaskParam.is_join_wildcard(param))
                 else:
                     return temps._asdict()[param]
 
@@ -192,25 +193,25 @@ class SensorsFansCommandHandler(MethodCommandHandler):
         tup = self.get_value()
         assert isinstance(tup, dict)
 
-        if BaseHandler.is_wildcard(source):
+        if TaskParam.is_wildcard(source):
             tup = {k: [i.current for i in v] for k, v in tup.items()}
-            return string_from_dict_optionally(tup, BaseHandler.is_join_wildcard(source))
+            return string_from_dict_optionally(tup, TaskParam.is_join_wildcard(source))
 
         if source in tup:
             llist = tup[source]
             if label == '' and param == '':
                 return [i.current for i in llist]
-            elif BaseHandler.is_wildcard(label):
+            elif TaskParam.is_wildcard(label):
                 llist = [i._asdict() for i in llist]
-                return string_from_dict_optionally(llist, BaseHandler.is_join_wildcard(label))
+                return string_from_dict_optionally(llist, TaskParam.is_join_wildcard(label))
             else:
                 temps = llist[int(label)] if label.isdigit() else next((x for x in llist if x.label == label), None)
                 if temps is None:
                     raise Exception(f"{self.name}: Device '{label}' is not supported")
                 if param == '':
                     return temps.current
-                elif BaseHandler.is_wildcard(param):
-                    return string_from_dict_optionally(temps._asdict(), BaseHandler.is_join_wildcard(param))
+                elif TaskParam.is_wildcard(param):
+                    return string_from_dict_optionally(temps._asdict(), TaskParam.is_join_wildcard(param))
                 else:
                     return temps._asdict()[param]
         raise Exception(f"{self.name}: Fan '{source}' is not supported")

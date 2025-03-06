@@ -14,6 +14,7 @@ from typing import (
 
 from .handlers_base import BaseHandler, Payload
 from .utils import string_from_dict_optionally, string_from_list_optionally
+from .task import TaskParam
 
 class ProcessesCommandHandler(BaseHandler):
     '''
@@ -38,8 +39,8 @@ class ProcessesCommandHandler(BaseHandler):
         property = params[1]
         remaining_params = [params[2]] if len(params) == 3 else []
 
-        if BaseHandler.is_wildcard(process_id):
-            if BaseHandler.is_regular_wildcard(property):
+        if TaskParam.is_wildcard(process_id):
+            if TaskParam.is_regular_wildcard(property):
                 raise Exception(f"The process property in '{self.name}' should be specified")
             result = {p.pid: self.get_process_value(p, property, remaining_params) for p in psutil.process_iter()}
             return string_from_dict_optionally(result, process_id.endswith(';'))
@@ -205,7 +206,7 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
         assert self.method is not None
         arr = self.method(process)
 
-        if BaseHandler.is_wildcard(param):
+        if TaskParam.is_wildcard(param):
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
@@ -228,7 +229,7 @@ class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
         tup = self.method(process)
 
         param = params[0]
-        if BaseHandler.is_wildcard(param):
+        if TaskParam.is_wildcard(param):
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)

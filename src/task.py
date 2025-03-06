@@ -7,10 +7,22 @@ import logging
 import hashlib
 from typing import Any, List, Dict
 
-from .handlers_base import BaseHandler
 from .handlers_all import TaskHandlers
 from .topic import Topic
 from .mqtt_client import MqttClient
+
+class TaskParam:
+    @staticmethod
+    def is_wildcard(param: str) -> bool:
+        return param == "*" or param == "+"
+
+    @staticmethod
+    def is_regular_wildcard(param: str) -> bool:
+        return param == "*"
+
+    @staticmethod
+    def is_join_wildcard(param: str) -> bool:
+        return param == "+"
 
 
 class Task:
@@ -65,7 +77,7 @@ class Task:
         escapedParams = []
         for x in nonEmptyParams:
             if isinstance(x,str):
-                if BaseHandler.is_join_wildcard(x):
+                if TaskParam.is_join_wildcard(x):
                     # skip any join wildcard (+) parameter from the MQTT topic; do insert however the regular wildcard (*)
                     # so that the Topic class knows that it's actually a multi-topic
                     continue
