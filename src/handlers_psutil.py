@@ -106,6 +106,9 @@ class DiskIOCountersRateHandler(BaseHandler):
         result = {}
         for k in new_values.keys():
             if k in last_values:
+                # IMPORTANT: no checks are done on the result being negative... ideally this should never happen
+                #            unless psutil has some internal counter reset and its monotonically increasing counters
+                #            happen to decrease. This is not expected to happen in normal operation.
                 result[k] = int((new_values[k] - last_values[k]) / delta_time_seconds)
             else:
                 result[k] = new_values[k]
@@ -120,7 +123,7 @@ class DiskIOCountersRateHandler(BaseHandler):
         if caller_task_id not in self.last_values:
             # this is the first sample being retrieved... just save the current values
             # and we'll be able to compute the rate/delta of the next call
-            new_values = self.monotonic_counter_handler.handle(params)
+            new_values = self.monotonic_counter_handler.handle(params, caller_task_id)
             new_timestamp = time.time()
 
             # we return zero(s) on this first sample to avoid pushing a HUGE absolute value
@@ -134,7 +137,7 @@ class DiskIOCountersRateHandler(BaseHandler):
             else:
                 raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")
 
-            logging.debug(f"{self.name}: producing first sample as zeroes: {result}")
+            logging.debug(f"{self.name}: producing first sample as zeroes for caller task {caller_task_id}: {result}")
 
             # fall to the end of the function where we update internal state
 
@@ -143,7 +146,8 @@ class DiskIOCountersRateHandler(BaseHandler):
             old_values = self.last_values[caller_task_id]
             old_timestamp = self.last_timestamp[caller_task_id]
 
-            new_values = self.monotonic_counter_handler.handle(params)
+            # get the new sensor readings:
+            new_values = self.monotonic_counter_handler.handle(params, caller_task_id)
             new_timestamp = time.time()
 
             delta_time_seconds = new_timestamp - old_timestamp
@@ -151,7 +155,7 @@ class DiskIOCountersRateHandler(BaseHandler):
                 # delta is too small... return the last value and skip any internal update
                 return old_values
 
-            logging.debug(f"{self.name}: computing rate with delta_time_seconds={delta_time_seconds}")
+            logging.debug(f"{self.name}: computing rate with delta_time_seconds={delta_time_seconds} for caller task {caller_task_id}")
 
             if isinstance(new_values, dict):
                 assert isinstance(old_values, dict)
@@ -161,6 +165,9 @@ class DiskIOCountersRateHandler(BaseHandler):
                 result = DiskIOCountersRateHandler.compute_rate_from_tuples(new_values, old_values, delta_time_seconds)
             elif isinstance(new_values, int):
                 assert isinstance(old_values, int)
+                # IMPORTANT: no checks are done on the result being negative... ideally this should never happen
+                #            unless psutil has some internal counter reset and its monotonically increasing counters
+                #            happen to decrease. This is not expected to happen in normal operation.
                 result = int((new_values - old_values) / delta_time_seconds)
             else:
                 raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")

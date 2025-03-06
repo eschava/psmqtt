@@ -113,7 +113,7 @@ schedule:
       #     unit_of_measurement: "%"
       #     icon: mdi:memory
       - task: disk_io_counters
-        params: [ "read_bytes", "/dev/sda" ]
+        params: [ "write_bytes", "/dev/sda" ]
         ha_discovery:
           name: "SDA Read Bytes"
           platform: sensor
@@ -125,6 +125,14 @@ schedule:
         ha_discovery:
           name: "SDA Read Bytes"
           platform: sensor
-          device_class: data_size
-          unit_of_measurement: "B"
+          device_class: data_rate
+          unit_of_measurement: "B/s"
+
+      - task: disk_io_counters_rate
+        params: [ "write_bytes", "/dev/sda" ]
+        ha_discovery:
+          name: "SDA Write Bytes"
+          platform: sensor
+          device_class: data_rate
+          unit_of_measurement: "B/s"
 

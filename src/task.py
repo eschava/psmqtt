@@ -228,8 +228,10 @@ class Task:
         # if we get here, the sensor reading was successful
         if logging.getLogger().isEnabledFor(logging.DEBUG):
             is_seq = isinstance(value, list) or isinstance(value, dict)
-            desc = f"multiple results ({len(value)})" if is_seq else "single result"
-            logging.debug(f"Task.get_payload({self.task_friendly_name}) produced {desc}:\n{value}")
+            if is_seq:
+                logging.debug(f"Task.get_payload({self.task_friendly_name}) produced multi-valued output:\n{value}")
+            else:
+                logging.debug(f"Task.get_payload({self.task_friendly_name}) produced single-valued output: {value}")
 
         if self.formatter is not None and self.formatter != '':
             value = Formatter.format(self.formatter, value)
