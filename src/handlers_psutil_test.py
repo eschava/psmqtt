@@ -14,33 +14,35 @@ from .handlers_psutil import (
     SensorsFansCommandHandler
 )
 
+fake_task_id = "0.0"
+
 @pytest.mark.unit
 class TestHandlers(unittest.TestCase):
 
-    def test_disk_usage_command_handler(self) -> None:
+    def test_MockedDiskUsageCommandHandler(self) -> None:
         disk: Optional[str] = '/'
         handler = type("TestHandler", (DiskUsageCommandHandler, object),
                        {"get_value": lambda s,d: self._disk_usage_get_value(disk, d)})()
         # normal execution: read field "a" from the fake tuple returned for disk "/"
-        self.assertEqual(10, handler.handle(['a', '/']))
-        self.assertEqual({'a': 10, 'b': 20}, handler.handle(['*', '/']))
-        self.assertEqual('{"a": 10, "b": 20}', handler.handle(['+', '/']))
-        self.assertEqual('{"a": 10, "b": 20}', handler.handle(['+', '/']))
+        self.assertEqual(10, handler.handle(['a', '/'], fake_task_id))
+        self.assertEqual({'a': 10, 'b': 20}, handler.handle(['*', '/'], fake_task_id))
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle(['+', '/'], fake_task_id))
+        self.assertEqual('{"a": 10, "b": 20}', handler.handle(['+', '/'], fake_task_id))
         disk = 'c:'
-        self.assertEqual(10, handler.handle(['a','c:']))
+        self.assertEqual(10, handler.handle(['a','c:'], fake_task_id))
         disk = 'c:/'
-        self.assertEqual(10, handler.handle(['a','c:/']))
+        self.assertEqual(10, handler.handle(['a','c:/'], fake_task_id))
         # exceptions
         disk = None     # do not validate disk, only parameters
-        self.assertRaises(Exception, handler.handle, ['a'])
-        self.assertRaises(Exception, handler.handle, ['a',''])
-        self.assertRaises(Exception, handler.handle, ['/'])
-        self.assertRaises(Exception, handler.handle, ['*',''])
-        self.assertRaises(Exception, handler.handle, ['','*'])
-        self.assertRaises(Exception, handler.handle, ['blabla'])
-        self.assertRaises(Exception, handler.handle, ['bla', 'bla'])
-        self.assertRaises(Exception, handler.handle, ['bla/'])
-        self.assertRaises(Exception, handler.handle, ['', 'bla'])
+        self.assertRaises(Exception, handler.handle, ['a'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['a',''], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['/'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['*',''], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['','*'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['blabla'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['bla', 'bla'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['bla/'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['', 'bla'], fake_task_id)
 
     def _disk_usage_get_value(self, disk: Optional[str], d:str) -> NamedTuple:
         if disk is not None:
@@ -54,30 +56,30 @@ class TestHandlers(unittest.TestCase):
         self.assertIsInstance(val, tuple)
         return
 
-    def test_temperature_sensors(self) -> None:
+    def test_MockedSensorsTemperaturesCommandHandler(self) -> None:
         handler = type(
             "TestHandler",
             (SensorsTemperaturesCommandHandler, object),
             {
                 "get_value": lambda s: self._temperature_sensors_get_value()
             })()
-        self.assertEqual(handler.handle(['*']), {"asus": [30.0], "coretemp": [45.0, 52.0]})
-        self.assertEqual(handler.handle(['+']), '{"asus": [30.0], "coretemp": [45.0, 52.0]}')
-        self.assertEqual(handler.handle(['asus']), [30.0])
-        self.assertEqual(handler.handle(['asus','*']), [{"label": "", "current": 30.0, "high": None, "critical": None}])
-        self.assertEqual(handler.handle(['asus','+']), '[{"critical": null, "current": 30.0, "high": null, "label": ""}]')
-        self.assertEqual(handler.handle(['asus','','*']), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
-        self.assertEqual(handler.handle(['asus','','+']), '{"critical": null, "current": 30.0, "high": null, "label": ""}')
-        self.assertEqual(handler.handle(['asus','','current']), 30.0)
-        self.assertEqual(handler.handle(['asus',0]), 30.0)
-        self.assertEqual(handler.handle(['asus',0,'*']), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
-        self.assertEqual(handler.handle(['asus',0,'+']), '{"critical": null, "current": 30.0, "high": null, "label": ""}')
-        self.assertEqual(handler.handle(['asus',0,'current']), 30.0)
-        self.assertEqual(handler.handle(['coretemp']), [45.0, 52.0])
-        self.assertEqual(handler.handle(['coretemp','Core 0']), 45.0)
-        self.assertEqual(handler.handle(['coretemp','Core 0','*']), {'label': 'Core 0', 'current': 45.0, 'high': 100.0, 'critical': 100.0})
-        self.assertEqual(handler.handle(['coretemp','Core 0','+']), '{"critical": 100.0, "current": 45.0, "high": 100.0, "label": "Core 0"}')
-        self.assertEqual(handler.handle(['coretemp','Core 0','current']), 45.0)
+        self.assertEqual(handler.handle(['*'], fake_task_id), {"asus": [30.0], "coretemp": [45.0, 52.0]})
+        self.assertEqual(handler.handle(['+'], fake_task_id), '{"asus": [30.0], "coretemp": [45.0, 52.0]}')
+        self.assertEqual(handler.handle(['asus'], fake_task_id), [30.0])
+        self.assertEqual(handler.handle(['asus','*'], fake_task_id), [{"label": "", "current": 30.0, "high": None, "critical": None}])
+        self.assertEqual(handler.handle(['asus','+'], fake_task_id), '[{"critical": null, "current": 30.0, "high": null, "label": ""}]')
+        self.assertEqual(handler.handle(['asus','','*'], fake_task_id), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
+        self.assertEqual(handler.handle(['asus','','+'], fake_task_id), '{"critical": null, "current": 30.0, "high": null, "label": ""}')
+        self.assertEqual(handler.handle(['asus','','current'], fake_task_id), 30.0)
+        self.assertEqual(handler.handle(['asus',0], fake_task_id), 30.0)
+        self.assertEqual(handler.handle(['asus',0,'*'], fake_task_id), {'label': '', 'current': 30.0, 'high': None, 'critical': None})
+        self.assertEqual(handler.handle(['asus',0,'+'], fake_task_id), '{"critical": null, "current": 30.0, "high": null, "label": ""}')
+        self.assertEqual(handler.handle(['asus',0,'current'], fake_task_id), 30.0)
+        self.assertEqual(handler.handle(['coretemp'], fake_task_id), [45.0, 52.0])
+        self.assertEqual(handler.handle(['coretemp','Core 0'], fake_task_id), 45.0)
+        self.assertEqual(handler.handle(['coretemp','Core 0','*'], fake_task_id), {'label': 'Core 0', 'current': 45.0, 'high': 100.0, 'critical': 100.0})
+        self.assertEqual(handler.handle(['coretemp','Core 0','+'], fake_task_id), '{"critical": 100.0, "current": 45.0, "high": 100.0, "label": "Core 0"}')
+        self.assertEqual(handler.handle(['coretemp','Core 0','current'], fake_task_id), 45.0)
 
     @staticmethod
     def _temperature_sensors_get_value() -> Dict[str, Any]:

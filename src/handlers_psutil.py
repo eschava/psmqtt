@@ -18,7 +18,7 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
     def __init__(self):
         super().__init__('disk_io_counters')
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:
@@ -93,7 +93,7 @@ class DiskUsageCommandHandler(MethodCommandHandler):
         super().__init__('disk_usage')
         return
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 2:
@@ -128,7 +128,7 @@ class SensorsTemperaturesCommandHandler(MethodCommandHandler):
         super().__init__('sensors_temperatures')
         return
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         '''
         '''
         assert isinstance(params, list)
@@ -180,7 +180,7 @@ class SensorsFansCommandHandler(MethodCommandHandler):
         super().__init__('sensors_fans')
         return
 
-    def handle(self, params:list[str]) -> Payload:
+    def handle(self, params:list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) < 1 or len(params) > 3:
