@@ -129,14 +129,14 @@ schedule:
           unit_of_measurement: "B/s"
 
 
-      - task: net_io_counters
+      - task: net_io_counters_rate
         params: [ "bytes_sent", "enp3s0" ]
         ha_discovery:
           name: "enp3s0 TX Bytes"
           platform: sensor
           device_class: data_rate
           unit_of_measurement: "B/s"
-      - task: net_io_counters
+      - task: net_io_counters_rate
         params: [ "bytes_recv", "enp3s0" ]
         ha_discovery:
           name: "enp3s0 RX Bytes"
