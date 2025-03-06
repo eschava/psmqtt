@@ -46,6 +46,17 @@ class BaseHandler:
         return
 
     def handle(self, params: list[str], caller_task_id: str) -> Payload:
+        '''
+        The handle() function is the core function of an handler:
+        it typically performs 3 steps in sequence:
+        1. validation of the input parameters
+        2. invoke the psutil/pySMART function via get_value() accessor function
+        3. filter of the output and conversion to "Payload" type
+
+        The 'caller_task_id' is a string that identifies the task that is invoking this handler.
+        This is useful only to stateful handlers, which need to store a state that is different
+        from task to task.
+        '''
         assert isinstance(params, list)
         raise Exception("Not implemented")
 
