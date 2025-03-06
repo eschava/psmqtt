@@ -14,7 +14,7 @@ from .mqtt_client import MqttClient
 from .formatter import Formatter
 
 from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
-from .handlers_psutil_processes import ProcessesCommandHandler, ProcessPropertiesCommandHandler, ProcessMethodCommandHandler, ProcessMethodIndexCommandHandler, ProcessMethodTupleCommandHandler
+from .handlers_psutil_processes import ProcessesCommandHandler
 from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIOCommandHandler, SensorsTemperaturesCommandHandler
 from .handlers_pysmart import SmartCommandHandler
 
@@ -98,37 +98,6 @@ class Task:
         'sensors_battery': TupleCommandHandler('sensors_battery'),
     }
 
-    process_handlers = {
-        '*': ProcessPropertiesCommandHandler('*', False, False),
-        '**': ProcessPropertiesCommandHandler('**', False, True),
-        '*;': ProcessPropertiesCommandHandler('*;', True, False),
-        '**;': ProcessPropertiesCommandHandler('**;', True, True),
-        'pid': type("ProcessPidCommandHandler", (ProcessMethodCommandHandler, object),
-                    {"get_value": lambda self, process: process.pid})('pid'),
-        'ppid': ProcessMethodCommandHandler('ppid'),
-        'name': ProcessMethodCommandHandler('name'),
-        'exe': ProcessMethodCommandHandler('exe'),
-        'cwd': ProcessMethodCommandHandler('cwd'),
-        'cmdline': ProcessMethodIndexCommandHandler('cmdline'),
-        'status': ProcessMethodCommandHandler('status'),
-        'username': ProcessMethodCommandHandler('username'),
-        'create_time': ProcessMethodCommandHandler('create_time'),
-        'terminal': ProcessMethodCommandHandler('terminal'),
-        'uids': ProcessMethodTupleCommandHandler('uids'),
-        'gids': ProcessMethodTupleCommandHandler('gids'),
-        'cpu_times': ProcessMethodTupleCommandHandler('cpu_times'),
-        'cpu_percent': ProcessMethodCommandHandler('cpu_percent'),
-        'cpu_affinity': ProcessMethodIndexCommandHandler('cpu_affinity'),
-        'memory_percent': ProcessMethodCommandHandler('memory_percent'),
-        'memory_info': ProcessMethodTupleCommandHandler('memory_info'),
-        'memory_full_info': ProcessMethodTupleCommandHandler('memory_full_info'),
-        'io_counters': ProcessMethodTupleCommandHandler('io_counters'),
-        'num_threads': ProcessMethodCommandHandler('num_threads'),
-        'num_fds': ProcessMethodCommandHandler('num_fds'),
-        'num_ctx_switches': ProcessMethodTupleCommandHandler('num_ctx_switches'),
-        'nice': ProcessMethodCommandHandler('nice'),
-    }
-
     def __init__(self,
             name:str,
             params:List[str],
@@ -146,6 +115,7 @@ class Task:
 
         self.parent_schedule_rule_idx = parent_schedule_rule_idx
         self.task_friendly_name = f"schedule{parent_schedule_rule_idx}.task{task_idx}.{name}"
+        self.task_id = f"{parent_schedule_rule_idx}.{task_idx}"
 
         # create a Topic instance associated with this Task:
         if self.topic_name is None or self.topic_name == '':
@@ -252,7 +222,7 @@ class Task:
 
         # invoke the handler to read the sensor values
         handler = Task.handlers[self.task_name]
-        value = handler.handle(self.params)
+        value = handler.handle(self.params, self.task_id)
 
         # if we get here, the sensor reading was successful
         if logging.getLogger().isEnabledFor(logging.DEBUG):

@@ -8,12 +8,14 @@ from .handlers_psutil_processes import (
     ProcessesCommandHandler
 )
 
+fake_task_id = "0.0"
+
 @pytest.mark.unit
 class TestHandlers(unittest.TestCase):
 
     def test_ProcessesCommandHandler(self) -> None:
         handler = ProcessesCommandHandler()
-        processes = handler.handle(['*','name'])
+        processes = handler.handle(['*','name'], fake_task_id)
         self.assertIsInstance(processes, dict)
         assert isinstance(processes, dict)
         self.assertGreater(len(processes), 3)
@@ -28,15 +30,15 @@ class TestHandlers(unittest.TestCase):
             assert isinstance(v, str)
             assert isinstance(k, int)
 
-        res = handler.handle([f'{last_pid}','name'])
+        res = handler.handle([f'{last_pid}','name'], fake_task_id)
         self.assertEqual(res, last_name)
 
-        processes = handler.handle(['top_cpu','name'])
+        processes = handler.handle(['top_cpu','name'], fake_task_id)
         self.assertIsInstance(processes, str)
 
-        processes = handler.handle(['top_memory','exe'])
+        processes = handler.handle(['top_memory','exe'], fake_task_id)
         self.assertIsInstance(processes, str)
 
-        pid = handler.handle([f'name[{last_name}]','pid'])
+        pid = handler.handle([f'name[{last_name}]','pid'], fake_task_id)
         self.assertEqual(pid, last_pid)
         return

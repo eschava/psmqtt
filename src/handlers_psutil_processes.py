@@ -18,6 +18,12 @@ from .handlers_base import TaskParam
 
 class ProcessesCommandHandler(BaseHandler):
     '''
+    This is the handler linking the Task class to the family of the
+    ProcessCommandHandler-derived classes.
+    This class is in charge of using psutil.process_iter() function
+     (https://psutil.readthedocs.io/en/latest/#psutil.process_iter)
+    to iterate over all running processes and extract the information
+    selected via the usual parameters provided to the handle() method.
     '''
 
     top_cpu_regexp = re.compile(r"^top_cpu(\[\d+\])*$")
@@ -30,7 +36,7 @@ class ProcessesCommandHandler(BaseHandler):
         super().__init__('processes')
         return
 
-    def handle(self, params:list[str]) -> Payload:
+    def handle(self, params:list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 2 and len(params) != 3:
@@ -104,7 +110,7 @@ class ProcessesCommandHandler(BaseHandler):
 
 class ProcessCommandHandler:
     '''
-
+    Base abstract class for all process-related command handlers.
     '''
     def __init__(self, name:str):
         self.name = name
@@ -115,6 +121,11 @@ class ProcessCommandHandler:
 
 
 class ProcessMethodCommandHandler(ProcessCommandHandler):
+    '''
+    This class implements the get_value() function by applying the psutil.Process.<METHOD>
+    function to the process instance passed as a parameter to get_value(),
+    where <METHOD> is actually the name of the class instance.
+    '''
     def __init__(self, name:str):
         super().__init__(name)
         try:
@@ -197,7 +208,7 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
 
 class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
 
-    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
         assert isinstance(params, list)
         if len(params) != 1:
             raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
@@ -220,7 +231,7 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
 
 class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
 
-    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
         assert isinstance(params, list)
         if len(params) != 1:
             raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")

@@ -45,7 +45,18 @@ class BaseHandler:
         self.name = name
         return
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
+        '''
+        The handle() function is the core function of an handler:
+        it typically performs 3 steps in sequence:
+        1. validation of the input parameters
+        2. invoke the psutil/pySMART function via get_value() accessor function
+        3. filter of the output and conversion to "Payload" type
+
+        The 'caller_task_id' is a string that identifies the task that is invoking this handler.
+        This is useful only to stateful handlers, which need to store a state that is different
+        from task to task.
+        '''
         assert isinstance(params, list)
         raise Exception("Not implemented")
 
@@ -88,12 +99,12 @@ class ValueCommandHandler(MethodCommandHandler):
     This is a good class to be used when no parameters are expected.
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         '''
         Will call self.get_value()
         '''
         assert isinstance(params, list)
-        if params != []:
+        if len(params) > 0:
             raise Exception(f"{self.name}: Parameter '{params}' is not supported")
 
         return self.get_value()
@@ -103,7 +114,7 @@ class IndexCommandHandler(MethodCommandHandler):
     IndexCommandHandler handles psutil functions that return a list, e.g. the psutil.pids() function.
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         arr = self.get_value()
@@ -130,7 +141,7 @@ class TupleCommandHandler(MethodCommandHandler):
     tuple, e.g. psutil.cpu_times, psutil.cpu_stats, psutil.virtual_memory, psutil.swap_memory
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         tup = self.get_value()
@@ -163,7 +174,7 @@ class IndexTupleCommandHandler(MethodCommandHandler):
     list of named tuples, e.g. psutil.disk_partitions, psutil.users
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         '''
         This handler accepts 1 or 2 parameters.
         The first parameter shall be:
@@ -230,7 +241,7 @@ class IndexOrTotalCommandHandler(BaseHandler):
         super().__init__(name)
         return
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         total = True
@@ -296,7 +307,7 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
     def __init__(self, name:str):
         super().__init__(name)
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:
@@ -369,7 +380,7 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     or a dictionary of named tuples.
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:

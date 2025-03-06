@@ -19,7 +19,7 @@ class SmartCommandHandler(BaseHandler):
         super().__init__('smart')
         return
 
-    def handle(self, params: List[str]) -> Payload:
+    def handle(self, params: List[str], caller_task_id: str) -> Payload:
         '''
         Takes 2 parameters:
         * device name
