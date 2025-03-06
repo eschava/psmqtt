@@ -8,6 +8,7 @@ from typing import (
 
 from .handlers_base import BaseHandler, Payload
 from .utils import string_from_dict_optionally
+from .handlers_base import TaskParam
 
 class SmartCommandHandler(BaseHandler):
     '''
@@ -31,7 +32,7 @@ class SmartCommandHandler(BaseHandler):
         device = params[0]
         field = params[1] if len(params) == 2 else ''
 
-        #if BaseHandler.is_wildcard(dev) and BaseHandler.is_wildcard(param):
+        #if TaskParam.is_wildcard(dev) and TaskParam.is_wildcard(param):
         #    raise Exception(f"{self.name}: Cannot list all SMART fields from all disks into the same task")
 
         info = self.get_value(device)
@@ -39,9 +40,9 @@ class SmartCommandHandler(BaseHandler):
 
         if field == '':
             return string_from_dict_optionally(info, True)
-        elif BaseHandler.is_join_wildcard(field):
+        elif TaskParam.is_join_wildcard(field):
             return string_from_dict_optionally(info, True)
-        elif BaseHandler.is_regular_wildcard(field):
+        elif TaskParam.is_regular_wildcard(field):
             return string_from_dict_optionally(info, False)
 
         # specific field requested

@@ -9,6 +9,36 @@ from .task import Task
 @pytest.mark.unit
 class TestTask(unittest.TestCase):
 
+    def test_get_payload(self) -> None:
+
+        testcases = [
+            {
+                "input_task": {"task": "cpu_percent", "params": [], "formatter": ""},
+                "expected_float_payload": True,
+            },
+            {
+                "input_task": {"task": "virtual_memory", "params": ["percent"], "formatter": ""},
+                "expected_float_payload": True,
+            },
+        ]
+
+        for t in testcases:
+            task = Task(
+                t["input_task"]["task"],
+                t["input_task"]["params"],
+                "",  # mqtt_topic
+                t["input_task"]["formatter"],  # formatter
+                {},  # ha_discovery
+                "",  # mqtt_topic_prefix
+                0, 0)
+
+            payload = task.get_payload()
+
+            if t["expected_float_payload"]:
+                self.assertIsInstance(payload, float)
+
+        return
+
     def test_topic_from_task(self):
 
         testcases = [
