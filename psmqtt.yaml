@@ -115,7 +115,7 @@ schedule:
       
       - task: disk_io_counters_rate
         params: [ "read_bytes", "/dev/sda" ]
-        formatter: "{{x|MB}}"
+        formatter: "{{x|MB_fractional}}"
         ha_discovery:
           name: "SDA Read Bytes"
           platform: sensor
@@ -123,7 +123,7 @@ schedule:
           unit_of_measurement: "MB/s"
       - task: disk_io_counters_rate
         params: [ "write_bytes", "/dev/sda" ]
-        formatter: "{{x|MB}}"
+        formatter: "{{x|MB_fractional}}"
         ha_discovery:
           name: "SDA Write Bytes"
           platform: sensor
@@ -133,7 +133,7 @@ schedule:
 
       - task: net_io_counters_rate
         params: [ "bytes_sent", "enp3s0" ]
-        formatter: "{{x|MB}}"
+        formatter: "{{x|MB_fractional}}"
         ha_discovery:
           name: "enp3s0 TX Bytes"
           platform: sensor
@@ -141,7 +141,7 @@ schedule:
           unit_of_measurement: "MB/s"
       - task: net_io_counters_rate
         params: [ "bytes_recv", "enp3s0" ]
-        formatter: "{{x|MB}}"
+        formatter: "{{x|MB_fractional}}"
         ha_discovery:
           name: "enp3s0 RX Bytes"
           platform: sensor

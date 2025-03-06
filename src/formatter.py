@@ -6,19 +6,36 @@ from datetime import datetime, timezone
 from typing import Any
 from jinja2 import Environment
 
+fractional_num_digits = 2
+
 
 # ---------------------------------------------------------------------------- #
 #                                JINJA2 FILTERS                                #
 # ---------------------------------------------------------------------------- #
 
+
+# Please note that dividing by 1000 produces Kilobytes, Megabytes, Gigabytes, etc.
+# This is not the same as dividing by 1024, which would produce Kibibytes, Mebibytes, Gibibytes, etc.
+# The former is the SI standard, the latter is the IEC standard.
+
 def jinja2_filter_kb(value:int) -> str:
-    return str(value // 1024) + " KB"
+    return str(value // 1000) + " KB"
 
 def jinja2_filter_mb(value:int) -> str:
-    return str(value // 1024 // 1024) + " MB"
+    return str(value // 1000 // 1000) + " MB"
 
 def jinja2_filter_gb(value:int) -> str:
-    return str(value // 1024 / 1024 // 1024) + " GB"
+    return str(value // 1000 / 1000 // 1000) + " GB"
+
+def jinja2_filter_kb_fractional(value:int) -> str:
+    return str(round(value / 1000, fractional_num_digits)) + " KB"
+
+def jinja2_filter_mb_fractional(value:int) -> str:
+    return str(round(value / (1000 * 1000), fractional_num_digits)) + " MB"
+
+def jinja2_filter_gb_fractional(value:int) -> str:
+    return str(round(value / (1000 * 1000 * 1000), fractional_num_digits)) + " GB"
+
 
 def jinja2_filter_uptime_str(linux_epoch_sec:float) -> str:
     upt = time.time() - linux_epoch_sec
@@ -53,6 +70,9 @@ def register_jinja2_filters() -> Environment:
     env.filters['KB'] = jinja2_filter_kb
     env.filters['MB'] = jinja2_filter_mb
     env.filters['GB'] = jinja2_filter_gb
+    env.filters['KB_fractional'] = jinja2_filter_kb_fractional
+    env.filters['MB_fractional'] = jinja2_filter_mb_fractional
+    env.filters['GB_fractional'] = jinja2_filter_gb_fractional
     env.filters['uptime_str'] = jinja2_filter_uptime_str
     env.filters['uptime_sec'] = jinja2_filter_uptime_sec
     env.filters['iso8601_str'] = jinja2_filter_iso8601_str
