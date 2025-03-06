@@ -98,7 +98,7 @@ class Task:
             name:str,
             params:List[str],
             mqtt_topic:str,
-            formatter:str,
+            formatter_str:str,
             ha_discovery:Dict[str,Any],
             mqtt_topic_prefix:str,
             parent_schedule_rule_idx:int,
@@ -106,7 +106,7 @@ class Task:
         self.task_name = name
         self.params = params
         self.topic_name = mqtt_topic
-        self.formatter = formatter  # FIXME: logically we should build an instance of a Formatter class here
+        self.formatter = Formatter(formatter_str) if formatter_str is not None and formatter_str != '' else None
         self.ha_discovery = ha_discovery
 
         self.parent_schedule_rule_idx = parent_schedule_rule_idx
@@ -228,9 +228,9 @@ class Task:
             else:
                 logging.debug(f"Task.get_payload({self.task_friendly_name}) produced single-valued output: {value}")
 
-        if self.formatter is not None and self.formatter != '':
-            value = Formatter.format(self.formatter, value)
-            logging.debug(f"Task.get_payload({self.task_friendly_name}) after formatting with {self.formatter} => {value}")
+        if self.formatter is not None:
+            value = self.formatter.format(value)
+            logging.debug(f"Task.get_payload({self.task_friendly_name}) after formatting with {self.formatter.get_template()} => {value}")
 
         # the value must be one of the types declared inside "Payload"
         assert isinstance(value, str) or isinstance(value, int) or isinstance(value, float) or isinstance(value, list) or isinstance(value, dict) or isinstance(value, tuple)

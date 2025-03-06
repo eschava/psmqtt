@@ -3,22 +3,24 @@
 
 import time
 from datetime import datetime, timezone
-from typing import Any, Optional, Text, Tuple
+from typing import Any
 from jinja2 import Environment
 
-def kb(value:int) -> str:
+
+# ---------------------------------------------------------------------------- #
+#                                JINJA2 FILTERS                                #
+# ---------------------------------------------------------------------------- #
+
+def jinja2_filter_kb(value:int) -> str:
     return str(value // 1024) + " KB"
 
-
-def mb(value:int) -> str:
+def jinja2_filter_mb(value:int) -> str:
     return str(value // 1024 // 1024) + " MB"
 
-
-def gb(value:int) -> str:
+def jinja2_filter_gb(value:int) -> str:
     return str(value // 1024 / 1024 // 1024) + " GB"
 
-
-def uptime_str(linux_epoch_sec:float) -> str:
+def jinja2_filter_uptime_str(linux_epoch_sec:float) -> str:
     upt = time.time() - linux_epoch_sec
 
     retval = ""
@@ -39,44 +41,52 @@ def uptime_str(linux_epoch_sec:float) -> str:
 
     return retval
 
-def uptime_sec(linux_epoch_sec: float) -> int:
+def jinja2_filter_uptime_sec(linux_epoch_sec: float) -> int:
     upt = time.time() - linux_epoch_sec
     return round(upt)
 
-def iso8601_str(linux_epoch_sec: float) -> str:
+def jinja2_filter_iso8601_str(linux_epoch_sec: float) -> str:
     return datetime.fromtimestamp(linux_epoch_sec, tz=timezone.utc).isoformat()
 
-
-def register_filters() -> Environment:
+def register_jinja2_filters() -> Environment:
     env = Environment()
-    env.filters['KB'] = kb
-    env.filters['MB'] = mb
-    env.filters['GB'] = gb
-    env.filters['uptime_str'] = uptime_str
-    env.filters['uptime_sec'] = uptime_sec
-    env.filters['iso8601_str'] = iso8601_str
+    env.filters['KB'] = jinja2_filter_kb
+    env.filters['MB'] = jinja2_filter_mb
+    env.filters['GB'] = jinja2_filter_gb
+    env.filters['uptime_str'] = jinja2_filter_uptime_str
+    env.filters['uptime_sec'] = jinja2_filter_uptime_sec
+    env.filters['iso8601_str'] = jinja2_filter_iso8601_str
     return env
+
+# ---------------------------------------------------------------------------- #
+#                                   FORMATTER                                  #
+# ---------------------------------------------------------------------------- #
 
 class Formatter:
     '''
     Provides formatters to be applied to the task outputs before they get published
     to the MQTT broker
     '''
-    env = register_filters()
+    env = register_jinja2_filters()
 
-    @classmethod
-    def get_format(cls, path:str) -> Tuple[str, Optional[str]]:
-        '''
-        Tuple would be a better choice for typing
-        '''
-        i = path.find("{{")
-        if i > 0:
-            i = path.rfind("/", 0, i)
-            if i > 0:
-                return (path[0:i], path[i+1:])
-        return (path, None)
+    def __init__(self, jinja2_template_str: str) -> None:
+        self.jinja2_template_str = jinja2_template_str
+        self.jinja2_template = Formatter.env.from_string(jinja2_template_str)
 
-    @classmethod
-    def format(cls, f:str, value: Any) -> Text:
-        return cls.env.from_string(f).render(
-            value if isinstance(value, dict) else {"x": value})
+    # @classmethod
+    # def get_format(cls, path:str) -> Tuple[str, Optional[str]]:
+    #     '''
+    #     Tuple would be a better choice for typing
+    #     '''
+    #     i = path.find("{{")
+    #     if i > 0:
+    #         i = path.rfind("/", 0, i)
+    #         if i > 0:
+    #             return (path[0:i], path[i+1:])
+    #     return (path, None)
+
+    def format(self, value: Any) -> str:
+        return self.jinja2_template.render(value if isinstance(value, dict) else {"x": value})
+
+    def get_template(self) -> str:
+        return self.jinja2_template_str

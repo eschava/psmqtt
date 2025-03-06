@@ -115,32 +115,36 @@ schedule:
       
       - task: disk_io_counters_rate
         params: [ "read_bytes", "/dev/sda" ]
+        formatter: "{{x|MB}}"
         ha_discovery:
           name: "SDA Read Bytes"
           platform: sensor
           device_class: data_rate
-          unit_of_measurement: "B/s"
+          unit_of_measurement: "MB/s"
       - task: disk_io_counters_rate
         params: [ "write_bytes", "/dev/sda" ]
+        formatter: "{{x|MB}}"
         ha_discovery:
           name: "SDA Write Bytes"
           platform: sensor
           device_class: data_rate
-          unit_of_measurement: "B/s"
+          unit_of_measurement: "MB/s"
 
 
       - task: net_io_counters_rate
         params: [ "bytes_sent", "enp3s0" ]
+        formatter: "{{x|MB}}"
         ha_discovery:
           name: "enp3s0 TX Bytes"
           platform: sensor
           device_class: data_rate
-          unit_of_measurement: "B/s"
+          unit_of_measurement: "MB/s"
       - task: net_io_counters_rate
         params: [ "bytes_recv", "enp3s0" ]
+        formatter: "{{x|MB}}"
         ha_discovery:
           name: "enp3s0 RX Bytes"
           platform: sensor
           device_class: data_rate
-          unit_of_measurement: "B/s"
+          unit_of_measurement: "MB/s"
   
