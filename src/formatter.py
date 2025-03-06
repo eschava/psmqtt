@@ -27,14 +27,17 @@ def jinja2_filter_mb(value:int) -> str:
 def jinja2_filter_gb(value:int) -> str:
     return str(value // 1000 / 1000 // 1000) + " GB"
 
+# the _fractional variants return the value with up to 2 fractional digits
+# and without appending any unit of measurement
+
 def jinja2_filter_kb_fractional(value:int) -> str:
-    return str(round(value / 1000, fractional_num_digits)) + " KB"
+    return str(round(value / 1000, fractional_num_digits))
 
 def jinja2_filter_mb_fractional(value:int) -> str:
-    return str(round(value / (1000 * 1000), fractional_num_digits)) + " MB"
+    return str(round(value / (1000 * 1000), fractional_num_digits))
 
 def jinja2_filter_gb_fractional(value:int) -> str:
-    return str(round(value / (1000 * 1000 * 1000), fractional_num_digits)) + " GB"
+    return str(round(value / (1000 * 1000 * 1000), fractional_num_digits))
 
 
 def jinja2_filter_uptime_str(linux_epoch_sec:float) -> str:
