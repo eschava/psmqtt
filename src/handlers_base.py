@@ -15,27 +15,35 @@ from typing import (
 )
 
 from .utils import list_from_array_of_namedtuples, dict_from_dict_of_namedtupes, string_from_dict_optionally, string_from_dict, string_from_list_optionally
-from .task import TaskParam
 
 # all command handlers will return from their handle() function a Payload:
 Payload = Union[List[Any], Dict[str, Any], NamedTuple, str, float, int]
+
+class TaskParam:
+    @staticmethod
+    def is_wildcard(param: str) -> bool:
+        return param == "*" or param == "+"
+
+    @staticmethod
+    def is_regular_wildcard(param: str) -> bool:
+        return param == "*"
+
+    @staticmethod
+    def is_join_wildcard(param: str) -> bool:
+        return param == "+"
 
 class BaseHandler:
     '''
     Abstract base class that has a handle() method.
     All task handlers will inherit from this base class.
 
-    Note that the only truly public API of all handlers inheriting from this class is the handle_task() method.
+    Note that the only truly public API of all handlers inheriting from this class is the handle() method.
     The get_value() method is "protected" and should not be called from outside the class.
     '''
 
     def __init__(self, name:str):
         self.name = name
         return
-
-    # def handle_task(self, task: Task) -> Payload:
-    #     assert isinstance(params, list)
-    #     raise Exception("Not implemented")
 
     def handle(self, params: list[str]) -> Payload:
         assert isinstance(params, list)

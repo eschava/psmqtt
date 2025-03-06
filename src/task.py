@@ -8,21 +8,9 @@ import hashlib
 from typing import Any, List, Dict
 
 from .handlers_all import TaskHandlers
+from .handlers_base import TaskParam
 from .topic import Topic
 from .mqtt_client import MqttClient
-
-class TaskParam:
-    @staticmethod
-    def is_wildcard(param: str) -> bool:
-        return param == "*" or param == "+"
-
-    @staticmethod
-    def is_regular_wildcard(param: str) -> bool:
-        return param == "*"
-
-    @staticmethod
-    def is_join_wildcard(param: str) -> bool:
-        return param == "+"
 
 
 class Task:

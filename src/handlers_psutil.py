@@ -8,7 +8,7 @@ from typing import (
 
 from .handlers_base import MethodCommandHandler, Payload
 from .utils import string_from_dict_optionally
-from .task import TaskParam
+from .handlers_base import TaskParam
 
 class DiskCountersIOCommandHandler(MethodCommandHandler):
     '''
