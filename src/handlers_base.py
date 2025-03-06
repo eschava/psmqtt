@@ -19,23 +19,7 @@ from .utils import list_from_array_of_namedtuples, dict_from_dict_of_namedtupes,
 # all command handlers will return from their handle() function a Payload:
 Payload = Union[List[Any], Dict[str, Any], NamedTuple, str, float, int]
 
-class BaseHandler:
-    '''
-    Abstract base class that has a handle() method.
-    All task handlers will inherit from this base class.
-    '''
-
-    def __init__(self, name:str):
-        self.name = name
-        return
-
-    def handle(self, params: list[str]) -> Payload:
-        assert isinstance(params, list)
-        raise Exception("Not implemented")
-
-    def get_value(self) -> Payload:
-        raise Exception("Not implemented")
-
+class TaskParam:
     @staticmethod
     def is_wildcard(param: str) -> bool:
         return param == "*" or param == "+"
@@ -47,6 +31,37 @@ class BaseHandler:
     @staticmethod
     def is_join_wildcard(param: str) -> bool:
         return param == "+"
+
+class BaseHandler:
+    '''
+    Abstract base class that has a handle() method.
+    All task handlers will inherit from this base class.
+
+    Note that the only truly public API of all handlers inheriting from this class is the handle() method.
+    The get_value() method is "protected" and should not be called from outside the class.
+    '''
+
+    def __init__(self, name:str):
+        self.name = name
+        return
+
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
+        '''
+        The handle() function is the core function of an handler:
+        it typically performs 3 steps in sequence:
+        1. validation of the input parameters
+        2. invoke the psutil/pySMART function via get_value() accessor function
+        3. filter of the output and conversion to "Payload" type
+
+        The 'caller_task_id' is a string that identifies the task that is invoking this handler.
+        This is useful only to stateful handlers, which need to store a state that is different
+        from task to task.
+        '''
+        assert isinstance(params, list)
+        raise Exception("Not implemented")
+
+    def get_value(self) -> Payload:
+        raise Exception("Not implemented")
 
 
 class MethodCommandHandler(BaseHandler):
@@ -84,12 +99,12 @@ class ValueCommandHandler(MethodCommandHandler):
     This is a good class to be used when no parameters are expected.
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         '''
         Will call self.get_value()
         '''
         assert isinstance(params, list)
-        if params != []:
+        if len(params) > 0:
             raise Exception(f"{self.name}: Parameter '{params}' is not supported")
 
         return self.get_value()
@@ -99,7 +114,7 @@ class IndexCommandHandler(MethodCommandHandler):
     IndexCommandHandler handles psutil functions that return a list, e.g. the psutil.pids() function.
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         arr = self.get_value()
@@ -109,8 +124,8 @@ class IndexCommandHandler(MethodCommandHandler):
             raise Exception(f"{self.name}: exactly 1 parameter is required; found {len(params)} parameters instead: {params}")
 
         index_str = params[0]
-        if BaseHandler.is_wildcard(index_str):
-            return string_from_list_optionally(arr, BaseHandler.is_join_wildcard(index_str))
+        if TaskParam.is_wildcard(index_str):
+            return string_from_list_optionally(arr, TaskParam.is_join_wildcard(index_str))
         elif index_str == 'count':
             return len(arr)
         elif isinstance(index_str, int):
@@ -126,7 +141,7 @@ class TupleCommandHandler(MethodCommandHandler):
     tuple, e.g. psutil.cpu_times, psutil.cpu_stats, psutil.virtual_memory, psutil.swap_memory
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         tup = self.get_value()
@@ -142,9 +157,9 @@ class TupleCommandHandler(MethodCommandHandler):
 
         # the parameter for this handler decides which tuple field we should select:
         tuple_field = params[0]
-        if BaseHandler.is_regular_wildcard(tuple_field):
+        if TaskParam.is_regular_wildcard(tuple_field):
             return tup._asdict()
-        if BaseHandler.is_join_wildcard(tuple_field):
+        if TaskParam.is_join_wildcard(tuple_field):
             return string_from_dict(tup._asdict())
         elif tuple_field in tup._fields:
             return getattr(tup, tuple_field)
@@ -159,7 +174,7 @@ class IndexTupleCommandHandler(MethodCommandHandler):
     list of named tuples, e.g. psutil.disk_partitions, psutil.users
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         '''
         This handler accepts 1 or 2 parameters.
         The first parameter shall be:
@@ -176,7 +191,7 @@ class IndexTupleCommandHandler(MethodCommandHandler):
         field_selector = params[0]
         index_str = params[1] if len(params) >= 2 else ''
 
-        all_fields = BaseHandler.is_wildcard(field_selector)
+        all_fields = TaskParam.is_wildcard(field_selector)
         index = -1
 
         if isinstance(field_selector, int):
@@ -189,7 +204,7 @@ class IndexTupleCommandHandler(MethodCommandHandler):
             index = index_str
         elif index_str.isdigit():
             index = int(index_str)
-        elif not BaseHandler.is_wildcard(index_str):
+        elif not TaskParam.is_wildcard(index_str):
             raise Exception(f"{self.name}: Element '{index_str}' in '{params}' is not supported")
 
         if index < 0 and all_fields:
@@ -199,12 +214,12 @@ class IndexTupleCommandHandler(MethodCommandHandler):
         assert isinstance(result, list)
         if index < 0:
             # no index selected: select the same field from ALL tuples
-            return list_from_array_of_namedtuples(result, field_selector, self.name, BaseHandler.is_join_wildcard(index_str))
+            return list_from_array_of_namedtuples(result, field_selector, self.name, TaskParam.is_join_wildcard(index_str))
         else:  # index selected
             try:
                 elt = result[index]
                 if all_fields:
-                    return string_from_dict_optionally(elt._asdict(), BaseHandler.is_join_wildcard(field_selector))
+                    return string_from_dict_optionally(elt._asdict(), TaskParam.is_join_wildcard(field_selector))
                 elif field_selector in elt._fields:
                     return getattr(elt, field_selector)
                 else:
@@ -226,7 +241,7 @@ class IndexOrTotalCommandHandler(BaseHandler):
         super().__init__(name)
         return
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         total = True
@@ -238,9 +253,9 @@ class IndexOrTotalCommandHandler(BaseHandler):
 
         param = params[0] if len(params) == 1 else ''
 
-        if BaseHandler.is_regular_wildcard(param):
+        if TaskParam.is_regular_wildcard(param):
             total = False
-        elif BaseHandler.is_join_wildcard(param):
+        elif TaskParam.is_join_wildcard(param):
             total = False
             join = True
         elif param == 'total':
@@ -292,7 +307,7 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
     def __init__(self, name:str):
         super().__init__(name)
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:
@@ -301,15 +316,15 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
         param = params[0]
         index_str = params[1] if len(params) == 2 else ''
 
-        all_params = BaseHandler.is_wildcard(param)
-        params_join = BaseHandler.is_join_wildcard(param)
+        all_params = TaskParam.is_wildcard(param)
+        params_join = TaskParam.is_join_wildcard(param)
 
         total = True
         index_join = False
         index = -1
-        if BaseHandler.is_regular_wildcard(index_str):
+        if TaskParam.is_regular_wildcard(index_str):
             total = False
-        elif BaseHandler.is_join_wildcard(index_str):
+        elif TaskParam.is_join_wildcard(index_str):
             total = False
             index_join = True
         elif isinstance(index_str, int):
@@ -365,7 +380,7 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     or a dictionary of named tuples.
     '''
 
-    def handle(self, params: list[str]) -> Payload:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 1 and len(params) != 2:
@@ -374,15 +389,15 @@ class NameOrTotalTupleCommandHandler(MethodCommandHandler):
         param = params[0]
         name = params[1] if len(params) == 2 else None
 
-        all_params = BaseHandler.is_wildcard(param)
-        params_join = BaseHandler.is_join_wildcard(param)
+        all_params = TaskParam.is_wildcard(param)
+        params_join = TaskParam.is_join_wildcard(param)
 
         total = True
         index_join = False
-        if BaseHandler.is_regular_wildcard(name):
+        if TaskParam.is_regular_wildcard(name):
             total = False
             name = None
-        elif BaseHandler.is_join_wildcard(name):
+        elif TaskParam.is_join_wildcard(name):
             total = False
             index_join = True
             name = None

@@ -5,13 +5,18 @@ from enum import IntEnum
 import json
 import logging
 import hashlib
+import psutil
 from typing import Any, List, Dict
 
-from .handlers_base import BaseHandler
-from .handlers_all import TaskHandlers
+from .handlers_base import TaskParam
 from .topic import Topic
 from .mqtt_client import MqttClient
+from .formatter import Formatter
 
+from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
+from .handlers_psutil_processes import ProcessesCommandHandler
+from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIOCommandHandler, SensorsTemperaturesCommandHandler
+from .handlers_pysmart import SmartCommandHandler
 
 class Task:
     '''
@@ -30,6 +35,69 @@ class Task:
     # Counts successfully-completed tasks
     num_success = 0
 
+    # Global dictionary of supported task handlers
+    handlers = {
+
+        # CPU
+
+        'cpu_times': TupleCommandHandler('cpu_times'),
+
+        'cpu_percent': type(
+            "CpuPercentCommandHandler",
+            (IndexOrTotalCommandHandler, object),
+            {
+                "get_value": lambda self, total:
+                    psutil.cpu_percent(percpu=not total)
+            })('cpu_percent'),
+
+        'cpu_times_percent': type(
+            "CpuTimesPercentCommandHandler",
+            (IndexOrTotalTupleCommandHandler, object),
+            {
+                "get_value": lambda self, total:
+                    psutil.cpu_times_percent(percpu=not total)
+            })('cpu_times_percent'),
+
+        'cpu_stats': TupleCommandHandler('cpu_stats'),
+
+        # MEMORY
+
+        'virtual_memory': TupleCommandHandler('virtual_memory'),
+        'swap_memory': TupleCommandHandler('swap_memory'),
+
+        # DISK
+
+        'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
+        'disk_usage': DiskUsageCommandHandler(),
+        'disk_io_counters': DiskCountersIOCommandHandler(),
+        'smart': SmartCommandHandler(),
+
+        # NETWORK
+
+        'net_io_counters': type(
+            "NetIOCountersCommandHandler",
+            (NameOrTotalTupleCommandHandler, object),
+            {
+                "get_value": lambda self, total:
+                    psutil.net_io_counters(pernic=not total)
+            })('net_io_counters'),
+
+        # PROCESSES
+
+        'processes': ProcessesCommandHandler(),
+
+        # OTHERS
+        'users': IndexTupleCommandHandler('users'),
+        'boot_time': ValueCommandHandler('boot_time'),
+        'pids': IndexCommandHandler('pids'),
+
+        # SENSORS
+
+        'sensors_temperatures': SensorsTemperaturesCommandHandler(),
+        'sensors_fans': SensorsFansCommandHandler(),
+        'sensors_battery': TupleCommandHandler('sensors_battery'),
+    }
+
     def __init__(self,
             name:str,
             params:List[str],
@@ -42,20 +110,23 @@ class Task:
         self.task_name = name
         self.params = params
         self.topic_name = mqtt_topic
-        self.formatter = formatter
+        self.formatter = formatter  # FIXME: logically we should build an instance of a Formatter class here
         self.ha_discovery = ha_discovery
 
         self.parent_schedule_rule_idx = parent_schedule_rule_idx
         self.task_friendly_name = f"schedule{parent_schedule_rule_idx}.task{task_idx}.{name}"
+        self.task_id = f"{parent_schedule_rule_idx}.{task_idx}"
 
         # create a Topic instance associated with this Task:
-        if self.topic_name is None:
+        if self.topic_name is None or self.topic_name == '':
             self.topic = self._topic_from_task(mqtt_topic_prefix)
         else:
             # use the specified MQTT topic name; just make sure that the MQTT topic prefix is present
             self.topic = Topic(self.topic_name if self.topic_name.startswith(mqtt_topic_prefix)
                                 else mqtt_topic_prefix + self.topic_name)
+
         logging.info(f"Task.run_task({self.task_friendly_name}): MQTT topic is '{self.topic.get_topic()}'")
+        assert self.topic.get_topic() != ''
 
     def _topic_from_task(self, topic_prefix: str) -> Topic:
         # create the MQTT topic by concatenating the task name and its parameters with the MQTT topic-level separator '/'
@@ -65,7 +136,7 @@ class Task:
         escapedParams = []
         for x in nonEmptyParams:
             if isinstance(x,str):
-                if BaseHandler.is_join_wildcard(x):
+                if TaskParam.is_join_wildcard(x):
                     # skip any join wildcard (+) parameter from the MQTT topic; do insert however the regular wildcard (*)
                     # so that the Topic class knows that it's actually a multi-topic
                     continue
@@ -92,6 +163,13 @@ class Task:
         #else:
         return json.dumps(v)
 
+    @staticmethod
+    def get_supported_handlers() -> List[str]:
+        '''
+        Returns list of supported handlers
+        '''
+        return list(Task.handlers.keys())
+
     def run_task(self, mqttc: MqttClient) -> None:
         '''
         Runs this task and publishes results on the provided MQTT client
@@ -104,7 +182,7 @@ class Task:
             return
 
         try:
-            payload = TaskHandlers.get_value(self.task_name, self.params, self.formatter)
+            payload = self.get_payload()
             is_seq = isinstance(payload, list) or isinstance(payload, dict)
             if is_seq and not self.topic.is_multitopic():
                 raise Exception(f"Result of task '{self.task_friendly_name}' has several values but topic doesn't contain the wildcard '*' character. Please include the wildcard in the topic specification.")
@@ -131,6 +209,35 @@ class Task:
 
         Task.num_success += 1
         return
+
+    def get_payload(self) -> Payload:
+        '''
+        Invokes the handler associated with this task (the task name defines the handler to be invoked);
+        the handler will retrieves the sensor value(s), filter them and returns it/them.
+
+        Then this function formats the output(s) invoking the Task formatter.
+        '''
+        if self.task_name not in Task.handlers:
+            raise Exception(f"Task '{self.task_name}' is not supported")
+
+        # invoke the handler to read the sensor values
+        handler = Task.handlers[self.task_name]
+        value = handler.handle(self.params, self.task_id)
+
+        # if we get here, the sensor reading was successful
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            is_seq = isinstance(value, list) or isinstance(value, dict)
+            desc = f"multiple results ({len(value)})" if is_seq else "single result"
+            logging.debug(f"Task.get_payload({self.task_friendly_name}) produced {desc}:\n{value}")
+
+        if self.formatter is not None and self.formatter != '':
+            value = Formatter.format(self.formatter, value)
+            logging.debug(f"Task.get_payload({self.task_friendly_name}) after formatting with {self.formatter} => {value}")
+
+        # the value must be one of the types declared inside "Payload"
+        assert isinstance(value, str) or isinstance(value, int) or isinstance(value, float) or isinstance(value, list) or isinstance(value, dict) or isinstance(value, tuple)
+
+        return value
 
     @staticmethod
     def num_total_tasks_executed() -> int:

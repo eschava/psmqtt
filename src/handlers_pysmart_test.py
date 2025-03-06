@@ -8,6 +8,8 @@ from .handlers_pysmart import (
     SmartCommandHandler,
 )
 
+fake_task_id = "0.0"
+
 @pytest.mark.unit
 class TestHandlers(unittest.TestCase):
 
@@ -15,7 +17,7 @@ class TestHandlers(unittest.TestCase):
         handler = SmartCommandHandler()
         #val = handler.get_value()
         try:
-            val = handler.handle('dev/nvme0')
+            val = handler.handle(['dev/nvme0'], fake_task_id)
             #print(val)
             self.assertIsInstance(val, dict)
             assert isinstance(val, dict)
@@ -23,6 +25,7 @@ class TestHandlers(unittest.TestCase):
             self.assertEqual(
                 handler.handle('*'), {"asus": [30.0], "coretemp": [45.0, 52.0]})
         except Exception:
+            # test must be ignored if no SMART devices are available
             pass
 
         return

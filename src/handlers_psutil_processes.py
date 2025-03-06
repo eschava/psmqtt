@@ -14,9 +14,16 @@ from typing import (
 
 from .handlers_base import BaseHandler, Payload
 from .utils import string_from_dict_optionally, string_from_list_optionally
+from .handlers_base import TaskParam
 
 class ProcessesCommandHandler(BaseHandler):
     '''
+    This is the handler linking the Task class to the family of the
+    ProcessCommandHandler-derived classes.
+    This class is in charge of using psutil.process_iter() function
+     (https://psutil.readthedocs.io/en/latest/#psutil.process_iter)
+    to iterate over all running processes and extract the information
+    selected via the usual parameters provided to the handle() method.
     '''
 
     top_cpu_regexp = re.compile(r"^top_cpu(\[\d+\])*$")
@@ -29,7 +36,7 @@ class ProcessesCommandHandler(BaseHandler):
         super().__init__('processes')
         return
 
-    def handle(self, params:list[str]) -> Payload:
+    def handle(self, params:list[str], caller_task_id: str) -> Payload:
         assert isinstance(params, list)
 
         if len(params) != 2 and len(params) != 3:
@@ -38,8 +45,8 @@ class ProcessesCommandHandler(BaseHandler):
         property = params[1]
         remaining_params = [params[2]] if len(params) == 3 else []
 
-        if BaseHandler.is_wildcard(process_id):
-            if BaseHandler.is_regular_wildcard(property):
+        if TaskParam.is_wildcard(process_id):
+            if TaskParam.is_regular_wildcard(property):
                 raise Exception(f"The process property in '{self.name}' should be specified")
             result = {p.pid: self.get_process_value(p, property, remaining_params) for p in psutil.process_iter()}
             return string_from_dict_optionally(result, process_id.endswith(';'))
@@ -103,7 +110,7 @@ class ProcessesCommandHandler(BaseHandler):
 
 class ProcessCommandHandler:
     '''
-
+    Base abstract class for all process-related command handlers.
     '''
     def __init__(self, name:str):
         self.name = name
@@ -114,6 +121,11 @@ class ProcessCommandHandler:
 
 
 class ProcessMethodCommandHandler(ProcessCommandHandler):
+    '''
+    This class implements the get_value() function by applying the psutil.Process.<METHOD>
+    function to the process instance passed as a parameter to get_value(),
+    where <METHOD> is actually the name of the class instance.
+    '''
     def __init__(self, name:str):
         super().__init__(name)
         try:
@@ -196,7 +208,7 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
 
 class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
 
-    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
         assert isinstance(params, list)
         if len(params) != 1:
             raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
@@ -205,7 +217,7 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
         assert self.method is not None
         arr = self.method(process)
 
-        if BaseHandler.is_wildcard(param):
+        if TaskParam.is_wildcard(param):
             return string_from_list_optionally(arr, param.endswith(';'))
         elif param == 'count':
             return len(arr)
@@ -219,7 +231,7 @@ class ProcessMethodIndexCommandHandler(ProcessMethodCommandHandler):
 
 class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
 
-    def handle(self, params: list[str],process:psutil.Process) -> Payload:
+    def handle(self, params: list[str], process:psutil.Process) -> Payload:
         assert isinstance(params, list)
         if len(params) != 1:
             raise Exception(f"Exactly 1 parameter is supported for '{self.name}'; found {len(params)} parameters instead: {params}")
@@ -228,7 +240,7 @@ class ProcessMethodTupleCommandHandler(ProcessMethodCommandHandler):
         tup = self.method(process)
 
         param = params[0]
-        if BaseHandler.is_wildcard(param):
+        if TaskParam.is_wildcard(param):
             return string_from_dict_optionally(tup._asdict(), param.endswith(';'))
         elif param in tup._fields:
             return getattr(tup, param)
