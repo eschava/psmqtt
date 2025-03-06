@@ -8,7 +8,7 @@ from typing import (
     NamedTuple,
 )
 
-from .handlers_base import MethodCommandHandler, Payload
+from .handlers_base import BaseHandler, MethodCommandHandler, Payload
 from .utils import string_from_dict_optionally
 from .handlers_base import TaskParam
 
@@ -90,11 +90,14 @@ class DiskIOCountersRateHandler(BaseHandler):
     '''
     DiskIOCountersRateHandler computes the rate of change of the disk I/O counters
     '''
+
+    MINIMAL_DELTA_TIME_SECONDS = 0.1
+
     def __init__(self) -> None:
         super().__init__('disk_io_counters_rate')
         self.monotonic_counter_handler = DiskIOCountersCommandHandler()
-        self.last_values = None
-        self.last_timestamp = None
+        self.last_values = {}
+        self.last_timestamp = {}
         return
 
     @staticmethod
@@ -113,57 +116,59 @@ class DiskIOCountersRateHandler(BaseHandler):
     def compute_rate_from_tuples(new_values: tuple, last_values: tuple, delta_time_seconds: float) -> dict:
         return DiskIOCountersRateHandler.compute_rate_from_dicts(new_values._asdict(), last_values._asdict(), delta_time_seconds)
 
-    def handle(self, params: list[str]) -> Payload:
-
-        # TODO: this class might be used by multiple tasks... we need to hash "params" to ensure that
-        #       we keep track of the "last values" for each task separately
-
-        if self.last_values is None:
+    def handle(self, params: list[str], caller_task_id: str) -> Payload:
+        if caller_task_id not in self.last_values:
             # this is the first sample being retrieved... just save the current values
             # and we'll be able to compute the rate/delta of the next call
-            self.last_values = self.monotonic_counter_handler.handle(params)
-            self.last_timestamp = time.time()
-
-            # we return zero(s) on this first sample to avoid pushing a HUGE absolute value
-            # which might decrease nearly to zero on the next sample
-            if isinstance(self.last_values, dict):
-                result = {k: 0 for k in self.last_values.keys()}
-            elif isinstance(self.last_values, tuple):
-                result = (0,) * len(self.last_values)
-            elif isinstance(self.last_values, int):
-                result = 0
-            else:
-                raise Exception(f"{self.name}: Unexpected result type: {type(self.last_values)}")
-
-            logging.debug(f"{self.name}: producing first sample as zeroes: {result}")
-            return result
-
-        else:
             new_values = self.monotonic_counter_handler.handle(params)
             new_timestamp = time.time()
 
-            delta_time_seconds = new_timestamp - self.last_timestamp
-            if delta_time_seconds <= 0.1:
-                # delta is too small... return the last value
-                return self.last_values
+            # we return zero(s) on this first sample to avoid pushing a HUGE absolute value
+            # which might decrease nearly to zero on the next sample
+            if isinstance(new_values, dict):
+                result = {k: 0 for k in new_values.keys()}
+            elif isinstance(new_values, tuple):
+                result = (0,) * len(new_values)
+            elif isinstance(new_values, int):
+                result = 0
+            else:
+                raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")
+
+            logging.debug(f"{self.name}: producing first sample as zeroes: {result}")
+
+            # fall to the end of the function where we update internal state
+
+        else:
+            # retrieve previous values / timestamp
+            old_values = self.last_values[caller_task_id]
+            old_timestamp = self.last_timestamp[caller_task_id]
+
+            new_values = self.monotonic_counter_handler.handle(params)
+            new_timestamp = time.time()
+
+            delta_time_seconds = new_timestamp - old_timestamp
+            if delta_time_seconds <= DiskIOCountersRateHandler.MINIMAL_DELTA_TIME_SECONDS:
+                # delta is too small... return the last value and skip any internal update
+                return old_values
 
             logging.debug(f"{self.name}: computing rate with delta_time_seconds={delta_time_seconds}")
 
             if isinstance(new_values, dict):
-                assert isinstance(self.last_values, dict)
-                result = DiskIOCountersRateHandler.compute_rate_from_dicts(new_values, self.last_values, delta_time_seconds)
+                assert isinstance(old_values, dict)
+                result = DiskIOCountersRateHandler.compute_rate_from_dicts(new_values, old_values, delta_time_seconds)
             elif isinstance(new_values, tuple):
-                assert isinstance(self.last_values, tuple)
-                result = DiskIOCountersRateHandler.compute_rate_from_tuples(new_values, self.last_values, delta_time_seconds)
+                assert isinstance(old_values, tuple)
+                result = DiskIOCountersRateHandler.compute_rate_from_tuples(new_values, old_values, delta_time_seconds)
             elif isinstance(new_values, int):
-                assert isinstance(self.last_values, int)
-                result = int((new_values - self.last_values) / delta_time_seconds)
+                assert isinstance(old_values, int)
+                result = int((new_values - old_values) / delta_time_seconds)
             else:
                 raise Exception(f"{self.name}: Unexpected result type: {type(new_values)}")
 
-            self.last_values = new_values
-            self.last_timestamp = new_timestamp
-            return result
+        # update internal state (by caller task)
+        self.last_values[caller_task_id] = new_values
+        self.last_timestamp[caller_task_id] = new_timestamp
+        return result
 
     def get_value(self) -> Payload:
         return self.last_values
