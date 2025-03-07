@@ -242,11 +242,16 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `total`, `used`, `free`, `percent` (single-valued task).
     * **REQUIRED**: `<param2>`: The path where disk usage must be measured, e.g. `/`, `/var` or `/home/<username>`.
   * Task name: `disk_io_counters`
-    * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
+    * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters ).
+      Please note that these are monotonically increasing counters. You may want to use the `disk_io_counters_rate` task instead.
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, `read_time`, `write_time`, etc (single-valued task).
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all partitions/disks (multi-valued task) or the name of a specific drive e.g. `/dev/md0` or `/dev/sda` to select just that partition/disk. If not provided, then the total disk I/O counters (e.g. total bytes read from all the partitions/disks) are produced in output, according to the field(s) selected with `<param1>`.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+  * Task name: `disk_io_counters_rate`
+    * Short description: disk I/O bandwidth, measured as rate of change of [disk I/O counters]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters ).
+    * **REQUIRED**: `<param1>`: See the description for the `<param1>` of the `disk_io_counters` task.
+    * **OPTIONAL**: `<param2>`: See the description for the `<param2>` of the `disk_io_counters` task.
   * Task name: `smart`
     * Short description: Self-Monitoring, Analysis and Reporting Technology System (SMART) counters built into most modern ATA/SATA, SCSI/SAS and NVMe disks. [ Full reference ]( https://www.smartmontools.org/wiki/TocDoc )
     * **REQUIRED**: `<param1>`: The name of a specific drive e.g. `/dev/md0` or `/dev/sda`.
@@ -270,6 +275,10 @@ Here follows the reference documentation for all required tasks and their parame
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all network interface cards (NICs) or a NIC name like e.g. `eth0`, `wlan0`, `enp3s0f0`, etc to select a specific NIC (single-valued task).
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+  * Task name: `net_io_counters_rate`
+    * Short description: network I/O bandwidth, measured as rate of change of [network I/O counters]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters ).
+    * **REQUIRED**: `<param1>`: See the description for the `<param1>` of the `net_io_counters` task.
+    * **OPTIONAL**: `<param2>`: See the description for the `<param2>` of the `net_io_counters` task.
 
 #### <a name='CategoryTemperature'></a>Category Temperature
 
