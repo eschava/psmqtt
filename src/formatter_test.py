@@ -29,7 +29,41 @@ class TestFormatter(unittest.TestCase):
         self.assertEqual("2.0", Formatter("{{a/5}}").format({"a": 10}))
         self.assertEqual("15", Formatter("{{a+b}}").format({"a": 10, "b": 5}))
         self.assertEqual("1.2 MB", Formatter("{{a/1000000}} MB").format({"a": 1200000}))
-        self.assertEqual("1 MB", Formatter("{{a|MB}}").format({"a": 1200000}))
+
+    def test_byte_conversion_filters(self) -> None:
+        tests = [
+
+            {
+                "input_value": 1200000,
+                "input": "{{a|KB}}",
+                "expected_output": "1200",
+            },
+            {
+                "input_value": 1200000,
+                "input": "{{a|MB}}",
+                "expected_output": "1",
+            },
+            {
+                "input_value": 1200000,
+                "input": "{{a|GB}}",
+                "expected_output": "0",
+            },
+
+            {
+                "input_value": 1234000,
+                "input": "{{a|MB_fractional}}",
+                "expected_output": "1.23",
+            },
+            {
+                "input_value": 1234567,
+                "input": "{{a|MB_fractional(4)}}",
+                "expected_output": "1.2346",  # note there is rounding here 1.234567 -> 1.2346
+            },
+        ]
+
+        for t in tests:
+            self.assertEqual(t["expected_output"],
+                                Formatter(t["input"]).format({"a": t["input_value"]}))
 
     def test_format_uptime_str(self) -> None:
         import time

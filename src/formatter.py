@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 from jinja2 import Environment
 
-fractional_num_digits = 2
+default_num_decimal_digits = 2
 
 
 # ---------------------------------------------------------------------------- #
@@ -18,26 +18,26 @@ fractional_num_digits = 2
 # This is not the same as dividing by 1024, which would produce Kibibytes, Mebibytes, Gibibytes, etc.
 # The former is the SI standard, the latter is the IEC standard.
 
-def jinja2_filter_kb(value:int) -> str:
-    return str(value // 1000) + " KB"
+def jinja2_filter_kb(value:float) -> str:
+    return str(value // 1000)
 
-def jinja2_filter_mb(value:int) -> str:
-    return str(value // 1000 // 1000) + " MB"
+def jinja2_filter_mb(value:float) -> str:
+    return str(value // 1000 // 1000)
 
-def jinja2_filter_gb(value:int) -> str:
-    return str(value // 1000 / 1000 // 1000) + " GB"
+def jinja2_filter_gb(value:float) -> str:
+    return str(value // 1000 // 1000 // 1000)
 
-# the _fractional variants return the value with up to 2 fractional digits
-# and without appending any unit of measurement
+# the _fractional variants return the value with a default number of 2 fractional digits
+# (customizable providing a filter argument)
 
-def jinja2_filter_kb_fractional(value:int) -> str:
-    return str(round(value / 1000, fractional_num_digits))
+def jinja2_filter_kb_fractional(value:float, num_decimal_digits=default_num_decimal_digits) -> str:
+    return str(round(value / 1000, num_decimal_digits))
 
-def jinja2_filter_mb_fractional(value:int) -> str:
-    return str(round(value / (1000 * 1000), fractional_num_digits))
+def jinja2_filter_mb_fractional(value:float, num_decimal_digits=default_num_decimal_digits) -> str:
+    return str(round(value / (1000 * 1000), num_decimal_digits))
 
-def jinja2_filter_gb_fractional(value:int) -> str:
-    return str(round(value / (1000 * 1000 * 1000), fractional_num_digits))
+def jinja2_filter_gb_fractional(value:float, num_decimal_digits=default_num_decimal_digits) -> str:
+    return str(round(value / (1000 * 1000 * 1000), num_decimal_digits))
 
 
 def jinja2_filter_uptime_str(linux_epoch_sec:float) -> str:

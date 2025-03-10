@@ -399,15 +399,15 @@ schedule:
 
 configures PSMQTT to append the `%` symbol after CPU usage.
 
-For multi-valued tasks (that use a wildcard `*`) all outputs are
-available:
+For multi-valued tasks (that use a wildcard `*`) all outputs are available:
 * by name if they are named.
 * as `x` if they are unnamed.
 * as `x[1]`, `x[2]`, etc if they are numbered. 
 
-PSMQTT provides some Jinja2 filters:
+PSMQTT provides the following Jinja2 filters:
 
-* `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
+* `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit.
+* `KB_fractional(n)`,`MB_fractional(n)`,`GB_fractional(n)` to format value in bytes as KBytes, MBytes or GBytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
 * `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like 
 "30 days, 5:18").
 * `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
@@ -434,6 +434,10 @@ Examples:
   - task: boot_time
     formatter: "{{x|uptime_str}}"
 
+  - task: disk_io_counters_rate
+    params: [ "write_bytes", "/dev/sda" ]
+    # emit number of written bytes/sec as MB/sec with 3 decimal digits:
+    formatter: "{{x|MB_fractional(3)}}"
 ```
 
 
