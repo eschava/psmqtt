@@ -270,7 +270,8 @@ Here follows the reference documentation for all required tasks and their parame
 #### <a name='CategoryNetwork'></a>Category Network
 
   * Task name: `net_io_counters`
-    * Short description: Network I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters )
+    * Short description: Network I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters ).
+      Please note that these are monotonically increasing counters. You may want to use the `net_io_counters_rate` task instead.
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `bytes_sent`, `bytes_recv`, `packets_sent`, `packets_recv`, etc (single-valued task).
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all network interface cards (NICs) or a NIC name like e.g. `eth0`, `wlan0`, `enp3s0f0`, etc to select a specific NIC (single-valued task).

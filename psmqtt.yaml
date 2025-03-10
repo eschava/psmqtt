@@ -74,45 +74,54 @@ options:
   exit_after_num_tasks: 0
 
 schedule:
-  # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
+  # Each scheduling rule is defined by a cron expression and a list of tasks to be executed;
   # the "cron" expression is a human-friendly expression, see https://github.com/kvh/recurrent/tree/master
   # for example of supported syntaxes
   - cron: "every 10 seconds"
     tasks:
-      # each task is defined by
+      # Each task is defined by
       # * "task": the name (see PSMQTT docs for full list of available task handlers);
       # * "params": optional task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
       # * "topic": optional MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
       # * "formatter": optional formatter expression, which is a Jinja2 expression
       # see "Usage docs" for more details
 
-      # # simple task requesting to publish virtual_memory percentage into a topic named "foobar"
-      # - task: virtual_memory
-      #   params: [ percent ]
-      #   topic: foobar
+      # Simple task requesting to publish virtual_memory percentage into a topic named "foobar"
+      - task: virtual_memory
+        params: [ percent ]
+        topic: foobar
 
-      # # task with 2 parameters, no formatter, no HA discovery message configuration:
-      # - task: sensors_temperatures
-      #   params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
+      # Task with 2 parameters, no formatter, no HomeAssistant discovery message configuration:
+      - task: sensors_temperatures
+        params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
         
-      # # task with 1 parameter, no formatter, HA discovery message configuration:
-      # - task: cpu_percent
-      #   params: [ total ]
-      #   ha_discovery:
-      #     name: "CPU Percentage"
-      #     platform: sensor
-      #     unit_of_measurement: "%"
-      #     icon: mdi:speedometer
+      # Task with 1 parameter, no formatter, HomeAssistant discovery message configuration:
+      - task: cpu_percent
+        params: [ total ]
+        ha_discovery:
+          name: "CPU Percentage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:speedometer
 
-      # # task with 1 parameter, no formatter, HA discovery message configuration:
-      # - task: virtual_memory
-      #   params: [ percent ]
-      #   ha_discovery:
-      #     name: "Memory Percentage"
-      #     platform: sensor
-      #     unit_of_measurement: "%"
-      #     icon: mdi:memory
-      
+      # Task with 1 parameter, no formatter, HomeAssistant discovery message configuration:
+      - task: virtual_memory
+        params: [ percent ]
+        ha_discovery:
+          name: "Memory Percentage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:memory
+  
+  # Another scheduling rule:
+  - cron: "every 5 seconds"
+    tasks:
+
+      # Example task having 2 parameters that select 1 specific output out of the many that the "disk_io_counters"
+      # psutil function normally produces; this task is thus single-valued and an HomeAssistant MQTT discovery 
+      # message is configured to ease the integration with HomeAssistant.
+      # Moreover this task has also a formatter attached that will convert the output value from Bytes/s to MB/s,
+      # as a floating point number with 2 decimal digits.
       - task: disk_io_counters_rate
         params: [ "read_bytes", "/dev/sda" ]
         formatter: "{{x|MB_fractional}}"
@@ -129,7 +138,6 @@ schedule:
           platform: sensor
           device_class: data_rate
           unit_of_measurement: "MB/s"
-
 
       - task: net_io_counters_rate
         params: [ "bytes_sent", "enp3s0" ]
