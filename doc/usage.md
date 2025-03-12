@@ -406,10 +406,9 @@ For multi-valued tasks (that use a wildcard `*`) all outputs are available:
 
 PSMQTT provides the following Jinja2 filters:
 
-* `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit.
-* `KB_fractional(n)`,`MB_fractional(n)`,`GB_fractional(n)` to format value in bytes as KBytes, MBytes or GBytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
-* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like 
-"30 days, 5:18").
+* `KB`,`MB`,`GB` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit.
+* `KB_fractional(n)`,`MB_fractional(n)`,`GB_fractional(n)` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
+* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like "30 days, 5:18").
 * `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
 * `iso8601_str`  to format Linux epochs (mostly the output of the `boot_time` task) as an [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp; this is particularly useful to create HomeAssistant sensors with a `timestamp` device class.
 
@@ -426,18 +425,24 @@ Examples:
     # emit free virtual memory in MB instead of bytes
     formatter: "{{x|MB}}"
 
+  - task: disk_io_counters_rate
+    params: [ "write_bytes", "/dev/sda" ]
+    # emit number of written bytes/sec on /dev/sda as MB/sec with 3 decimal digits:
+    formatter: "{{x|MB_fractional(3)}}"
+
+  - task: boot_time
+    # format a fixed point in time (the boot timestamp) as difference between now and that point in time,
+    # e.g. "30 days, 5:18"
+    formatter: "{{x|uptime_str}}"
+
+  - task: boot_time
+    # format a fixed point in time (the boot timestamp) using ISO8601 format, e.g. "20250312T094946Z"
+    formatter: "{{x|iso8601_str}}"
+
   - task: cpu_times_percent
     params: [ "user", "*" ]
     # emit total CPU time spend in user mode for the first and second logical cores only
     formatter: "{{x[0]+x[1]}}"
-
-  - task: boot_time
-    formatter: "{{x|uptime_str}}"
-
-  - task: disk_io_counters_rate
-    params: [ "write_bytes", "/dev/sda" ]
-    # emit number of written bytes/sec as MB/sec with 3 decimal digits:
-    formatter: "{{x|MB_fractional(3)}}"
 ```
 
 

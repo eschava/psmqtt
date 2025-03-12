@@ -59,6 +59,11 @@ class TestFormatter(unittest.TestCase):
                 "input": "{{a|MB_fractional(4)}}",
                 "expected_output": "1.2346",  # note there is rounding here 1.234567 -> 1.2346
             },
+            {
+                "input_value": 1234567,
+                "input": "{{a|KB_fractional(3)}}",
+                "expected_output": "1234.567",
+            },
         ]
 
         for t in tests:
