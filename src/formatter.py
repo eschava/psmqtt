@@ -96,20 +96,15 @@ class Formatter:
         self.jinja2_template_str = jinja2_template_str
         self.jinja2_template = Formatter.env.from_string(jinja2_template_str)
 
-    # @classmethod
-    # def get_format(cls, path:str) -> Tuple[str, Optional[str]]:
-    #     '''
-    #     Tuple would be a better choice for typing
-    #     '''
-    #     i = path.find("{{")
-    #     if i > 0:
-    #         i = path.rfind("/", 0, i)
-    #         if i > 0:
-    #             return (path[0:i], path[i+1:])
-    #     return (path, None)
-
     def format(self, value: Any) -> str:
+        '''
+        Format the provided value (either dictionary or sequence or scalar) according to the
+        template string provided at the constructor
+        '''
         return self.jinja2_template.render(value if isinstance(value, dict) else {"x": value})
 
     def get_template(self) -> str:
+        '''
+        Return the Jinja2 template string provided at the constructor
+        '''
         return self.jinja2_template_str

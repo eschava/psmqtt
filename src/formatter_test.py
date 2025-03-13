@@ -9,20 +9,8 @@ from .formatter import Formatter
 @pytest.mark.unit
 class TestFormatter(unittest.TestCase):
 
-    # def test_get_format(self) -> None:
-    #     f = Formatter.get_format("123/ddd/ddd{{sdd}}/444")
-    #     self.assertEqual("123/ddd", f[0])
-    #     self.assertEqual("ddd{{sdd}}/444", f[1])
-
-    #     f = Formatter.get_format("123/ddd/ddd{sdd}}/444")
-    #     self.assertEqual("123/ddd/ddd{sdd}}/444", f[0])
-    #     self.assertEqual(None, f[1])
-
-    #     f = Formatter.get_format("ddd{{sdd}}/444")
-    #     self.assertEqual("ddd{{sdd}}/444", f[0])
-    #     self.assertEqual(None, f[1])
-
     def test_generic_format(self) -> None:
+        # the format() function can take a dictionary, a single value or a sequence
         self.assertEqual("10", Formatter("{{a}}").format({"a": 10}))
         self.assertEqual("10", Formatter("{{x}}").format(10))
         self.assertEqual("3", Formatter("{{x[2]}}").format([1, 2, 3]))
