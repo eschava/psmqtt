@@ -42,7 +42,15 @@ class RateHandler(BaseHandler):
 
     @staticmethod
     def compute_rate_from_tuples(new_values: tuple, last_values: tuple, delta_time_seconds: float) -> dict:
-        return RateHandler.compute_rate_from_dicts(new_values._asdict(), last_values._asdict(), delta_time_seconds)
+        # compute the rate of change of the counters
+        result_list = []
+        min_len = min(len(new_values), len(last_values))
+        for idx in range(0,min_len):
+            # IMPORTANT: no checks are done on the result being negative... ideally this should never happen
+            #            unless psutil has some internal counter reset and its monotonically increasing counters
+            #            happen to decrease. This is not expected to happen in normal operation.
+            result_list.append(int((new_values[idx] - last_values[idx]) / delta_time_seconds))
+        return tuple(result_list)
 
     @staticmethod
     def produce_zeroes_with_same_type_of(type_to_return: Any) -> Any:
