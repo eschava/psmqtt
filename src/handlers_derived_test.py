@@ -96,3 +96,30 @@ class TestHandlers(unittest.TestCase):
         tuple_rate4 = handler.handle(['all','params','ignored'], fake_task_id)
         self.assertEqual(tuple_rate4[0], 0)
         self.assertEqual(tuple_rate4[1], 0)
+
+    def test_RateHandler_with_int(self) -> None:
+
+        handler = RateHandler("test", MonotonicTestHandler("test", "int"))
+        int_rate = handler.handle(['all','params','ignored'], fake_task_id)
+        assert isinstance(int_rate, int)
+
+        # even if the monotonic handler returns a tuple, the rate handler returns a tuple filled with ZEROS
+        self.assertEqual(int_rate, 0)
+
+        # if we invoke the RateHandler too quickly, we will get zeroes as rate:
+        int_rate2 = handler.handle(['all','params','ignored'], fake_task_id)
+        self.assertEqual(int_rate2, 0)
+
+        # now sleep enough time to get a rate > 0
+        time.sleep(RateHandler.MINIMAL_DELTA_TIME_SECONDS + 0.1)
+        int_rate3 = handler.handle(['all','params','ignored'], fake_task_id)
+
+        # afterwards we should get a rate > 0 for each value
+        # the exact rate value will be 1/elapsed_time_sec.. so to avoid making this unit test flaky,
+        # we just check that the rate is greater than zero
+        print(int_rate3)
+        self.assertGreater(int_rate3, 0)
+
+        # if we invoke the RateHandler too quickly, we will get zeroes as rate:
+        int_rate4 = handler.handle(['all','params','ignored'], fake_task_id)
+        self.assertEqual(int_rate4, 0)
