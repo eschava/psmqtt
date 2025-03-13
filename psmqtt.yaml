@@ -4,7 +4,7 @@
 #
 
 logging:
-  level: DEBUG
+  level: INFO
 
   # psmqtt will report its own status (e.g. number of errors) every N seconds on its log output
   # and on the specific '<mqtt.publish_topic_prefix>/status' topic
@@ -139,87 +139,87 @@ schedule:
           device_class: data_rate
           unit_of_measurement: "MB/s"
 
-  #     # Task showcasing the use of the "net_io_counters_rate" task handler
-  #     - task: net_io_counters_rate
-  #       params: [ "bytes_sent", "enp3s0" ]
-  #       formatter: "{{x|MB_fractional(2)}}"
-  #       ha_discovery:
-  #         name: "enp3s0 TX Bytes"
-  #         platform: sensor
-  #         device_class: data_rate
-  #         unit_of_measurement: "MB/s"
-  #     - task: net_io_counters_rate
-  #       params: [ "bytes_recv", "enp3s0" ]
-  #       formatter: "{{x|MB_fractional(2)}}"
-  #       ha_discovery:
-  #         name: "enp3s0 RX Bytes"
-  #         platform: sensor
-  #         device_class: data_rate
-  #         unit_of_measurement: "MB/s"
+      # Task showcasing the use of the "net_io_counters_rate" task handler
+      - task: net_io_counters_rate
+        params: [ "bytes_sent", "enp3s0" ]
+        formatter: "{{x|MB_fractional(2)}}"
+        ha_discovery:
+          name: "enp3s0 TX Bytes"
+          platform: sensor
+          device_class: data_rate
+          unit_of_measurement: "MB/s"
+      - task: net_io_counters_rate
+        params: [ "bytes_recv", "enp3s0" ]
+        formatter: "{{x|MB_fractional(2)}}"
+        ha_discovery:
+          name: "enp3s0 RX Bytes"
+          platform: sensor
+          device_class: data_rate
+          unit_of_measurement: "MB/s"
   
-  #     # A few tasks showcasing the use of the "smart" task handler:
-  #     - task: smart
-  #       params: [ "/dev/nvme0", temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
-  #       ha_discovery:
-  #         name: "NVMe0 Temperature"
-  #         platform: sensor
-  #         device_class: temperature
-  #         unit_of_measurement: "°C"
-  #         icon: mdi:thermometer
+      # A few tasks showcasing the use of the "smart" task handler:
+      - task: smart
+        params: [ "/dev/nvme0", temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
+        ha_discovery:
+          name: "NVMe0 Temperature"
+          platform: sensor
+          device_class: temperature
+          unit_of_measurement: "°C"
+          icon: mdi:thermometer
 
-  #     # Task requesting ALL available SMART attributes of a specific disk to be published as individual topics
-  #     - task: smart
-  #       params: [ "/dev/sda", "*" ]
-  #       topic: "/sda_smart_status/*"
-  #       # ha_discovery not supported for messages with wildcards 
+      # Task requesting ALL available SMART attributes of a specific disk to be published as individual topics
+      - task: smart
+        params: [ "/dev/sda", "*" ]
+        topic: "/sda_smart_status/*"
+        # ha_discovery not supported for messages with wildcards 
 
-  #     # Task requesting ALL available SMART attributes of a specific disk to be published as a single topic with JSON payload
-  #     - task: smart
-  #       params: [ "/dev/sda", "+" ]
-  #       topic: "/sda_smart_status"
-  #       # ha_discovery not supported for messages with wildcards 
+      # Task requesting ALL available SMART attributes of a specific disk to be published as a single topic with JSON payload
+      - task: smart
+        params: [ "/dev/sda", "+" ]
+        topic: "/sda_smart_status"
+        # ha_discovery not supported for messages with wildcards 
 
-  #     # Task requesting to publish the result of the last SMART test, complete with HomeAssistant discovery message configuration:
-  #     - task: smart
-  #       params: [ "/dev/sda", "test[0]" ]
-  #       formatter: "{{hours}}"
-  #       topic: "sda_info_last_test"
-  #       ha_discovery:
-  #         name: "SDA SMART Test"
-  #         platform: sensor
-  #         device_class: duration
-  #         unit_of_measurement: "h"
-  #         icon: mdi:clock
+      # Task requesting to publish the result of the last SMART test, complete with HomeAssistant discovery message configuration:
+      - task: smart
+        params: [ "/dev/sda", "test[0]" ]
+        formatter: "{{hours}}"
+        topic: "sda_info_last_test"
+        ha_discovery:
+          name: "SDA SMART Test"
+          platform: sensor
+          device_class: duration
+          unit_of_measurement: "h"
+          icon: mdi:clock
 
-  #     # Task requesting to publish the overall SMART status, complete with HomeAssistant discovery message configuration:
-  #     - task: smart
-  #       params: [ "/dev/sda", smart_status ]
-  #       ha_discovery:
-  #         name: "SDA SMART Status"
-  #         platform: binary_sensor
-  #         payload_on: FAIL  # the "on" condition indicates a problem, so associate it with the "FAIL" status of SMART test
-  #         payload_off: PASS
-  #         device_class: problem
-  #         icon: mdi:harddisk
+      # Task requesting to publish the overall SMART status, complete with HomeAssistant discovery message configuration:
+      - task: smart
+        params: [ "/dev/sda", smart_status ]
+        ha_discovery:
+          name: "SDA SMART Status"
+          platform: binary_sensor
+          payload_on: FAIL  # the "on" condition indicates a problem, so associate it with the "FAIL" status of SMART test
+          payload_off: PASS
+          device_class: problem
+          icon: mdi:harddisk
 
-  # - cron: "every 60 minutes"
-  #   tasks:
-  #     - task: disk_usage
-  #       params: [ percent, "/" ]
-  #       ha_discovery:
-  #         name: "Root Disk Usage"
-  #         platform: sensor
-  #         unit_of_measurement: "%"
-  #         icon: mdi:harddisk
+  - cron: "every 60 minutes"
+    tasks:
+      - task: disk_usage
+        params: [ percent, "/" ]
+        ha_discovery:
+          name: "Root Disk Usage"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:harddisk
 
-  # - cron: "every 3 hours"
-  #   tasks:
-  #     # Task with a Jinja2 formatter; single or double-quoting is necessary
-  #     - task: boot_time
-  #       formatter: "{{x|iso8601_str}}"
-  #       ha_discovery:
-  #         name: "Uptime"
-  #         platform: sensor
-  #         device_class: timestamp
-  #         icon: mdi:calendar
-  #         value_template: "{{ as_datetime(value) }}"
+  - cron: "every 3 hours"
+    tasks:
+      # Task with a Jinja2 formatter; single or double-quoting is necessary
+      - task: boot_time
+        formatter: "{{x|iso8601_str}}"
+        ha_discovery:
+          name: "Uptime"
+          platform: sensor
+          device_class: timestamp
+          icon: mdi:calendar
+          value_template: "{{ as_datetime(value) }}"
