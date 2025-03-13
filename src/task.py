@@ -13,9 +13,9 @@ from .topic import Topic
 from .mqtt_client import MqttClient
 from .formatter import Formatter
 
-from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler, NameOrTotalTupleCommandHandler
+from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler
 from .handlers_psutil_processes import ProcessesCommandHandler
-from .handlers_psutil import DiskUsageCommandHandler, SensorsFansCommandHandler, DiskCountersIOCommandHandler, SensorsTemperaturesCommandHandler
+from .handlers_psutil import DiskIOCountersCommandHandler, DiskIOCountersRateHandler, DiskUsageCommandHandler, NetIOCountersCommandHandler, NetIOCountersRateHandler, SensorsFansCommandHandler, SensorsTemperaturesCommandHandler
 from .handlers_pysmart import SmartCommandHandler
 
 class Task:
@@ -69,18 +69,14 @@ class Task:
 
         'disk_partitions': IndexTupleCommandHandler('disk_partitions'),
         'disk_usage': DiskUsageCommandHandler(),
-        'disk_io_counters': DiskCountersIOCommandHandler(),
+        'disk_io_counters': DiskIOCountersCommandHandler(),
+        'disk_io_counters_rate': DiskIOCountersRateHandler(),
         'smart': SmartCommandHandler(),
 
         # NETWORK
 
-        'net_io_counters': type(
-            "NetIOCountersCommandHandler",
-            (NameOrTotalTupleCommandHandler, object),
-            {
-                "get_value": lambda self, total:
-                    psutil.net_io_counters(pernic=not total)
-            })('net_io_counters'),
+        'net_io_counters': NetIOCountersCommandHandler(),
+        'net_io_counters_rate': NetIOCountersRateHandler(),
 
         # PROCESSES
 
@@ -102,7 +98,7 @@ class Task:
             name:str,
             params:List[str],
             mqtt_topic:str,
-            formatter:str,
+            formatter_str:str,
             ha_discovery:Dict[str,Any],
             mqtt_topic_prefix:str,
             parent_schedule_rule_idx:int,
@@ -110,7 +106,7 @@ class Task:
         self.task_name = name
         self.params = params
         self.topic_name = mqtt_topic
-        self.formatter = formatter  # FIXME: logically we should build an instance of a Formatter class here
+        self.formatter = Formatter(formatter_str) if formatter_str is not None and formatter_str != '' else None
         self.ha_discovery = ha_discovery
 
         self.parent_schedule_rule_idx = parent_schedule_rule_idx
@@ -227,12 +223,14 @@ class Task:
         # if we get here, the sensor reading was successful
         if logging.getLogger().isEnabledFor(logging.DEBUG):
             is_seq = isinstance(value, list) or isinstance(value, dict)
-            desc = f"multiple results ({len(value)})" if is_seq else "single result"
-            logging.debug(f"Task.get_payload({self.task_friendly_name}) produced {desc}:\n{value}")
+            if is_seq:
+                logging.debug(f"Task.get_payload({self.task_friendly_name}) produced multi-valued output:\n{value}")
+            else:
+                logging.debug(f"Task.get_payload({self.task_friendly_name}) produced single-valued output: {value}")
 
-        if self.formatter is not None and self.formatter != '':
-            value = Formatter.format(self.formatter, value)
-            logging.debug(f"Task.get_payload({self.task_friendly_name}) after formatting with {self.formatter} => {value}")
+        if self.formatter is not None:
+            value = self.formatter.format(value)
+            logging.debug(f"Task.get_payload({self.task_friendly_name}) after formatting with {self.formatter.get_template()} => {value}")
 
         # the value must be one of the types declared inside "Payload"
         assert isinstance(value, str) or isinstance(value, int) or isinstance(value, float) or isinstance(value, list) or isinstance(value, dict) or isinstance(value, tuple)

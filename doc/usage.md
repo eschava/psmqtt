@@ -242,11 +242,16 @@ Here follows the reference documentation for all required tasks and their parame
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `total`, `used`, `free`, `percent` (single-valued task).
     * **REQUIRED**: `<param2>`: The path where disk usage must be measured, e.g. `/`, `/var` or `/home/<username>`.
   * Task name: `disk_io_counters`
-    * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters )
+    * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters ).
+      Please note that these are monotonically increasing counters. You may want to use the `disk_io_counters_rate` task instead.
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `read_count`, `write_count`, `read_bytes`, `write_bytes`, `read_time`, `write_time`, etc (single-valued task).
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all partitions/disks (multi-valued task) or the name of a specific drive e.g. `/dev/md0` or `/dev/sda` to select just that partition/disk. If not provided, then the total disk I/O counters (e.g. total bytes read from all the partitions/disks) are produced in output, according to the field(s) selected with `<param1>`.
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+  * Task name: `disk_io_counters_rate`
+    * Short description: disk I/O bandwidth, measured as rate of change of [disk I/O counters]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters ).
+    * **REQUIRED**: `<param1>`: See the description for the `<param1>` of the `disk_io_counters` task.
+    * **OPTIONAL**: `<param2>`: See the description for the `<param2>` of the `disk_io_counters` task.
   * Task name: `smart`
     * Short description: Self-Monitoring, Analysis and Reporting Technology System (SMART) counters built into most modern ATA/SATA, SCSI/SAS and NVMe disks. [ Full reference ]( https://www.smartmontools.org/wiki/TocDoc )
     * **REQUIRED**: `<param1>`: The name of a specific drive e.g. `/dev/md0` or `/dev/sda`.
@@ -265,11 +270,16 @@ Here follows the reference documentation for all required tasks and their parame
 #### <a name='CategoryNetwork'></a>Category Network
 
   * Task name: `net_io_counters`
-    * Short description: Network I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters )
+    * Short description: Network I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters ).
+      Please note that these are monotonically increasing counters. You may want to use the `net_io_counters_rate` task instead.
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all fields (multi-valued task) or a field name like `bytes_sent`, `bytes_recv`, `packets_sent`, `packets_recv`, etc (single-valued task).
       Check full reference for all available fields
     * **OPTIONAL**: `<param2>`: The wildcard `*` or `+` to select all network interface cards (NICs) or a NIC name like e.g. `eth0`, `wlan0`, `enp3s0f0`, etc to select a specific NIC (single-valued task).
       Note that you cannot use a wildcard as `<param2>` together with a wildcard on `<param1>`.
+  * Task name: `net_io_counters_rate`
+    * Short description: network I/O bandwidth, measured as rate of change of [network I/O counters]( https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters ).
+    * **REQUIRED**: `<param1>`: See the description for the `<param1>` of the `net_io_counters` task.
+    * **OPTIONAL**: `<param2>`: See the description for the `<param2>` of the `net_io_counters` task.
 
 #### <a name='CategoryTemperature'></a>Category Temperature
 
@@ -389,17 +399,16 @@ schedule:
 
 configures PSMQTT to append the `%` symbol after CPU usage.
 
-For multi-valued tasks (that use a wildcard `*`) all outputs are
-available:
+For multi-valued tasks (that use a wildcard `*`) all outputs are available:
 * by name if they are named.
 * as `x` if they are unnamed.
 * as `x[1]`, `x[2]`, etc if they are numbered. 
 
-PSMQTT provides some Jinja2 filters:
+PSMQTT provides the following Jinja2 filters:
 
-* `KB`,`MB`,`GB` to format value in bytes as KBytes, MBytes or GBytes.
-* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like 
-"30 days, 5:18").
+* `KB`,`MB`,`GB` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit.
+* `KB_fractional(n)`,`MB_fractional(n)`,`GB_fractional(n)` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
+* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like "30 days, 5:18").
 * `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
 * `iso8601_str`  to format Linux epochs (mostly the output of the `boot_time` task) as an [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp; this is particularly useful to create HomeAssistant sensors with a `timestamp` device class.
 
@@ -416,14 +425,24 @@ Examples:
     # emit free virtual memory in MB instead of bytes
     formatter: "{{x|MB}}"
 
+  - task: disk_io_counters_rate
+    params: [ "write_bytes", "/dev/sda" ]
+    # emit number of written bytes/sec on /dev/sda as MB/sec with 3 decimal digits:
+    formatter: "{{x|MB_fractional(3)}}"
+
+  - task: boot_time
+    # format a fixed point in time (the boot timestamp) as difference between now and that point in time,
+    # e.g. "30 days, 5:18"
+    formatter: "{{x|uptime_str}}"
+
+  - task: boot_time
+    # format a fixed point in time (the boot timestamp) using ISO8601 format, e.g. "20250312T094946Z"
+    formatter: "{{x|iso8601_str}}"
+
   - task: cpu_times_percent
     params: [ "user", "*" ]
     # emit total CPU time spend in user mode for the first and second logical cores only
     formatter: "{{x[0]+x[1]}}"
-
-  - task: boot_time
-    formatter: "{{x|uptime_str}}"
-
 ```
 
 

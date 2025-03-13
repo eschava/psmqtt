@@ -74,28 +74,28 @@ options:
   exit_after_num_tasks: 0
 
 schedule:
-  # each scheduling rule is defined by a cron expression and a list of tasks to be executed;
+  # Each scheduling rule is defined by a cron expression and a list of tasks to be executed;
   # the "cron" expression is a human-friendly expression, see https://github.com/kvh/recurrent/tree/master
   # for example of supported syntaxes
   - cron: "every 10 seconds"
     tasks:
-      # each task is defined by
+      # Each task is defined by
       # * "task": the name (see PSMQTT docs for full list of available task handlers);
       # * "params": optional task parameters (e.g. percentage or absolute value, the name of an hard drive or the index of a CPU, etc);
       # * "topic": optional MQTT topic name; if this is not provided, the task name and all its parameters will be used as MQTT topic;
       # * "formatter": optional formatter expression, which is a Jinja2 expression
       # see "Usage docs" for more details
 
-      # simple task requesting to publish virtual_memory percentage into a topic named "foobar"
+      # Simple task requesting to publish virtual_memory percentage into a topic named "foobar"
       - task: virtual_memory
         params: [ percent ]
         topic: foobar
 
-      # task with 2 parameters, no formatter, no HA discovery message configuration:
+      # Task with 2 parameters, no formatter, no HomeAssistant discovery message configuration:
       - task: sensors_temperatures
         params: [ coretemp, 0 ] # use "coretemp" sensor for CPU core 0
         
-      # task with 1 parameter, no formatter, HA discovery message configuration:
+      # Task with 1 parameter, no formatter, HomeAssistant discovery message configuration:
       - task: cpu_percent
         params: [ total ]
         ha_discovery:
@@ -104,7 +104,7 @@ schedule:
           unit_of_measurement: "%"
           icon: mdi:speedometer
 
-      # task with 1 parameter, no formatter, HA discovery message configuration:
+      # Task with 1 parameter, no formatter, HomeAssistant discovery message configuration:
       - task: virtual_memory
         params: [ percent ]
         ha_discovery:
@@ -112,15 +112,52 @@ schedule:
           platform: sensor
           unit_of_measurement: "%"
           icon: mdi:memory
-      - task: disk_io_counters
+  
+  # Another scheduling rule:
+  - cron: "every 15 seconds"
+    tasks:
+
+      # Example task having 2 parameters that select 1 specific output out of the many that the "disk_io_counters"
+      # psutil function normally produces; this task is thus single-valued and an HomeAssistant MQTT discovery 
+      # message is configured to ease the integration with HomeAssistant.
+      # Moreover this task has also a formatter attached that will convert the output value from Bytes/s to MB/s,
+      # as a floating point number with 2 decimal digits.
+      - task: disk_io_counters_rate
         params: [ "read_bytes", "/dev/sda" ]
+        formatter: "{{x|MB_fractional(2)}}"
         ha_discovery:
           name: "SDA Read Bytes"
           platform: sensor
-          device_class: data_size
-          unit_of_measurement: "B"
+          device_class: data_rate
+          unit_of_measurement: "MB/s"
+      - task: disk_io_counters_rate
+        params: [ "write_bytes", "/dev/sda" ]
+        formatter: "{{x|MB_fractional(2)}}"
+        ha_discovery:
+          name: "SDA Write Bytes"
+          platform: sensor
+          device_class: data_rate
+          unit_of_measurement: "MB/s"
 
-      # task with 2 parameters, no formatter, HA discovery message configuration:
+      # Task showcasing the use of the "net_io_counters_rate" task handler
+      - task: net_io_counters_rate
+        params: [ "bytes_sent", "enp3s0" ]
+        formatter: "{{x|MB_fractional(2)}}"
+        ha_discovery:
+          name: "enp3s0 TX Bytes"
+          platform: sensor
+          device_class: data_rate
+          unit_of_measurement: "MB/s"
+      - task: net_io_counters_rate
+        params: [ "bytes_recv", "enp3s0" ]
+        formatter: "{{x|MB_fractional(2)}}"
+        ha_discovery:
+          name: "enp3s0 RX Bytes"
+          platform: sensor
+          device_class: data_rate
+          unit_of_measurement: "MB/s"
+  
+      # A few tasks showcasing the use of the "smart" task handler:
       - task: smart
         params: [ "/dev/nvme0", temperature ] # report only the "temperature" SMART attribute of "/dev/nvme0"
         ha_discovery:
@@ -130,19 +167,19 @@ schedule:
           unit_of_measurement: "°C"
           icon: mdi:thermometer
 
-      # task requesting ALL available SMART attributes of a specific disk to be published as individual topics
+      # Task requesting ALL available SMART attributes of a specific disk to be published as individual topics
       - task: smart
         params: [ "/dev/sda", "*" ]
         topic: "/sda_smart_status/*"
         # ha_discovery not supported for messages with wildcards 
 
-      # task requesting ALL available SMART attributes of a specific disk to be published as a single topic with JSON payload
+      # Task requesting ALL available SMART attributes of a specific disk to be published as a single topic with JSON payload
       - task: smart
         params: [ "/dev/sda", "+" ]
         topic: "/sda_smart_status"
         # ha_discovery not supported for messages with wildcards 
 
-      # task requesting to publish the result of the last SMART test, complete with HA discovery message configuration:
+      # Task requesting to publish the result of the last SMART test, complete with HomeAssistant discovery message configuration:
       - task: smart
         params: [ "/dev/sda", "test[0]" ]
         formatter: "{{hours}}"
@@ -154,7 +191,7 @@ schedule:
           unit_of_measurement: "h"
           icon: mdi:clock
 
-      # task requesting to publish the overall SMART status, complete with HA discovery message configuration:
+      # Task requesting to publish the overall SMART status, complete with HomeAssistant discovery message configuration:
       - task: smart
         params: [ "/dev/sda", smart_status ]
         ha_discovery:
@@ -174,10 +211,10 @@ schedule:
           platform: sensor
           unit_of_measurement: "%"
           icon: mdi:harddisk
-    
+
   - cron: "every 3 hours"
     tasks:
-      # task with a Jinja2 formatter; single or double-quoting is necessary
+      # Task with a Jinja2 formatter; single or double-quoting is necessary
       - task: boot_time
         formatter: "{{x|iso8601_str}}"
         ha_discovery:

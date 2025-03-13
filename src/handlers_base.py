@@ -56,6 +56,16 @@ class BaseHandler:
         The 'caller_task_id' is a string that identifies the task that is invoking this handler.
         This is useful only to stateful handlers, which need to store a state that is different
         from task to task.
+
+        The return value of this function is a "Payload" type, which is a generic type that can be
+        1. single-valued types: str, float, int
+        2. multi-valued types:
+           * list: in this case every list item will be published in a different MQTT subtopic,
+                   obtained using the list item index as last MQTT topic separator
+           * dict: in this case every (key,value) pair will be published in a different MQTT subtopic
+                   using the "key" as last MQTT topic separator
+           * namedtuple: in this case every (field,value) pair will be published in a different MQTT subtopic
+                   using the "field" as last MQTT topic separator
         '''
         assert isinstance(params, list)
         raise Exception("Not implemented")
@@ -377,7 +387,7 @@ class IndexOrTotalTupleCommandHandler(MethodCommandHandler):
 class NameOrTotalTupleCommandHandler(MethodCommandHandler):
     '''
     IndexOrTotalTupleCommandHandler handles psutil functions that return a named tuple
-    or a dictionary of named tuples.
+    or a dictionary of named tuples, like psutil.net_io_counters().
     '''
 
     def handle(self, params: list[str], caller_task_id: str) -> Payload:

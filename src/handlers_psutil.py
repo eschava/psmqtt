@@ -6,13 +6,13 @@ from typing import (
     NamedTuple,
 )
 
-from .handlers_base import MethodCommandHandler, Payload
+from .handlers_base import MethodCommandHandler, NameOrTotalTupleCommandHandler, Payload, TaskParam
+from .handlers_derived import RateHandler
 from .utils import string_from_dict_optionally
-from .handlers_base import TaskParam
 
-class DiskCountersIOCommandHandler(MethodCommandHandler):
+class DiskIOCountersCommandHandler(MethodCommandHandler):
     '''
-    DiskCountersIOCommandHandler handles the output of psutil.disk_io_counters()
+    DiskIOCountersCommandHandler handles the output of psutil.disk_io_counters()
     https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
     '''
     def __init__(self):
@@ -84,6 +84,16 @@ class DiskCountersIOCommandHandler(MethodCommandHandler):
             raise Exception(f"{self.name}: Disk '{disk}' is not valid. Available disks: {avail_disks}")
 
 
+class DiskIOCountersRateHandler(RateHandler):
+    '''
+    DiskIOCountersRateHandler computes the rate of change of the disk I/O counters.
+    This is often more useful than the monotonically-increasing raw disk I/O counters.
+    '''
+
+    def __init__(self) -> None:
+        super().__init__('disk_io_counters_rate', DiskIOCountersCommandHandler())
+        return
+
 class DiskUsageCommandHandler(MethodCommandHandler):
     '''
     DiskUsageCommandHandler handles the output of psutil.disk_usage()
@@ -117,6 +127,30 @@ class DiskUsageCommandHandler(MethodCommandHandler):
     # noinspection PyMethodMayBeStatic
     def get_value(self, disk:str) -> NamedTuple:
         return psutil.disk_usage(disk)
+
+
+class NetIOCountersCommandHandler(NameOrTotalTupleCommandHandler):
+    '''
+    NetIOCountersCommandHandler handles the output of psutil.net_io_counters()
+    '''
+
+    def __init__(self) -> None:
+        super().__init__('net_io_counters')
+        return
+
+    def get_value(self, total:bool) -> Payload:
+        return psutil.net_io_counters(pernic=not total)
+
+
+class NetIOCountersRateHandler(RateHandler):
+    '''
+    NetIOCountersRateHandler computes the rate of change of the network I/O counters.
+    This is often more useful than the monotonically-increasing raw network I/O counters.
+    '''
+
+    def __init__(self) -> None:
+        super().__init__('net_io_counters_rate', NetIOCountersCommandHandler())
+        return
 
 
 class SensorsTemperaturesCommandHandler(MethodCommandHandler):
