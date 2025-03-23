@@ -124,8 +124,8 @@ jobs:
           multiPlatform: true
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
-          tags: ${{ steps.meta.outputs.version }}
-          addLatest: true
+          tags: ${{ steps.meta.outputs.version }},latest
+          addLatest: false
           # options related to PUSHing the docker image:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -160,3 +160,4 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
+          pushImage: true
