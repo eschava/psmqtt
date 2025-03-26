@@ -60,6 +60,8 @@ class Task:
 
         'cpu_stats': TupleCommandHandler('cpu_stats'),
 
+        'getloadavg': GetLoadAvgCommandHandler(),
+
         # MEMORY
 
         'virtual_memory': TupleCommandHandler('virtual_memory'),
@@ -84,7 +86,6 @@ class Task:
 
         # OTHERS
 
-        'getloadavg': GetLoadAvgCommandHandler(),
         'users': IndexTupleCommandHandler('users'),
         'boot_time': ValueCommandHandler('boot_time'),
         'pids': IndexCommandHandler('pids'),
