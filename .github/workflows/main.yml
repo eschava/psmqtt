@@ -98,6 +98,8 @@ jobs:
           multiPlatform: true
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
+          tags: ${{ steps.meta.outputs.version }}
+          addLatest: false
           # options related to PUSHing the docker image:
           registry: ghcr.io
           pushImage: false
@@ -113,8 +115,21 @@ jobs:
       - name: Metadata extraction
         id: meta
         uses: docker/metadata-action@v5
+      - name: Decorate docker image version
+        id: docker_version
+        run: |
+          ver=${{ steps.meta.outputs.version }}
+          # Add the 'latest' tag only to tag builds
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=$ver,latest" >> $GITHUB_OUTPUT
+          else
+            #if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            #  echo "version=$ver,latest" >> $GITHUB_OUTPUT
+            #fi
+            echo "version=$ver" >> $GITHUB_OUTPUT
+          fi
       - run: |
-          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}"
+          echo "Docker image will be versioned as: ${{ steps.docker_version.outputs.version }}"
 
       - name: Build and push Docker image [non-root]
         uses: mr-smithers-excellent/docker-build-push@v6
@@ -124,7 +139,7 @@ jobs:
           multiPlatform: true
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
-          tags: ${{ steps.meta.outputs.version }},latest
+          tags: ${{ steps.docker_version.outputs.version }}
           addLatest: false
           # options related to PUSHing the docker image:
           registry: ghcr.io
@@ -142,8 +157,21 @@ jobs:
       - name: Metadata extraction
         id: meta
         uses: docker/metadata-action@v5
+      - name: Decorate docker image version
+        id: docker_version
+        run: |
+          ver=${{ steps.meta.outputs.version }}
+          # Add the 'latest' tag only to tag builds
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=${ver}-root,latest-root" >> $GITHUB_OUTPUT
+          else
+            #if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            #  echo "version=$ver,latest" >> $GITHUB_OUTPUT
+            #fi
+            echo "version=${ver}-root" >> $GITHUB_OUTPUT
+          fi
       - run: |
-          echo "Docker image will be versioned as: ${{ steps.meta.outputs.version }}-root"
+          echo "Docker image will be versioned as: ${{ steps.docker_version.outputs.version }}"
 
       - name: Build and push Docker image [root]
         uses: mr-smithers-excellent/docker-build-push@v6
@@ -154,10 +182,11 @@ jobs:
           platform: linux/amd64,linux/arm64,linux/arm/v7
           image: psmqtt
           buildArgs: USERNAME=root
-          tags: ${{ steps.meta.outputs.version }}-root,latest-root
+          tags: ${{ steps.docker_version.outputs.version }}
           addLatest: false
           # options related to PUSHing the docker image:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
           pushImage: true
+
