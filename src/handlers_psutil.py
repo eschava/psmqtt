@@ -249,3 +249,47 @@ class SensorsFansCommandHandler(MethodCommandHandler):
                 else:
                     return temps._asdict()[param]
         raise Exception(f"{self.name}: Fan '{source}' is not supported")
+
+class GetLoadAvgCommandHandler(MethodCommandHandler):
+    '''
+    GetLoadAvgCommandHandler handles the output of psutil.getloadavg()
+    '''
+    def __init__(self) -> None:
+        super().__init__('getloadavg')
+        return
+
+    def handle(self, params:list[str], caller_task_id: str) -> Payload:
+        assert isinstance(params, list)
+
+        if len(params) != 1 and len(params) != 2:
+            raise Exception(f"{self.name}: Exactly 1 or 2 parameters are required; found {len(params)} parameters instead: {params}")
+
+        field = params[0]
+        percent_or_abs = params[1] if len(params) == 2 else 'percent'
+
+        avgload = self.get_value()
+        assert isinstance(avgload, tuple)
+
+        if percent_or_abs == 'percent':
+            avgload = [x / psutil.cpu_count() * 100 for x in avgload]
+        elif percent_or_abs == 'abs' or percent_or_abs == 'absolute':
+            pass
+        else:
+            raise Exception(f"{self.name}: Invalid parameter '{percent_or_abs}': either 'percent' or 'abs' is expected")
+
+        if TaskParam.is_wildcard(field):
+            loadavg_dict = {
+                'last1min': avgload[0],
+                'last5min': avgload[1],
+                'last15min': avgload[2],
+            }
+            return string_from_dict_optionally(loadavg_dict, TaskParam.is_join_wildcard(field))
+
+        if field == 'last1min':
+            return avgload[0]
+        elif field == 'last5min':
+            return avgload[1]
+        elif field == 'last15min':
+            return avgload[2]
+
+        raise Exception(f"{self.name}: Field '{field}' is not supported: expected 'last1min', 'last5min' or 'last15min'")

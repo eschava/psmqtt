@@ -15,7 +15,7 @@ from .formatter import Formatter
 
 from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, IndexCommandHandler, IndexOrTotalCommandHandler, IndexTupleCommandHandler, IndexOrTotalTupleCommandHandler
 from .handlers_psutil_processes import ProcessesCommandHandler
-from .handlers_psutil import DiskIOCountersCommandHandler, DiskIOCountersRateHandler, DiskUsageCommandHandler, NetIOCountersCommandHandler, NetIOCountersRateHandler, SensorsFansCommandHandler, SensorsTemperaturesCommandHandler
+from .handlers_psutil import DiskIOCountersCommandHandler, DiskIOCountersRateHandler, DiskUsageCommandHandler, NetIOCountersCommandHandler, NetIOCountersRateHandler, SensorsFansCommandHandler, SensorsTemperaturesCommandHandler, GetLoadAvgCommandHandler
 from .handlers_pysmart import SmartCommandHandler
 
 class Task:
@@ -60,6 +60,8 @@ class Task:
 
         'cpu_stats': TupleCommandHandler('cpu_stats'),
 
+        'getloadavg': GetLoadAvgCommandHandler(),
+
         # MEMORY
 
         'virtual_memory': TupleCommandHandler('virtual_memory'),
@@ -83,6 +85,7 @@ class Task:
         'processes': ProcessesCommandHandler(),
 
         # OTHERS
+
         'users': IndexTupleCommandHandler('users'),
         'boot_time': ValueCommandHandler('boot_time'),
         'pids': IndexCommandHandler('pids'),

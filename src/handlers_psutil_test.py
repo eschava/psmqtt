@@ -11,7 +11,8 @@ import pytest
 from .handlers_psutil import (
     DiskUsageCommandHandler,
     SensorsTemperaturesCommandHandler,
-    SensorsFansCommandHandler
+    SensorsFansCommandHandler,
+    GetLoadAvgCommandHandler
 )
 
 fake_task_id = "0.0"
@@ -101,3 +102,32 @@ class TestHandlers(unittest.TestCase):
             for t in v:
                 self.assertIsInstance(t, tuple)
         return
+
+    def test_GetLoadAvgCommandHandler(self) -> None:
+        handler = type("TestHandler", (GetLoadAvgCommandHandler, object),
+                       {"get_value": lambda s: (2.5, 0.3, 0.1)})()
+        val = handler.get_value()
+        self.assertIsInstance(val, tuple)
+        self.assertEqual(val, (2.5, 0.3, 0.1))
+
+        num_cpu_cores = psutil.cpu_count()
+
+        def abs2percent(abs_load_value) -> float:
+            return 100 * abs_load_value / num_cpu_cores
+
+        # normal execution: read pseudo-field "last1min"
+        self.assertEqual(2.5, handler.handle(['last1min', 'abs'], fake_task_id))
+        self.assertEqual(abs2percent(2.5), handler.handle(['last1min', 'percent'], fake_task_id))
+
+        # normal execution: read pseudo-field "last5min"
+        self.assertEqual(0.3, handler.handle(['last5min', 'abs'], fake_task_id))
+        self.assertEqual(abs2percent(0.3), handler.handle(['last5min', 'percent'], fake_task_id))
+
+        # normal execution: read pseudo-field "last15min"
+        self.assertEqual(0.1, handler.handle(['last15min', 'abs'], fake_task_id))
+        self.assertEqual(abs2percent(0.1), handler.handle(['last15min', 'percent'], fake_task_id))
+
+        # exceptions
+        self.assertRaises(Exception, handler.handle, ['whatever'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['last1min', 'wrongParam'], fake_task_id)
+        self.assertRaises(Exception, handler.handle, ['last1min', 'percent', 'tooManyParams'], fake_task_id)

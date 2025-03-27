@@ -4,7 +4,7 @@
 #
 
 logging:
-  level: INFO
+  level: DEBUG
 
   # psmqtt will report its own status (e.g. number of errors) every N seconds on its log output
   # and on the specific '<mqtt.publish_topic_prefix>/status' topic
@@ -201,6 +201,16 @@ schedule:
           payload_off: PASS
           device_class: problem
           icon: mdi:harddisk
+
+  - cron: "every 1 minutes"
+    tasks:
+      - task: getloadavg
+        params: [ "last5min", "percent" ]
+        ha_discovery:
+          name: "Average System Load"
+          platform: sensor
+          unit_of_measurement: "%"
+          icon: mdi:speedometer
 
   - cron: "every 60 minutes"
     tasks:
