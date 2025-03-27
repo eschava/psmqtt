@@ -221,7 +221,8 @@ Here follows the reference documentation for all required tasks and their parame
   * Task name: `getloadavg`
     * Short description: Average system load in last 1, 5 and 15 minutes. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.getloadavg )
     * **REQUIRED**: `<param1>`: The wildcard `*`  or `+` to select all 3 available values (`last1min`, `last5min`, `last15min`) or a field name like `last1min`, `last5min`, `last15min` (single-valued task).
-    * **OPTIONAL**: `<param2>`: The string `percent` to produce the system CPU load as a percentage (where 100% indicates full utilization of all available CPU cores) or `absolute` to produce in output the plain system load number returned by psutil, which only make sense if related to the number of CPU cores installed on the system. 
+    * **OPTIONAL**: `<param2>`: The string `percent` to produce the system CPU load as a percentage (where 100% indicates full utilization of all available CPU cores) or `absolute` to produce in output the plain system load number returned by psutil, which only make sense if related to the number of CPU cores installed on the system.
+    The default value is `percent`.
 
 #### <a name='CategoryMemory'></a>Category Memory
 
