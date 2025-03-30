@@ -206,6 +206,7 @@ schedule:
     tasks:
       - task: getloadavg
         params: [ "last5min", "percent" ]
+        formatter: "{{'%0.2f'|format(x)}}"
         ha_discovery:
           name: "Average System Load"
           platform: sensor
