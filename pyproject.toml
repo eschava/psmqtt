@@ -1,0 +1,47 @@
+[project]
+name = "psmqtt"
+version = "2.4.0"
+authors = [
+  { name="Eugene Schava", email="eschava@nospam@gmail.com" },
+  { name="Francesco Montorsi", email="francesco.montorsi@nospam@gmail.com" },
+]
+description = "Utility reporting system health and status via MQTT"
+readme = "README.rst"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "graphviz>=0.19.1",
+  "recurrent==0.4.1",
+  "paho-mqtt==2.1.0",
+  "python-dateutil==2.9.0.post0",
+  "psutil==7.0.0",
+  "jinja2==3.1.6",
+  "types-paho-mqtt==1.6.0.20240321",
+  # pySMART>=1.3.1.dev8 is required, see https://github.com/truenas/py-SMART/issues/86
+  "pySMART==1.4.1",
+  # testcontainers>=4.6.0 is required, since 4.6.0 introduced MosquittoContainer
+  "testcontainers==4.9.2",
+  "pyyaml==6.0.2",
+  "yamale==6.0.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/eschava/psmqtt"
+"Bug Tracker" = "https://github.com/eschava/psmqtt/issues"
+
+[project.scripts]
+psmqtt = "psmqtt"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "src/*.py",
+  "psmqtt.py"
+]
