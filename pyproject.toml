@@ -2,8 +2,8 @@
 name = "psmqtt"
 version = "2.4.0"
 authors = [
-  { name="Eugene Schava", email="eschava@nospam@gmail.com" },
-  { name="Francesco Montorsi", email="francesco.montorsi@nospam@gmail.com" },
+  { name="Eugene Schava", email="eschava.nospam@gmail.com" },
+  { name="Francesco Montorsi", email="francesco.montorsi.nospam@gmail.com" },
 ]
 description = "Utility reporting system health and status via MQTT"
 readme = "README.rst"
