@@ -21,11 +21,11 @@ import sys
 import platform
 import time
 
-from src.config import Config
-from src.mqtt_client import MqttClient
-from src.task import Task
-from src.schedule import Schedule
-from src.utils import get_mac_address
+from .config import Config
+from .mqtt_client import MqttClient
+from .task import Task
+from .schedule import Schedule
+from .utils import get_mac_address
 
 class PsmqttApp:
 
@@ -110,17 +110,20 @@ class PsmqttApp:
         Reads the content of a version file.
         '''
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        version_file_path = os.path.join(current_dir, filename)
-        try:
-            # Open the version file and read its content
-            with open(version_file_path, 'r') as f:
-                version_content = f.read()
-                return version_content
+        from _psmqtt_version import version as __version__
+        return __version__
 
-        except FileNotFoundError:
-            logging.error(f"Version file '{filename}' not found in the current directory.")
-            return "N/A"
+        # current_dir = os.path.dirname(os.path.abspath(__file__))
+        # version_file_path = os.path.join(current_dir, filename)
+        # try:
+        #     # Open the version file and read its content
+        #     with open(version_file_path, 'r') as f:
+        #         version_content = f.read()
+        #         return version_content
+
+        # except FileNotFoundError:
+        #     logging.error(f"Version file '{filename}' not found in the current directory.")
+        #     return "N/A"
 
     def publish_ha_discovery_messages(self) -> int:
         '''
@@ -190,7 +193,7 @@ class PsmqttApp:
 
         # CLI interface
         parser = argparse.ArgumentParser(
-            prog=os.path.basename(__file__),
+            prog="psmqtt",
             description='Publish psutil/pySMART counters to an MQTT broker according to scheduling rules',
             epilog='See documentation at https://github.com/eschava/psmqtt for configuration examples. All the configuration options are read from the psmqtt.yaml file or the path pointed by the \'PSMQTTCONFIG\' environment variable.')
         parser.add_argument(
@@ -206,7 +209,7 @@ class PsmqttApp:
         args = parser.parse_args()
         if args.version:
             print(f"Version: {PsmqttApp.read_version_file()}")
-            return 0
+            return -1
 
         # fix for error 'No handlers could be found for logger "recurrent"'
         recurrent_logger = logging.getLogger('recurrent')
@@ -379,10 +382,15 @@ class PsmqttApp:
 
         return 0
 
-
-if __name__ == '__main__':
+def main() -> None:
     app = PsmqttApp()
     ret = app.setup()
-    if ret != 0:
+    if ret > 0:
         sys.exit(ret)
+    if ret == -1: # version has been requested (and already printed)
+        sys.exit(0)
     sys.exit(app.run())
+
+
+if __name__ == '__main__':
+    main()

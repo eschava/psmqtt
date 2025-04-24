@@ -9,6 +9,9 @@ lint-python:
 	ruff check src/
 	flake8 -v
 
+build-wheel:
+	python3 -m build --wheel --outdir dist/
+
 
 YAML_FILES:=\
 	psmqtt.yaml \
