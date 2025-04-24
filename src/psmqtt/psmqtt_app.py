@@ -387,7 +387,7 @@ def main() -> None:
     ret = app.setup()
     if ret > 0:
         sys.exit(ret)
-    if ret == -1: # version has been requested (and already printed)
+    if ret == -1:  # version has been requested (and already printed)
         sys.exit(0)
     sys.exit(app.run())
 

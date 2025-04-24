@@ -1,4 +1,3 @@
-import psmqtt
 from psmqtt.psmqtt_app import PsmqttApp
 import sys
 
