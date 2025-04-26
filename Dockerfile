@@ -8,19 +8,14 @@ RUN apk add build-base linux-headers
 
 WORKDIR /build
 COPY ./requirements.txt .
+COPY ./pyproject.toml .
+COPY ./src .
+COPY ./README.rst .
 RUN python -m pip install --upgrade pip
-RUN pip install --target=/build/deps -r requirements.txt
-RUN rm -r requirements.txt
-
-# Cleanup files we dont want to bring over
-WORKDIR /build/deps
-RUN rm -rf \
-    __pycache__ \
-    src/__pycache__ \
-    pip \
-    pip* \
-    src/*_test.py \
-    psutil/tests
+#RUN pip install --target=/build/deps -r requirements.txt
+RUN pip install build
+RUN python -m build
+#RUN rm -r requirements.txt
 
 
 #
@@ -42,9 +37,7 @@ COPY --from=builder /build .
 
 RUN mkdir ./src
 COPY *.py ./
-COPY src/*.py ./src
-COPY psmqtt.service .
-COPY VERSION .
+COPY src/psmqtt/*.py ./src
 
 RUN mkdir ./conf ./schema
 

@@ -7,6 +7,7 @@ import logging.config
 import yaml
 import yamale
 from yamale import YamaleError
+from platformdirs import PlatformDirs
 
 import socket
 from .task import Task
@@ -49,22 +50,53 @@ class Config:
         self.config = None
         self.schema = None
 
+    @staticmethod
+    def get_default_config_file_name() -> list[str]:
+        """
+        Returns the default config file full paths where this software will look for the config file.
+        """
+        plat_dirs = PlatformDirs("psmqtt", "eschava")
+        return [
+            os.path.join(d, Config.CONFIG_FILE_NAME)
+            for d in [plat_dirs.user_config_dir, plat_dirs.site_config_dir]
+        ]
+
     def load(self, filename: str = None, schema_filename: str = None):
-        '''
+        """
         filename is a fully qualified path to the YAML config file.
         The YAML file is validated against the schema file provided as argument,
         and optional configuration parameters are populated with their default values.
-        '''
+        """
 
-        dirname = os.path.dirname(os.path.abspath(__file__))
-        dirname = os.path.abspath(os.path.join(dirname, '..'))
+        source_code_install_dir = os.path.dirname(os.path.abspath(__file__))
+        source_code_install_dir = os.path.abspath(
+            os.path.join(source_code_install_dir, "..")
+        )
 
         if filename is None:
-            filename = os.getenv(
-                'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
+            if os.getenv("PSMQTTCONFIG", None) is not None:
+                filename = os.getenv("PSMQTTCONFIG")
+            else:
+                # first try the platform-specific, user-specific config directory:
+                for attempt in Config.get_default_config_file_name():
+                    if os.path.exists(attempt):
+                        # this is the directory where the config file should be
+                        # located, so we can use it to build the full path to the config file
+                        filename = attempt
+                        break
+
+                if filename is None:
+                    raise ValueError(
+                        "Failed to find the configuration file '%s' in all default locations: %s",
+                        Config.CONFIG_FILE_NAME,
+                        ",".join(Config.get_default_config_file_name()),
+                    )
+
         if schema_filename is None:
             schema_filename = os.getenv(
-                'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
+                "PSMQTTCONFIGSCHEMA",
+                os.path.join(source_code_install_dir, "schema/psmqtt.schema.yaml"),
+            )
 
         logging.info("Loading app config '%s' and its schema '%s'", filename, schema_filename)
 
@@ -93,7 +125,7 @@ class Config:
         self._fill_defaults_options()
         self._fill_defaults_schedule()
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
-        return
+
 
     def _fill_defaults_logging(self):
         # logging

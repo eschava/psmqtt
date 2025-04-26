@@ -1,6 +1,7 @@
 from psmqtt.psmqtt_app import PsmqttApp
 import sys
 
+
 def main() -> None:
     app = PsmqttApp()
     ret = app.setup()
@@ -9,5 +10,5 @@ def main() -> None:
     sys.exit(app.run())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
