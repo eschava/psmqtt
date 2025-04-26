@@ -8,6 +8,15 @@ For psmqtt development please install `mypy` and `flake8`:
 * `../.vscode/settings.json` takes advantage of these
 * `.flake8` and `mypy.ini` control their behavior
 
+It's suggested to use 
+
+```sh
+make test-wheel
+```
+
+to test how the project will work in a real installation (via Pypi in this case).
+
+
 ## Python Testing
 
 Just do:
@@ -16,10 +25,16 @@ Just do:
 make unit-tests
 ```
 
+or 
+
+```sh
+make integration-tests
+```
+
+
 ## Dependencies
 
-* [psutil](https://psutil.readthedocs.io/en/latest/) to retrieve sensor values
-* [recurrent](https://github.com/kvh/recurrent) to schedule the actions
+See the [requirements.txt](requirements.txt) file
 
 ## Creating a new release
 
@@ -28,15 +43,13 @@ Sometimes however it may be useful to publish a docker release manually.
 To push manually a new multi-arch docker version, use::
 
 ```sh
-docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8, --tag ghcr.io/eschava/psmqtt:1.0.2 --build-arg USERNAME=root --push .
+docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8, --tag ghcr.io/eschava/psmqtt:<new-tag> --build-arg USERNAME=root --push .
 ```
 
 (remember to update the tag version)
-
 
 ## TODO
 
 * support MQTTv5?
 * restore the ability to request psmqtt tasks from MQTT
 * implement batch transmission to MQTT to optimize network and CPU usage
-* publish on pypi the project

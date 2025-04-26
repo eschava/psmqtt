@@ -1,0 +1,40 @@
+[project]
+name = "psmqtt"
+version = "2.4.0"
+authors = [
+  { name="Eugene Schava", email="eschava.nospam@gmail.com" },
+  { name="Francesco Montorsi", email="francesco.montorsi.nospam@gmail.com" },
+]
+description = "Utility reporting system health and status via MQTT"
+readme = "README.rst"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+"Homepage" = "https://github.com/eschava/psmqtt"
+"Bug Tracker" = "https://github.com/eschava/psmqtt/issues"
+
+[project.scripts]
+psmqtt = "psmqtt:main.main"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src"]
+sources = ["src"]
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/_psmqtt_version.py"
+template = '''
+version = "{version}"
+'''

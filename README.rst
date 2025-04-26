@@ -23,6 +23,7 @@ Installation
 The suggested installation method is to use the provided `Docker image <doc/install-docker.md>`_.
 However alternative installation methods are available for Linux, FreeBSD and Windows:
 
+* Installing from **pypi**: see `Install from pypi doc <doc/install-pypi.md>`_
 * Installing from **sources**: see `Install from source doc <doc/install-source.md>`_
 * Installing on **FreeBSD**: see `FreeBSD doc <doc/install-freebsd.md>`_
 * Installing on **Windows**: see `Windows doc <doc/install-windows.md>`_
@@ -31,7 +32,8 @@ However alternative installation methods are available for Linux, FreeBSD and Wi
 Configuration and usage
 =======================
 
-Please check the `Usage page <doc/usage.md>`_.
+**PSMQTT** is strongly configuration-file-driven.
+Please check the `Usage page <doc/usage.md>`_ which contains all documentation on the configuration options for psmqtt.
 
 ============
 Known issues

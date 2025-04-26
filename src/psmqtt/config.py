@@ -3,10 +3,10 @@
 
 import os
 import logging
-import logging.config
 import yaml
 import yamale
 from yamale import YamaleError
+from platformdirs import PlatformDirs
 
 import socket
 from .task import Task
@@ -17,6 +17,9 @@ class Config:
     Config class validates and reads the psmqtt YAML configuration file and reports to the
     rest of the application the data as a dictionary.
     '''
+    CONFIG_FILE_NAME = "psmqtt.yaml"
+    CONFIG_SCHEMA_FILE_NAME = "psmqtt.schema.yaml"
+
     HA_SUPPORTED_PLATFORMS = ["sensor", "binary_sensor"]
     HA_SUPPORTED_DEVICE_CLASSES = {
         # see https://www.home-assistant.io/integrations/binary_sensor/#device-class
@@ -49,22 +52,66 @@ class Config:
         self.config = None
         self.schema = None
 
+    @staticmethod
+    def get_default_config_file_name() -> list[str]:
+        """
+        Returns the default config file full paths where this software will look for the config file.
+        """
+        plat_dirs = PlatformDirs("psmqtt", "eschava")
+        cfgfile_paths = [
+            # NOTE: the site_config_dir in Unix is returning /etc/xdg/psmqtt but frankly that's very
+            # unusual and not what I would expect. So we replace it with /etc/psmqtt
+            os.path.join(d, Config.CONFIG_FILE_NAME) for d in [
+                plat_dirs.user_config_dir,
+                plat_dirs.site_config_dir.replace("/etc/xdg/", "/etc/")
+            ]
+        ]
+
+        return cfgfile_paths
+
     def load(self, filename: str = None, schema_filename: str = None):
-        '''
+        """
         filename is a fully qualified path to the YAML config file.
         The YAML file is validated against the schema file provided as argument,
         and optional configuration parameters are populated with their default values.
-        '''
-
-        dirname = os.path.dirname(os.path.abspath(__file__))
-        dirname = os.path.abspath(os.path.join(dirname, '..'))
+        """
 
         if filename is None:
-            filename = os.getenv(
-                'PSMQTTCONFIG', os.path.join(dirname, 'psmqtt.yaml'))
+            # NOTE: a typical use case where PSMQTTCONFIG is set is within the official Docker image of psmqtt
+            if os.getenv("PSMQTTCONFIG", None) is not None:
+                filename = os.getenv("PSMQTTCONFIG")
+            else:
+                # first try the platform-specific, user-specific config directory:
+                for attempt in Config.get_default_config_file_name():
+                    if os.path.exists(attempt):
+                        filename = attempt
+                        break
+
+                if filename is None:
+                    raise ValueError(
+                       f"Failed to find the configuration file '{Config.CONFIG_FILE_NAME}' in all default locations: {','.join(Config.get_default_config_file_name())}"
+                    )
+
         if schema_filename is None:
-            schema_filename = os.getenv(
-                'PSMQTTCONFIGSCHEMA', os.path.join(dirname, 'schema/psmqtt.schema.yaml'))
+            # NOTE: a typical use case where PSMQTTCONFIGSCHEMA is set is within the official Docker image of psmqtt
+            if os.getenv("PSMQTTCONFIGSCHEMA", None) is not None:
+                schema_filename = os.getenv("PSMQTTCONFIGSCHEMA")
+            else:
+                source_code_install_dir = os.path.dirname(os.path.abspath(__file__))
+                schema_install_dir = os.path.join(source_code_install_dir, "schema")
+                schema_filename_attempts = [
+                    os.path.join(schema_install_dir, Config.CONFIG_SCHEMA_FILE_NAME),
+                ]
+
+                for attempt in schema_filename_attempts:
+                    if os.path.exists(attempt):
+                        schema_filename = attempt
+                        break
+
+                if schema_filename is None:
+                    raise ValueError(
+                       f"Failed to find the configuration file schema '{Config.CONFIG_SCHEMA_FILE_NAME}' in the directory '{schema_install_dir}'. Is the installation of psmqtt corrupted?"
+                    )
 
         logging.info("Loading app config '%s' and its schema '%s'", filename, schema_filename)
 
@@ -93,7 +140,6 @@ class Config:
         self._fill_defaults_options()
         self._fill_defaults_schedule()
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
-        return
 
     def _fill_defaults_logging(self):
         # logging
