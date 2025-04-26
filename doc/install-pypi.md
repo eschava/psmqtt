@@ -2,10 +2,13 @@
 
 **PSMQTT** is published on [pypi.org](https://pypi.org/project/psmqtt/) as a Python wheel.
 This makes it trivial to install it on both
+
 * Windows
 * MacOS
 * Unix
+
 if you have `pip`, the Python package manager, installed.
+
 If you don't have experience with `pip`, please check out the [official PIP tutorial](https://packaging.python.org/en/latest/tutorials/installing-packages/).
 
 Once you have verified that `pip` works fine on your system you can run:
