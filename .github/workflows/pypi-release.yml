@@ -3,48 +3,49 @@ name: pypi-release
 on: push
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
+    steps:
 
-        # setup python
-        - uses: actions/checkout@v4
-        - name: set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.x"
-        - name: install pypa/build
-          run: >-
-            python3 -m
-            pip install build --user
-        
-        # package & store artifacts
-        - name: package the pypi
-          run: |
-            python3 -m build
-        - name: store the distribution packages
-          uses: actions/upload-artifact@v4
-          with:
-            name: python-package-distributions
-            path: dist/
+    # setup python
+    - uses: actions/checkout@v4
+    - name: set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+    - name: install pypa/build
+      run: >-
+        python3 -m
+        pip install build --user
     
-    publish-to-pypi:
-        if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
-        needs:
-        - build
-        runs-on: ubuntu-latest
-        environment:
-            name: pypi
-            url: https://pypi.org/p/psmqtt
-        permissions:
-            id-token: write  # IMPORTANT: mandatory for trusted publishing
+    # package & store artifacts
+    - name: package the pypi
+      run: |
+        python3 -m build
+    - name: store the distribution packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+  
+  publish-to-pypi:
+    # only publish to PyPI on tag pushes
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/psmqtt
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
 
-        steps:
-        - name: Download all the dists
-          uses: actions/download-artifact@v4
-          with:
-            name: python-package-distributions
-            path: dist/
-        - name: Publish distribution 📦 to PyPI
-          uses: pypa/gh-action-pypi-publish@release/v1
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
