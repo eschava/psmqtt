@@ -94,25 +94,17 @@ class PsmqttApp:
         return
 
     @staticmethod
-    def read_version_file(filename='VERSION') -> str:
+    def get_embedded_version() -> str:
         '''
-        Reads the content of a version file.
+        Returns the embedded version of psmqtt, forged at build time
+        by the "hatch-vcs" plugin.
+
+        In particular the "hatch-vcs" plugin writes a _psmqtt_version.py file
+        that contains a 'version' variable with the version string.
         '''
 
         from _psmqtt_version import version as __version__
         return __version__
-
-        # current_dir = os.path.dirname(os.path.abspath(__file__))
-        # version_file_path = os.path.join(current_dir, filename)
-        # try:
-        #     # Open the version file and read its content
-        #     with open(version_file_path, 'r') as f:
-        #         version_content = f.read()
-        #         return version_content
-
-        # except FileNotFoundError:
-        #     logging.error(f"Version file '{filename}' not found in the current directory.")
-        #     return "N/A"
 
     def publish_ha_discovery_messages(self) -> int:
         '''
@@ -123,7 +115,7 @@ class PsmqttApp:
 
         ha_discovery_topic = self.config.config["mqtt"]["ha_discovery"]["topic"]
         ha_device_name = self.config.config["mqtt"]["ha_discovery"]["device_name"]
-        psmqtt_ver = PsmqttApp.read_version_file()
+        psmqtt_ver = PsmqttApp.get_embedded_version()
 
         device_dict = {
             "ids": ha_device_name,
@@ -202,7 +194,7 @@ class PsmqttApp:
             os.environ["COLUMNS"] = "120"  # avoid too many line wraps
         args = parser.parse_args()
         if args.version:
-            print(f"Version: {PsmqttApp.read_version_file()}")
+            print(f"Version: {PsmqttApp.get_embedded_version()}")
             return -1
 
         # fix for error 'No handlers could be found for logger "recurrent"'

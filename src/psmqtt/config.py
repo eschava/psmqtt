@@ -68,11 +68,6 @@ class Config:
             ]
         ]
 
-        # psmqtt versions <= 2.4.0 and especially their docker images
-        # had as default config file location the /opt/psmqtt/conf directory,
-        # so we add it here for backward compatibility
-        if sys.platform != "win32":
-            cfgfile_paths.append(os.path.join("/opt/psmqtt/conf/", Config.CONFIG_FILE_NAME))
         return cfgfile_paths
 
     def load(self, filename: str = None, schema_filename: str = None):
@@ -83,6 +78,7 @@ class Config:
         """
 
         if filename is None:
+            # NOTE: a typical use case where PSMQTTCONFIG is set is within the official Docker image of psmqtt
             if os.getenv("PSMQTTCONFIG", None) is not None:
                 filename = os.getenv("PSMQTTCONFIG")
             else:
@@ -98,6 +94,7 @@ class Config:
                     )
 
         if schema_filename is None:
+            # NOTE: a typical use case where PSMQTTCONFIGSCHEMA is set is within the official Docker image of psmqtt
             if os.getenv("PSMQTTCONFIGSCHEMA", None) is not None:
                 schema_filename = os.getenv("PSMQTTCONFIGSCHEMA")
             else:
@@ -106,10 +103,7 @@ class Config:
                 schema_filename_attempts = [
                     os.path.join(schema_install_dir, Config.CONFIG_SCHEMA_FILE_NAME),
                 ]
-
-                if sys.platform != "win32":
-                    schema_filename_attempts.append(os.path.join("/opt/psmqtt/conf/", Config.CONFIG_SCHEMA_FILE_NAME))
-
+                
                 for attempt in schema_filename_attempts:
                     if os.path.exists(attempt):
                         schema_filename = attempt

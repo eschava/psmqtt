@@ -16,10 +16,7 @@ COPY ./.git ./.git/
 RUN python -m pip install --upgrade pip
 RUN pip install --target=/build/deps -r requirements.txt
 RUN pip install build
-#RUN git config --global --add safe.directory /build
-#RUN mkdir src
 RUN python -m build --wheel --outdir /build/wheel
-#RUN hatch build
 
 
 #
@@ -49,14 +46,13 @@ COPY src/psmqtt/*.py ./src/
 COPY --from=builder /build/src/_psmqtt_version.py ./src/
 
 RUN mkdir ./conf ./schema
+COPY src/psmqtt/schema/* ./schema/
 
 # do not copy the default configuration file: it's better to error out loudly
-# if the user fails to bind-mount his own config file.
+# if the user fails to bind-mount his own config file, rather than using a default config file.
 # the reason is that at least the MQTT broker IP address is something the user
 # will need to configure
 #COPY psmqtt.yaml ./conf
-
-COPY src/psmqtt/schema/* ./schema/
 
 # add user psmqtt to image
 RUN if [[ "$USERNAME" != "root" ]]; then \
