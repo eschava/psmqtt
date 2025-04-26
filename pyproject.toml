@@ -23,7 +23,7 @@ dependencies = {file = ["requirements.txt"]}
 "Bug Tracker" = "https://github.com/eschava/psmqtt/issues"
 
 [project.scripts]
-psmqtt = "psmqtt:main"
+psmqtt = "psmqtt:main.main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

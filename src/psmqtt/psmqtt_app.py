@@ -1,16 +1,5 @@
-#!/usr/bin/env python
-#
 # Copyright (c) 2016 psmqtt project
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
-#
-# This is the entrypoint of the project:
-# 1. Reads configuration pointed to by PSMQTTCONFIG env var, or use `psmqtt.conf`
-#    by default.
-# 2. Extracts from config file settings, e.g. mqtt broker and schedule.
-# 2. Executes schedule...
-# 3. Performs tasks from the schedule, which involves reading sensors and sending
-#    values to the broker
-#
 
 import argparse
 import os
@@ -195,11 +184,10 @@ class PsmqttApp:
         parser = argparse.ArgumentParser(
             prog="psmqtt",
             description="Publish psutil/pySMART counters to an MQTT broker according to scheduling rules",
-            epilog="See documentation at https://github.com/eschava/psmqtt for configuration examples.\n"
-            + "All the configuration options are read from the psmqtt.yaml file or the path pointed by the 'PSMQTTCONFIG' environment variable.\n"
-            + "The configuration file is mandatory and it is searched in the following locations (in order):\n"
+            epilog="The configuration file is mandatory and it is searched in the following locations (in order):\n"
             + "  * the location pointed by the 'PSMQTTCONFIG' environment variable\n  * "
-            + "\n  * ".join(Config.get_default_config_file_name()),
+            + "\n  * ".join(Config.get_default_config_file_name())
+            + "\nSee documentation at https://github.com/eschava/psmqtt for configuration examples and the config reference guide.\n",
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         parser.add_argument(
@@ -387,16 +375,3 @@ class PsmqttApp:
         logging.warning("Exiting gracefully")
 
         return 0
-
-def main() -> None:
-    app = PsmqttApp()
-    ret = app.setup()
-    if ret > 0:
-        sys.exit(ret)
-    if ret == -1:  # version has been requested (and already printed)
-        sys.exit(0)
-    sys.exit(app.run())
-
-
-if __name__ == '__main__':
-    main()
