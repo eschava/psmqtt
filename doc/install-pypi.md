@@ -17,7 +17,7 @@ Once you have verified that `pip` works fine on your system you can run:
 pip install psmqtt
 ```
 
-To download the latest release from [pypi.org](https://pypi.org/project/psmqtt/).
+The command above will download the latest release of **PSMQTT** from [pypi.org](https://pypi.org/project/psmqtt/).
 Verify your installation with the commands:
 
 ```sh
