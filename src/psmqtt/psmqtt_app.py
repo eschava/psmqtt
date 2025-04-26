@@ -195,15 +195,18 @@ class PsmqttApp:
         parser = argparse.ArgumentParser(
             prog="psmqtt",
             description="Publish psutil/pySMART counters to an MQTT broker according to scheduling rules",
-            epilog="See documentation at https://github.com/eschava/psmqtt for configuration examples. "
-            + "All the configuration options are read from the psmqtt.yaml file or the path pointed by the 'PSMQTTCONFIG' environment variable."
-            + "The configuration file is mandatory and it is searched in the following locations:\n"
-            + "\n".join(Config.get_default_config_file_name()),
+            epilog=
+            "See documentation at https://github.com/eschava/psmqtt for configuration examples.\n"
+            + "All the configuration options are read from the psmqtt.yaml file or the path pointed by the 'PSMQTTCONFIG' environment variable.\n"
+            + "The configuration file is mandatory and it is searched in the following locations (in order):\n"
+            + "  * the location pointed by the 'PSMQTTCONFIG' environment variable\n  * "
+            + "\n  * ".join(Config.get_default_config_file_name()),
+            formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         parser.add_argument(
             "-V",
             "--version",
-            help="Print version and exit",
+            help="Print version and exit",\
             action="store_true",
             default=False,
         )

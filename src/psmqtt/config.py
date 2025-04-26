@@ -18,6 +18,9 @@ class Config:
     Config class validates and reads the psmqtt YAML configuration file and reports to the
     rest of the application the data as a dictionary.
     '''
+    CONFIG_FILE_NAME = "psmqtt.yaml"
+    CONFIG_SCHEMA_FILE_NAME = "psmqtt.schema.yaml"
+
     HA_SUPPORTED_PLATFORMS = ["sensor", "binary_sensor"]
     HA_SUPPORTED_DEVICE_CLASSES = {
         # see https://www.home-assistant.io/integrations/binary_sensor/#device-class
@@ -58,7 +61,10 @@ class Config:
         plat_dirs = PlatformDirs("psmqtt", "eschava")
         return [
             os.path.join(d, Config.CONFIG_FILE_NAME)
-            for d in [plat_dirs.user_config_dir, plat_dirs.site_config_dir]
+
+            # NOTE: the site_config_dir in Unix is returning /etc/xdg/psmqtt but frankly that's very
+            # unusual and not what I would expect. So we replace it with /etc/psmqtt
+            for d in [plat_dirs.user_config_dir, plat_dirs.site_config_dir.replace("/etc/xdg/", "/etc/")]
         ]
 
     def load(self, filename: str = None, schema_filename: str = None):
@@ -67,11 +73,6 @@ class Config:
         The YAML file is validated against the schema file provided as argument,
         and optional configuration parameters are populated with their default values.
         """
-
-        source_code_install_dir = os.path.dirname(os.path.abspath(__file__))
-        source_code_install_dir = os.path.abspath(
-            os.path.join(source_code_install_dir, "..")
-        )
 
         if filename is None:
             if os.getenv("PSMQTTCONFIG", None) is not None:
@@ -87,16 +88,20 @@ class Config:
 
                 if filename is None:
                     raise ValueError(
-                        "Failed to find the configuration file '%s' in all default locations: %s",
-                        Config.CONFIG_FILE_NAME,
-                        ",".join(Config.get_default_config_file_name()),
+                       f"Failed to find the configuration file '{Config.CONFIG_FILE_NAME}' in all default locations: {','.join(Config.get_default_config_file_name())}"
                     )
 
         if schema_filename is None:
-            schema_filename = os.getenv(
-                "PSMQTTCONFIGSCHEMA",
-                os.path.join(source_code_install_dir, "schema/psmqtt.schema.yaml"),
-            )
+            if os.getenv("PSMQTTCONFIGSCHEMA", None) is not None:
+                schema_filename = os.getenv("PSMQTTCONFIGSCHEMA")
+            else:
+                source_code_install_dir = os.path.dirname(os.path.abspath(__file__))
+                schema_install_dir = os.path.join(source_code_install_dir, "schema")
+                schema_filename = os.path.join(schema_install_dir, Config.CONFIG_SCHEMA_FILE_NAME)
+                if not os.path.exists(schema_filename):
+                    raise ValueError(
+                       f"Failed to find the configuration file schema '{Config.CONFIG_SCHEMA_FILE_NAME}' in the directory '{schema_install_dir}'. Is the installation of psmqtt corrupted?"
+                    )
 
         logging.info("Loading app config '%s' and its schema '%s'", filename, schema_filename)
 

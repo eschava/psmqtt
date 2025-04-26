@@ -1,4 +1,8 @@
-# Basic development targets
+# psmqtt Makefile
+
+#
+# Python development targets:
+#
 
 format:
 	black .
@@ -12,6 +16,37 @@ lint-python:
 build-wheel:
 	python3 -m build --wheel --outdir dist/
 
+test-wheel:
+	rm -rf dist/ && \
+ 		pip3 uninstall -y psmqtt && \
+		$(MAKE) build-wheel && \
+		pip3 install dist/psmqtt-*-py3-none-any.whl
+
+test: unit-test integration-test
+
+unit-test:
+ifeq ($(REGEX),)
+	pytest -vvv --log-level=INFO -m unit
+else
+	pytest -vvvv --log-level=INFO -s -m unit -k $(REGEX)
+endif
+
+# During integration-tests the "testcontainers" project will be used to spin up 
+# both a Mosquitto broker and the PSMQTT docker, so make sure you don't
+# have a Mosquitto broker (or other containers) already listening on the 1883 port
+# when using this target:
+integration-test:
+ifeq ($(REGEX),)
+	pytest -vvvv --log-level=INFO -s -m integration
+else
+	pytest -vvvv --log-level=INFO -s -m integration -k $(REGEX)
+endif
+
+
+
+#
+# Config file helper targets
+#
 
 YAML_FILES:=\
 	psmqtt.yaml \
@@ -33,6 +68,9 @@ docker:
 	docker build -t psmqtt:latest --build-arg USERNAME=root .
 
 
+#
+# Docker helper targets
+#
 
 # note that by using --network=host on the Mosquitto container, its default configuration
 # will work out of the box (by default Mosquitto listens only local connections);
@@ -65,23 +103,3 @@ docker-armv7:
 
 docker-arm64:
 	docker buildx build --platform linux/arm64/v8 --tag psmqtt:latest --build-arg USERNAME=root .
-
-test: unit-test integration-test
-
-unit-test:
-ifeq ($(REGEX),)
-	pytest -vvv --log-level=INFO -m unit
-else
-	pytest -vvvv --log-level=INFO -s -m unit -k $(REGEX)
-endif
-
-# During integration-tests the "testcontainers" project will be used to spin up 
-# both a Mosquitto broker and the PSMQTT docker, so make sure you don't
-# have a Mosquitto broker (or other containers) already listening on the 1883 port
-# when using this target:
-integration-test:
-ifeq ($(REGEX),)
-	pytest -vvvv --log-level=INFO -s -m integration
-else
-	pytest -vvvv --log-level=INFO -s -m integration -k $(REGEX)
-endif
