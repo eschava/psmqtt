@@ -3,7 +3,7 @@
 
 import os
 import logging
-import logging.config
+import sys
 import yaml
 import yamale
 from yamale import YamaleError
@@ -59,13 +59,21 @@ class Config:
         Returns the default config file full paths where this software will look for the config file.
         """
         plat_dirs = PlatformDirs("psmqtt", "eschava")
-        return [
-            os.path.join(d, Config.CONFIG_FILE_NAME)
-
+        cfgfile_paths = [
             # NOTE: the site_config_dir in Unix is returning /etc/xdg/psmqtt but frankly that's very
             # unusual and not what I would expect. So we replace it with /etc/psmqtt
-            for d in [plat_dirs.user_config_dir, plat_dirs.site_config_dir.replace("/etc/xdg/", "/etc/")]
+            os.path.join(d, Config.CONFIG_FILE_NAME) for d in [
+                plat_dirs.user_config_dir,
+                plat_dirs.site_config_dir.replace("/etc/xdg/", "/etc/")
+            ]
         ]
+
+        # psmqtt versions <= 2.4.0 and especially their docker images
+        # had as default config file location the /opt/psmqtt/conf directory,
+        # so we add it here for backward compatibility
+        if sys.platform != "win32":
+            cfgfile_paths.append(os.path.join("/opt/psmqtt/conf/", Config.CONFIG_FILE_NAME))
+        return cfgfile_paths
 
     def load(self, filename: str = None, schema_filename: str = None):
         """
@@ -81,8 +89,6 @@ class Config:
                 # first try the platform-specific, user-specific config directory:
                 for attempt in Config.get_default_config_file_name():
                     if os.path.exists(attempt):
-                        # this is the directory where the config file should be
-                        # located, so we can use it to build the full path to the config file
                         filename = attempt
                         break
 
@@ -97,8 +103,19 @@ class Config:
             else:
                 source_code_install_dir = os.path.dirname(os.path.abspath(__file__))
                 schema_install_dir = os.path.join(source_code_install_dir, "schema")
-                schema_filename = os.path.join(schema_install_dir, Config.CONFIG_SCHEMA_FILE_NAME)
-                if not os.path.exists(schema_filename):
+                schema_filename_attempts = [
+                    os.path.join(schema_install_dir, Config.CONFIG_SCHEMA_FILE_NAME),
+                ]
+
+                if sys.platform != "win32":
+                    schema_filename_attempts.append(os.path.join("/opt/psmqtt/conf/", Config.CONFIG_SCHEMA_FILE_NAME))
+
+                for attempt in schema_filename_attempts:
+                    if os.path.exists(attempt):
+                        schema_filename = attempt
+                        break
+
+                if schema_filename is None:
                     raise ValueError(
                        f"Failed to find the configuration file schema '{Config.CONFIG_SCHEMA_FILE_NAME}' in the directory '{schema_install_dir}'. Is the installation of psmqtt corrupted?"
                     )
@@ -130,7 +147,6 @@ class Config:
         self._fill_defaults_options()
         self._fill_defaults_schedule()
         logging.info(f"Configuration file '{filename}' successfully loaded and validated against schema. It contains {len(self.config['schedule'])} validated schedules.")
-
 
     def _fill_defaults_logging(self):
         # logging

@@ -8,13 +8,12 @@ RUN apk add build-base linux-headers
 
 WORKDIR /build
 COPY ./requirements.txt .
-COPY ./pyproject.toml .
-COPY ./src .
-COPY ./README.rst .
+#COPY ./pyproject.toml .
+#COPY ./src .
+#COPY ./README.rst .
+
 RUN python -m pip install --upgrade pip
-#RUN pip install --target=/build/deps -r requirements.txt
-RUN pip install build
-RUN python -m build
+RUN pip install --target=/build/deps -r requirements.txt
 #RUN rm -r requirements.txt
 
 
@@ -47,7 +46,7 @@ RUN mkdir ./conf ./schema
 # will need to configure
 #COPY psmqtt.yaml ./conf
 
-COPY schema/* ./schema/
+COPY src/psmqtt/schema/* ./schema/
 
 # add user psmqtt to image
 RUN if [[ "$USERNAME" != "root" ]]; then \
