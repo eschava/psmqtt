@@ -3,7 +3,6 @@
 
 import os
 import logging
-import sys
 import yaml
 import yamale
 from yamale import YamaleError
@@ -103,7 +102,7 @@ class Config:
                 schema_filename_attempts = [
                     os.path.join(schema_install_dir, Config.CONFIG_SCHEMA_FILE_NAME),
                 ]
-                
+
                 for attempt in schema_filename_attempts:
                     if os.path.exists(attempt):
                         schema_filename = attempt
