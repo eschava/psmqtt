@@ -22,6 +22,10 @@ test-wheel:
 		$(MAKE) build-wheel && \
 		pip3 install dist/psmqtt-*-py3-none-any.whl
 
+inspect-wheel:
+	# see https://github.com/wheelodex/wheel-inspect
+	wheel2json dist/psmqtt-*-py3-none-any.whl
+
 test: unit-test integration-test
 
 unit-test:

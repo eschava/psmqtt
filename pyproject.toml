@@ -25,8 +25,11 @@ dependencies = {file = ["requirements.txt"]}
 psmqtt = "psmqtt:main.main"
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling", "hatch-vcs", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
 
 [tool.hatch.build.targets.wheel]
 only-include = ["src"]
