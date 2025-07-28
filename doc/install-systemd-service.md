@@ -45,5 +45,12 @@ Look into syslog for potential errors:
 sudo tail /var/log/syslog
 ```
 
-If you get errors of type `ModuleNotFoundError`,
-make sure you correctly [installed psmqtt from sources](install-source.md) first.
+if your Linux/Unix distribution is using `syslog` or 
+
+```sh
+journalctl --pager-end --unit psmqtt
+```
+
+if you Linux/Unix distribution is using `journald`.
+Please note that if the log contains errors of type `ModuleNotFoundError`, that's a sign that the installation of psmqtt was not successful.
+Please make sure you correctly [installed psmqtt from sources](install-source.md) first.
