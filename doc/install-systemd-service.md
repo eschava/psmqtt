@@ -22,17 +22,23 @@ wget https://raw.githubusercontent.com/eschava/psmqtt/refs/heads/master/psmqtt.s
 sudo mv psmqtt.service /etc/systemd/system
 ```
 
-3. If you are interested in monitoring SMART counters, you will need to edit the `/etc/systemd/system/psmqtt.service` file
+3. Edit the file `/etc/systemd/system/psmqtt.service` and make sure that the `ExecStart=` line contains the right installation path of psmqtt, i.e. the output of
+
+```sh
+which psmqtt
+```
+
+4. If you are interested in monitoring SMART counters, you will need to edit the `/etc/systemd/system/psmqtt.service` file
 and set `User=root` instead of `User=nobody`.
 
-4. Finally enable the SystemD unit on your system to be started at boot and right now:
+5. Finally enable the SystemD unit on your system to be started at boot and right now:
 
 ```sh
 sudo systemctl enable psmqtt.service
 sudo systemctl start psmqtt.service
 ```
 
-5. Check the service status with `sudo systemctl status psmqtt`.
+6. Check the service status with `sudo systemctl status psmqtt`.
 Look into syslog for potential errors:
 
 ```sh
