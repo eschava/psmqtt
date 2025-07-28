@@ -8,10 +8,10 @@ Description=Resource daemon to MQTT
 After=multi-user.target
 
 [Service]
-WorkingDirectory=/opt/psmqtt
+WorkingDirectory=/tmp
 User=nobody
 Type=idle
-ExecStart=/usr/bin/python3 /opt/psmqtt/psmqtt.py
+ExecStart=/usr/local/bin/psmqtt
 Restart=always
 
 [Install]
