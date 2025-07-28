@@ -7,7 +7,7 @@ This documentation describes how to install psmqtt using [pip](https://pip.pypa.
 Check `python`:
 ```
 python3 --version
-Python 3.9.2
+Python 3.12.9
 ```
 Check `pip`:
 ```
@@ -21,7 +21,7 @@ apt install python3-pip
 Then:
 ```
 # python3 -m pip --version
-pip 20.3.4 from /usr/lib/python3/dist-packages/pip (python 3.9)
+pip 23.2.1 from /usr/lib/python3/dist-packages/pip (python 3.12)
 ```
 
 Check you have `smartctl` installed:
@@ -33,17 +33,17 @@ smartctl --scan
 ```
 If not, please install [smartmontools](https://www.smartmontools.org/wiki/Download).
 
-## Installation inside a venv (preferred way)
+## Installation inside a virtual environment (preferred way)
 
-Since Debian 12 (Bookworm) Python defaults to using venvs for modules installed with pip. 
+Since Debian 12 (Bookworm) Python defaults to using [virtual environments](https://docs.python.org/3/library/venv.html) for modules installed with pip. 
 They also strongly recommend keeping it as an "externally-managed-environment".
 
-As above, first clone the repository by running
+To proceed, first clone the repository by running
 ```
 git clone https://github.com/eschava/psmqtt.git
 cd psmqtt
 ```
-If you haven't already done so, you should create a directory for your venvs. Debian uses `~/.venvs` so I'll use that here.
+If you haven't already done so, you should create a directory for your virtual environments. Debian uses `~/.venvs` so this is what is used here.
 The following command creates a new folder and venv named psmqtt.
 ```
 python3 -m venv ~/.venvs/psmqtt
@@ -54,46 +54,70 @@ source ~/.venvs/psmqtt/bin/activate
 ```
 
 You should now see "(psmqtt)" reported in your prompt to indicate that you're now running commands within the venv.
-Then install the required psmqtt dependencies:
+Then install psmqtt and all its required dependencies
 
 ```
-pip3 install -r requirements.txt
+pip3 install .
 ```
 
+If pip is able to download and install all dependencies and build locally `psmqtt`, then you should see at the end a message like: 
+
+```
+Successfully installed certifi-2025.7.14 chardet-5.2.0 charset_normalizer-3.4.2 docker-7.1.0 humanfriendly-10.0 idna-3.10 jinja2-3.1.6 paho-mqtt-2.1.0 parsedatetime-2.6 platformdirs-4.3.7 psmqtt-2.5.1 psutil-7.0.0 pysmart-1.4.1 python-dateutil-2.9.0.post0 python-dotenv-1.1.1 pyyaml-6.0.2 recurrent-0.4.1 requests-2.32.4 testcontainers-4.9.2 types-paho-mqtt-1.6.0.20240321 typing-extensions-4.14.1 urllib3-2.5.0 wrapt-1.17.2 yamale-6.0.0
+```
+
+Note that `psmqtt` appears in the list of "successfully installed" packages.
 You are now ready to run psmqtt.
 
-## Installation without using a venv
+## Installation without using a virtual environment
 
-If for some reason you don't want to install psmqtt dependencies inside a venv, just run:
+If for some reason you don't want to install psmqtt dependencies inside a virtual environment ("venv" in short), just run:
 
 ```
 git clone https://github.com/eschava/psmqtt.git
-python3 -m pip install -r requirements.txt
+cd psmqtt
+pip3 install .
 ```
 
-If you get an `error: externally-managed-environment` you'll have to decide if you want to keep using venvs, which is recommended by Python and Debian. If you still don't want venvs you can force pip to install the dependencies
-using
+If you get an `error: externally-managed-environment` you'll have to decide if you want to use virtual environments, which is recommended by Python and Debian.
+If yes, please read the previous section.
+If you still don't want venvs you can force pip to install the dependencies using
 
 ```
-rm /usr/lib/python3.11/EXTERNALLY-MANAGED
+rm /usr/lib/python3.<your Python version>/EXTERNALLY-MANAGED
 ```
 
-Then repeat the `python3 -m pip install -r requirements.txt` command.
+Then repeat the `pip3 install .` command.
 You are now ready to run psmqtt.
 
 
 ## Running psmqtt
 
-Just run `psmqtt.py`:
+If psmqtt was installed correctly, it should be in your PATH and you should be able to run `psmqtt`:
 
 ```sh
-sudo python3 psmqtt.py
+psmqtt
 ```
 
-You will likely encounter an error with psmqtt complaining about the MQTT broker being not reachable.
-Please edit the MQTT broker IP address in the `psmqtt.yaml` file in such case.
+You will likely encounter an error with `psmqtt` complaining about the lack of configuration file.
+If that's the case, install system-wide the default configuration file:
 
-Finally use [MQTT explorer](http://mqtt-explorer.com/) to verify the sanity and the formatting of the
+```sh
+cd <path where you have cloned psmqtt>
+mkdir /etc/psmqtt
+cp psmqtt.yaml /etc/psmqtt/
+```
+
+Then edit the MQTT broker IP address in the `psmqtt.yaml` file:
+
+```sh
+nano /etc/psmqtt/psmqtt.yaml
+```
+
+You may also want to explore the `schedule` section to check the default scheduling rules and tasks,
+which are meant to showcase the features of psmqtt and probably do not cover your specific needs.
+
+Finally use [MQTT explorer](http://mqtt-explorer.com/) utility to verify the sanity and the formatting of the
 published data.
 
 ## Installing `psmqtt` as a Service
