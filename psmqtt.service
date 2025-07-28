@@ -4,14 +4,15 @@
 #
 
 [Unit]
-Description=Resource daemon to MQTT
+Description=psmqtt daemon for publishing system metrics to an MQTT broker
 After=multi-user.target
 
 [Service]
-WorkingDirectory=/opt/psmqtt
+WorkingDirectory=/tmp
 User=nobody
 Type=idle
-ExecStart=/usr/bin/python3 /opt/psmqtt/psmqtt.py
+# ExecStart should be pointing at your actual psmqtt installation path, which you can check running "which psmqtt"
+ExecStart=/usr/local/bin/psmqtt
 Restart=always
 
 [Install]
