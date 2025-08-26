@@ -6,9 +6,9 @@ from typing import (
     NamedTuple,
 )
 
-from .handlers_base import MethodCommandHandler, Payload
+from .handlers_base import BaseHandler, Payload
 
-class DirectoryUsageCommandHandler(MethodCommandHandler):
+class DirectoryUsageCommandHandler(BaseHandler):
     '''
     DirectoryUsageCommandHandler computes the size of a particular directory, in bytes
     This handler is implemented entirely inside PSMQTT and does not rely on psutil or other 3rd party libs
