@@ -6,8 +6,7 @@ from typing import (
     NamedTuple,
 )
 
-from .handlers_base import MethodCommandHandler, NameOrTotalTupleCommandHandler, Payload, TaskParam
-from .utils import string_from_dict_optionally
+from .handlers_base import MethodCommandHandler, Payload
 
 class DirectoryUsageCommandHandler(MethodCommandHandler):
     '''
@@ -46,5 +45,3 @@ class DirectoryUsageCommandHandler(MethodCommandHandler):
                 if not os.path.islink(fp):
                     total_size += os.path.getsize(fp)
         return total_size
-
-
