@@ -3,7 +3,17 @@
 
 name: tests-and-build
 
-on: [push]
+on: 
+  push:
+    branches:
+      - '**'
+    tags:
+      - '*'
+  # add a cron job to run every month -- ensure there's a valid CI build every month
+  # this is also useful to check if something breaks e.g. due to infrastructure changes (e.g. Ubuntu OS)
+  # and there are no commits for a long time on the project
+  schedule:
+    - cron: '0 0 1 * *'
 
 jobs:
 
@@ -147,6 +157,9 @@ jobs:
           password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
           pushImage: true
 
+      - name: Summary Message
+        run: echo "::notice title=Docker Image Published::Docker image psmqtt:${{ steps.docker_version.outputs.version }} was published to ghcr.io"  >> $GITHUB_STEP_SUMMARY
+
   build_docker_root_variant:
     runs-on: ubuntu-latest
     needs: [test_dependencies,lint_code,unit_tests,integration_tests]
@@ -190,3 +203,5 @@ jobs:
           password: ${{ secrets.PAT_TOKEN_FOR_GITHUB }}
           pushImage: true
 
+      - name: Summary Message
+        run: echo "::notice title=Docker Image Published::Docker image psmqtt:${{ steps.docker_version.outputs.version }} was published to ghcr.io"  >> $GITHUB_STEP_SUMMARY
