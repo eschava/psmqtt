@@ -560,7 +560,7 @@ the HA entities are:
 See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
 [MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
 
-See [HomeAsistant constant list](https://github.com/home-assistant/core/blob/dev/homeassistant/const.py) as reference for the supported values for the `unit_of_measurement` field.
+See [HomeAssistant constant list](https://github.com/home-assistant/core/blob/dev/homeassistant/const.py) as reference for the supported values for the `unit_of_measurement` field.
 
 For the `icon` field, you can use online resources for [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
 
