@@ -39,9 +39,12 @@ flowchart TD
     SMART([Hard drive SMART data])
     CLK((Clock))
     MQTT([MQTT Broker])
-    psmqttTASK(PSMQTT task handler)
-    psmqttSCHED(PSMQTT scheduler)
-    psmqttFMT(PSMQTT formatter)
+
+    subgraph PSMQTT[PSMQTT]
+        psmqttTASK(PSMQTT task handler)
+        psmqttSCHED(PSMQTT scheduler)
+        psmqttFMT(PSMQTT formatter)
+    end
 
 %% Edge connections between nodes
     OS -->|psutil| psmqttTASK
@@ -533,11 +536,12 @@ task.
 
 Consider that the `ha_discovery.name` will be the human-friendly name of the HA entity;
 `ha_discovery.platform` can be either `sensor` or `binary_sensor`.
-Most of PSMQTT tasks produce `sensor`s but there are a few exceptions, e.g. the `power_plugged` field of
-the `sensors_battery` task (which is either "true" or "false") or the `smart_status` field of the `smart` task
-(which is either "PASS" or "FAIL").
+Most of PSMQTT tasks produce `sensor`s but there are a few exceptions:
 
-Additional HA discovery messages that you might want to set to improve the look&feel of
+* the `power_plugged` field of the `sensors_battery` task (which is either "true" or "false") produces a `binary_sensor`
+* the `smart_status` field of the `smart` task (which is either "PASS" or "FAIL") produces a `binary_sensor`
+
+Additional HA discovery properties that you might want to set to improve the look&feel of
 the HA entities are:
 
 ```
@@ -555,6 +559,8 @@ the HA entities are:
 
 See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
 [MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
+
+See [HomeAsistant constant list](https://github.com/home-assistant/core/blob/dev/homeassistant/const.py) as reference for the supported values for the `unit_of_measurement` field.
 
 For the `icon` field, you can use online resources for [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
 
