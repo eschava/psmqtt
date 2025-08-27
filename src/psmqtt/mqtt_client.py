@@ -93,7 +93,9 @@ class MqttClient:
         rc = self._mqttc.connect(mqtt_broker, mqtt_port)
         logging.info("Connecting to MQTT broker '%s:%d'... return code was %d", mqtt_broker, mqtt_port, rc)
 
-        return True
+        if rc == paho.MQTT_ERR_SUCCESS:
+            return True
+        return False
 
     # FIXME: change this signature to allow batch-sending multiple messages
     def publish(self, topic:str, payload:str) -> None:
@@ -109,15 +111,15 @@ class MqttClient:
         '''
         See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
-        logging.info('starting MQTT client loop')
-        self._mqttc.loop_start()
+        rc = self._mqttc.loop_start()
+        logging.info(f"started MQTT client loop; return code was {rc}")
 
     def loop_stop(self) -> None:
         '''
         See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
-        logging.info('stopping MQTT client loop')
-        self._mqttc.loop_stop()
+        rc = self._mqttc.loop_stop()
+        logging.info(f"stopped MQTT client loop; return code was {rc}")
 
     def is_connected(self) -> bool:
         '''
@@ -155,7 +157,7 @@ class MqttClient:
     # ---------------------------------------------------------------------------- #
 
     def on_connect(self, mqttc: paho.Client, userdata: Any, flags: paho.ConnectFlags,
-            reason_code: paho.ReasonCodes, properties: paho.Properties = None) -> None:
+            reason_code: paho.ReasonCode, properties: paho.Properties = None) -> None:
         '''
         mqtt callback
         client:     the client instance for this callback
@@ -198,13 +200,13 @@ class MqttClient:
         return
 
     def on_disconnect(self, mqttc: paho.Client, userdata: Any, disconnect_flags: paho.DisconnectFlags,
-                      reason_code: paho.ReasonCodes, properties: paho.Properties) -> None:
+                      reason_code: paho.ReasonCode, properties: paho.Properties) -> None:
         '''
         MQTT callback in case of unexpected disconnection from the broker
         '''
         if reason_code != 0:
             MqttClient.num_disconnects += 1
-            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker with reason={reason_code}. Reconnecting in {self.reconnect_period_sec}sec.")
+            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker with reason=[{reason_code}]. Reconnecting in {self.reconnect_period_sec}sec.")
             time.sleep(self.reconnect_period_sec)
         #else: reason_code==0 indicates an intentional disconnect
         return
@@ -233,7 +235,7 @@ class MqttClient:
         return
 
     def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int,
-                   reason_code: paho.ReasonCodes, properties: paho.Properties) -> None:
+                   reason_code: paho.ReasonCode, properties: paho.Properties) -> None:
         '''
         MQTT callback in case of successful/failed publish()
         '''

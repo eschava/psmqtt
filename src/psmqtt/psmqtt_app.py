@@ -216,6 +216,12 @@ class PsmqttApp:
         self.config.apply_logging_config()
 
         #
+        # hello message
+        #
+
+        logging.info(f"psmqtt version {PsmqttApp.get_embedded_version()} starting up")
+
+        #
         # create MqttClient
         #
         ha_status_topic = ""
