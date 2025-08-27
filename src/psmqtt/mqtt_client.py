@@ -43,6 +43,7 @@ class MqttClient:
         self.topic_prefix = topic_prefix
         assert len(self.topic_prefix) > 0 and self.topic_prefix[-1] == "/"
 
+        self.client_id = client_id
         self.request_topic = request_topic
         self.qos = qos
         self.retain = retain
@@ -89,9 +90,9 @@ class MqttClient:
             self._mqttc.tls_set(ca_certs=None, certfile=None, keyfile=None,
                 cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS,
                 ciphers=None)
-        logging.info("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
+        logging.info(f"Connecting to MQTT broker '{mqtt_broker}:{mqtt_port}' with client_id={self.client_id}")
         rc = self._mqttc.connect(mqtt_broker, mqtt_port)
-        logging.info("Connecting to MQTT broker '%s:%d'... return code was %d", mqtt_broker, mqtt_port, rc)
+        logging.info(f"Connecting to MQTT broker '{mqtt_broker}:{mqtt_port}'... return code was {rc}")
 
         if rc == paho.MQTT_ERR_SUCCESS:
             return True

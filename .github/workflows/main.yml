@@ -20,7 +20,7 @@ jobs:
   test_dependencies:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13' 
@@ -32,7 +32,7 @@ jobs:
   lint_code:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13' 
@@ -51,7 +51,7 @@ jobs:
   unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13' 
@@ -67,7 +67,7 @@ jobs:
   integration_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13' 
@@ -92,7 +92,7 @@ jobs:
     # this lack of access forces us not to push images when dependabot runs
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Metadata extraction
         id: meta
@@ -120,7 +120,7 @@ jobs:
     needs: [test_dependencies,lint_code,unit_tests,integration_tests]
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Metadata extraction
         id: meta
@@ -169,7 +169,7 @@ jobs:
     needs: [test_dependencies,lint_code,unit_tests,integration_tests]
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Metadata extraction
         id: meta

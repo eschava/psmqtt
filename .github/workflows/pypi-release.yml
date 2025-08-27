@@ -9,7 +9,7 @@ jobs:
     steps:
 
     # setup python
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: set up Python
       uses: actions/setup-python@v5
       with:
@@ -43,7 +43,7 @@ jobs:
 
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: python-package-distributions
         path: dist/
