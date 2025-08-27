@@ -46,6 +46,6 @@ class DirectoryUsageCommandHandler(BaseHandler):
                     total_size_bytes += os.path.getsize(fp)
 
         elapsed_time = time.time() - start_time
-        logging.debug(f"Computed directory size in {elapsed_time:.2f} seconds")
+        logging.debug(f"Recursively computed size of directory {start_path} in {elapsed_time:.2f}seconds")
 
         return total_size_bytes
