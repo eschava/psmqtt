@@ -64,7 +64,7 @@ lint-yaml:
 
 lint-yaml-with-schema:
 	# use "pip install yamale" if you don't have the "yamale" CLI utility
-	yamale -s schema/psmqtt.schema.yaml psmqtt.yaml 
+	yamale -s src/psmqtt/schema/psmqtt.schema.yaml psmqtt.yaml 
 	@# integration test file contains some placeholders that won't pass the validation:
 	@#yamale -s schema/psmqtt.schema.yaml integration_tests/integration-tests-psmqtt.yaml
 

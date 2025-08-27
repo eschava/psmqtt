@@ -216,6 +216,12 @@ class PsmqttApp:
         self.config.apply_logging_config()
 
         #
+        # hello message
+        #
+
+        logging.info(f"psmqtt version {PsmqttApp.get_embedded_version()} starting up")
+
+        #
         # create MqttClient
         #
         ha_status_topic = ""
@@ -334,6 +340,10 @@ class PsmqttApp:
                 self.config.config["mqtt"]["broker"]["username"],
                 self.config.config["mqtt"]["broker"]["password"])
         except ConnectionRefusedError as e:
+            logging.error(f"Cannot connect to MQTT broker: {e}. Retrying shortly.")
+            # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
+            # so, if and when the MQTT broker will be available, the connection will be established
+        except OSError as e:
             logging.error(f"Cannot connect to MQTT broker: {e}. Retrying shortly.")
             # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
             # so, if and when the MQTT broker will be available, the connection will be established
