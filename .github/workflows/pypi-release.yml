@@ -9,7 +9,7 @@ jobs:
     steps:
 
     # setup python
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: set up Python
       uses: actions/setup-python@v5
       with:
