@@ -3,6 +3,8 @@
 
 import logging
 import os
+import shutil
+import subprocess
 import time
 
 from .handlers_base import BaseHandler, Payload
@@ -16,6 +18,11 @@ class DirectoryUsageCommandHandler(BaseHandler):
 
     def __init__(self) -> None:
         super().__init__('directory_usage')
+
+        # check if the system where PSMQTT is running has the "du" utility installed
+        self.has_du_utility = shutil.which("du") is not None
+        logging.info("DirectoryUsageCommandHandler: du utility is %savailable", "" if self.has_du_utility else "NOT ")
+
         return
 
     def handle(self, params: list[str], caller_task_id: str) -> Payload:
@@ -33,12 +40,26 @@ class DirectoryUsageCommandHandler(BaseHandler):
         '''
         start_time = time.time()
         total_size_bytes = 0
-        for dirpath, dirnames, filenames in os.walk(start_path):
-            for f in filenames:
-                fp = os.path.join(dirpath, f)
-                # skip if it is symbolic link
-                if not os.path.islink(fp):
-                    total_size_bytes += os.path.getsize(fp)
+
+        if self.has_du_utility:
+
+            # take the fast lane and delegate all the work to the "du" utility
+            try:
+                total_size_kbytes = subprocess.check_output(['du','-sk', start_path]).split()[0].decode('utf-8')
+            except subprocess.CalledProcessError as e:
+                raise Exception(f"Error occurred while executing du command: {e}")
+
+            total_size_bytes = int(total_size_kbytes) * 1024
+
+        else:
+
+            # python implementation:
+            for dirpath, dirnames, filenames in os.walk(start_path):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    # skip if it is symbolic link
+                    if not os.path.islink(fp):
+                        total_size_bytes += os.path.getsize(fp)
 
         elapsed_time = time.time() - start_time
         logging.debug(f"Recursively computed size of directory {start_path} in {elapsed_time:.2f}seconds")
