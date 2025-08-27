@@ -54,7 +54,7 @@ class MqttClient:
         self._ha_discovery_messages_requested = False
 
         # use MQTT v3.1.1 for now
-        self._mqttc = paho.Client(paho.CallbackAPIVersion.VERSION1,
+        self._mqttc = paho.Client(paho.CallbackAPIVersion.VERSION2,
             client_id, clean_session=clean_session, userdata=self,
             protocol=paho.MQTTv311)
         # protocol=paho.MQTTv5
@@ -65,6 +65,7 @@ class MqttClient:
         self._mqttc.on_connect = self.on_connect
         self._mqttc.on_disconnect = self.on_disconnect
         self._mqttc.on_publish = self.on_publish
+        self._mqttc.on_log = self.on_log
 
         # for sudden disconnection, send a last-will message
         self._mqttc.will_set(self.get_psmqtt_status_topic(), payload=MqttClient.LAST_WILL_PAYLOAD, qos=0, retain=True)
@@ -89,7 +90,9 @@ class MqttClient:
                 cert_reqs=paho.ssl.CERT_REQUIRED, tls_version=paho.ssl.PROTOCOL_TLS,
                 ciphers=None)
         logging.info("Connecting to MQTT broker '%s:%d'", mqtt_broker, mqtt_port)
-        self._mqttc.connect(mqtt_broker, mqtt_port)
+        rc = self._mqttc.connect(mqtt_broker, mqtt_port)
+        logging.info("Connecting to MQTT broker '%s:%d'... return code was %d", mqtt_broker, mqtt_port, rc)
+
         return True
 
     # FIXME: change this signature to allow batch-sending multiple messages
@@ -151,8 +154,8 @@ class MqttClient:
     # These will execute in the Paho secondary thread startd via loop_start()      #
     # ---------------------------------------------------------------------------- #
 
-    def on_connect(self, mqttc: paho.Client, userdata: Any, flags: Any,
-            result_code: Any, properties: Any = None) -> None:
+    def on_connect(self, mqttc: paho.Client, userdata: Any, flags: paho.ConnectFlags,
+            reason_code: paho.ReasonCodes, properties: paho.Properties = None) -> None:
         '''
         mqtt callback
         client:     the client instance for this callback
@@ -167,10 +170,13 @@ class MqttClient:
                     compatibility with MQTT v5.0, we recommend adding
                     properties=None.
         '''
-        if result_code != 0:
-            logging.warning(f"Connected to MQTT broker with result_code={result_code}")
+        # create an ID for this new connection to the MQTT broker:
+        self._connection_id += 1
+
+        if reason_code != 0:
+            logging.warning(f"Connected to MQTT broker with reason_code={reason_code}, connection_id={self._connection_id}")
         else:
-            logging.info("Successfully connected to MQTT broker")
+            logging.info(f"Successfully connected to MQTT broker with connection_id={self._connection_id}")
 
         # update our status:
         self._mqttc.publish(self.get_psmqtt_status_topic(), MqttClient.NEW_CONN_PAYLOAD, qos=self.qos, retain=True)
@@ -189,19 +195,18 @@ class MqttClient:
             mqttc.subscribe(self.ha_status_topic, self.qos)
         # else: Home Assistant MQTT discovery messages are disabled
 
-        # create an ID for this new connection to the MQTT broker:
-        self._connection_id += 1
         return
 
-    def on_disconnect(self, mqttc: paho.Client, userdata: Any, rc: Any) -> None:
+    def on_disconnect(self, mqttc: paho.Client, userdata: Any, disconnect_flags: paho.DisconnectFlags,
+                      reason_code: paho.ReasonCodes, properties: paho.Properties) -> None:
         '''
         MQTT callback in case of unexpected disconnection from the broker
         '''
-        if rc != 0:
+        if reason_code != 0:
             MqttClient.num_disconnects += 1
-            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker. Reconnecting in {self.reconnect_period_sec}sec.")
+            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker with reason={reason_code}. Reconnecting in {self.reconnect_period_sec}sec.")
             time.sleep(self.reconnect_period_sec)
-        #else: rc==0 indicates an intentional disconnect
+        #else: reason_code==0 indicates an intentional disconnect
         return
 
     def on_message(self, mqttc: paho.Client, userdata: Any, msg: paho.MQTTMessage) -> None:
@@ -227,9 +232,17 @@ class MqttClient:
             logging.warning(f"Unknown topic: {msg.topic}")
         return
 
-    def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int) -> None:
+    def on_publish(self, mqttc: paho.Client, userdata: Any, mid: int,
+                   reason_code: paho.ReasonCodes, properties: paho.Properties) -> None:
         '''
         MQTT callback in case of successful/failed publish()
         '''
         MqttClient.num_published_successful += 1
+        return
+
+    def on_log(self, mqttc: paho.Client, userdata: Any, level: int, buf: str) -> None:
+        '''
+        MQTT callback when paho needs to log something
+        '''
+        logging.log(level, "Paho MQTT msg: " + buf)
         return

@@ -2,9 +2,6 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import os
-from typing import (
-    NamedTuple,
-)
 
 from .handlers_base import BaseHandler, Payload
 
@@ -31,17 +28,17 @@ class DirectoryUsageCommandHandler(BaseHandler):
         return self.get_value(directory)
 
     # noinspection PyMethodMayBeStatic
-    def get_value(self, start_path:str) -> NamedTuple:
+    def get_value(self, start_path:str) -> int:
         '''
         Get the total (recursive) size of a directory in bytes.
         This method is cross-platform but is also _very_ slow for large folders.
         Use with care.
         '''
-        total_size = 0
+        total_size_bytes = 0
         for dirpath, dirnames, filenames in os.walk(start_path):
             for f in filenames:
                 fp = os.path.join(dirpath, f)
                 # skip if it is symbolic link
                 if not os.path.islink(fp):
-                    total_size += os.path.getsize(fp)
-        return total_size
+                    total_size_bytes += os.path.getsize(fp)
+        return total_size_bytes
