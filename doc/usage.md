@@ -252,6 +252,7 @@ Here follows the reference documentation for all required tasks and their parame
   * Task name: `directory_usage`
     * Short description: Disk space usage (amount of bytes) for a particular directory (recursively computed). Please note that this task has no direct association with any psutil function and is implemented entirely in **PSMQTT**. More importantly, please consider that this task is very I/O intensive and might take a considerable amount of time to complete; in comparison, `disk_usage` which reports several properties of an entire disk is a pretty fast operation. Try to use `disk_usage` whenever possible, i.e. when you are interested in measuring the utilization of a whole disk partition.
     * **REQUIRED**: `<param1>`: The path to a directory whose disk usage must be measured, e.g. `/var/lib/docker`, or `/home/<username>`.
+    * **OPTIONAL**: `<param2>` ... `<paramN>`: Additional paths whose disk usage must be evaluated together with `<param1>`; please note that the task output is always a single integer (number of bytes) regardless of how many parameters are provided.
   * Task name: `disk_io_counters`
     * Short description: Disk I/O counters. [ Full reference ]( https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters ).
       Please note that these are monotonically increasing counters. You may want to use the `disk_io_counters_rate` task instead.
