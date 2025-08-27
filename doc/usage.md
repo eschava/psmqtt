@@ -418,8 +418,10 @@ For multi-valued tasks (that use a wildcard `*`) all outputs are available:
 
 PSMQTT provides the following Jinja2 filters:
 
-* `KB`,`MB`,`GB` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit.
+* `KB`,`MB`,`GB` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit. Please note that these formatters will divide their input values by a power of ten (1000) and not by a power of two (1024); see e.g. [Mebibyte Wikipedia page](https://simple.wikipedia.org/wiki/Mebibyte) as explanation.
 * `KB_fractional(n)`,`MB_fractional(n)`,`GB_fractional(n)` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
+* `KiB`,`MiB`,`GiB` to format the input value in bytes as Kibibytes, Mebibytes or Gibibytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit. Check e.g. [Mebibyte Wikipedia page](https://simple.wikipedia.org/wiki/Mebibyte) to understand how a Mebibyte differs from a Megabyte.
+* `KiB_fractional(n)`,`MiB_fractional(n)`,`GiB_fractional(n)` to format the input value in bytes as Kibibytes, Mebibytes or Gibibytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
 * `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like "30 days, 5:18").
 * `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
 * `iso8601_str`  to format Linux epochs (mostly the output of the `boot_time` task) as an [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp; this is particularly useful to create HomeAssistant sensors with a `timestamp` device class.
