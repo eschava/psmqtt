@@ -44,6 +44,16 @@ class DirectoryUsageCommandHandler(BaseHandler):
         if self.has_du_utility:
 
             # take the fast lane and delegate all the work to the "du" utility
+            # this is typically up to 2x-3x faster than the python implementation
+            # see e.g. https://stackoverflow.com/questions/1392413/calculating-a-directorys-size-using-python
+            # here is some number I measured, in seconds:
+            #
+            #          PYTHON IMPL    DU IMPL
+            # folder1: 9.66           3.37
+            # folder2: 49.44          29.32
+            # folder3: 7.48           3.96
+            #
+            # where these 3 folders contain real-world data and big dataset (> 400GB)
             try:
                 total_size_kbytes = subprocess.check_output(['du','-sk', start_path]).split()[0].decode('utf-8')
             except subprocess.CalledProcessError as e:
