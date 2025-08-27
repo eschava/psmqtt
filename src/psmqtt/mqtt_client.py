@@ -112,14 +112,14 @@ class MqttClient:
         See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
         rc = self._mqttc.loop_start()
-        logging.info(f"started MQTT client loop; return code was {rc}")
+        logging.info(f"started MQTT client loop for connection_id={self._connection_id}; return code was {rc}")
 
     def loop_stop(self) -> None:
         '''
         See https://www.eclipse.org/paho/clients/python/docs/#network-loop
          '''
         rc = self._mqttc.loop_stop()
-        logging.info(f"stopped MQTT client loop; return code was {rc}")
+        logging.info(f"stopped MQTT client loop for connection_id={self._connection_id}; return code was {rc}")
 
     def is_connected(self) -> bool:
         '''
@@ -206,7 +206,7 @@ class MqttClient:
         '''
         if reason_code != 0:
             MqttClient.num_disconnects += 1
-            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker with reason=[{reason_code}]. Reconnecting in {self.reconnect_period_sec}sec.")
+            logging.warning(f"OOOOPS! Unexpected disconnection from the MQTT broker with reason=[{reason_code}] for connection_id={self._connection_id}. Reconnecting in {self.reconnect_period_sec}sec.")
             time.sleep(self.reconnect_period_sec)
         #else: reason_code==0 indicates an intentional disconnect
         return
@@ -245,6 +245,7 @@ class MqttClient:
     def on_log(self, mqttc: paho.Client, userdata: Any, level: int, buf: str) -> None:
         '''
         MQTT callback when paho needs to log something
+        This seems unused right now and might need to be turned out via some flag
         '''
         logging.log(level, "Paho MQTT msg: " + buf)
         return

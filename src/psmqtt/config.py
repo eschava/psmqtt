@@ -172,7 +172,8 @@ class Config:
         if "retain" not in m:
             m["retain"] = False
         if "clean_session" not in m:
-            m["clean_session"] = False
+            # see https://github.com/eschava/psmqtt/issues/102
+            m["clean_session"] = True
         if "clientid" not in m:
             m["clientid"] = 'psmqtt-%s' % os.getpid()
         if "qos" not in m:
