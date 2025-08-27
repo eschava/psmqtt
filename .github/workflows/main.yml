@@ -158,7 +158,11 @@ jobs:
           pushImage: true
 
       - name: Summary Message
-        run: echo "::notice title=Docker Image Published::Docker image psmqtt:${{ steps.docker_version.outputs.version }} was published to ghcr.io"  >> $GITHUB_STEP_SUMMARY
+        run: |
+          echo "### Published Docker Image :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/eschava/psmqtt:${{ steps.docker_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
   build_docker_root_variant:
     runs-on: ubuntu-latest
@@ -204,4 +208,8 @@ jobs:
           pushImage: true
 
       - name: Summary Message
-        run: echo "::notice title=Docker Image Published::Docker image psmqtt:${{ steps.docker_version.outputs.version }} was published to ghcr.io"  >> $GITHUB_STEP_SUMMARY
+        run: |
+          echo "### Published Docker Image :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/eschava/psmqtt:${{ steps.docker_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
