@@ -343,6 +343,10 @@ class PsmqttApp:
             logging.error(f"Cannot connect to MQTT broker: {e}. Retrying shortly.")
             # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
             # so, if and when the MQTT broker will be available, the connection will be established
+        except OSError as e:
+            logging.error(f"Cannot connect to MQTT broker: {e}. Retrying shortly.")
+            # IMPORTANT: there's no need to abort here -- paho MQTT client loop_start() will keep trying to reconnect
+            # so, if and when the MQTT broker will be available, the connection will be established
 
         self.last_ha_discovery_messages_connection_id = MqttClient.CONN_ID_INVALID
 
