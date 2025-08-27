@@ -72,7 +72,7 @@ class DirectoryUsageCommandHandler(BaseHandler):
                         total_size_bytes += os.path.getsize(fp)
 
         elapsed_time = time.time() - start_time
-        logging.debug(f"Recursively computed size of directory {start_path} in {elapsed_time:.2f}seconds")
+        logging.debug(f"Recursively computed size of directory {start_path} in {elapsed_time:.2f}seconds with {'du' if self.has_du_utility else 'python'} implemention")
         return total_size_bytes
 
     # noinspection PyMethodMayBeStatic
