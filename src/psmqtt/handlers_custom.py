@@ -1,7 +1,9 @@
 # Copyright (c) 2016 psmqtt project
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
+import logging
 import os
+import time
 
 from .handlers_base import BaseHandler, Payload
 
@@ -34,6 +36,7 @@ class DirectoryUsageCommandHandler(BaseHandler):
         This method is cross-platform but is also _very_ slow for large folders.
         Use with care.
         '''
+        start_time = time.time()
         total_size_bytes = 0
         for dirpath, dirnames, filenames in os.walk(start_path):
             for f in filenames:
@@ -41,4 +44,8 @@ class DirectoryUsageCommandHandler(BaseHandler):
                 # skip if it is symbolic link
                 if not os.path.islink(fp):
                     total_size_bytes += os.path.getsize(fp)
+
+        elapsed_time = time.time() - start_time
+        logging.debug(f"Computed directory size in {elapsed_time:.2f} seconds")
+
         return total_size_bytes
