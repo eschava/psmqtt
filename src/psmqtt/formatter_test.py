@@ -18,7 +18,7 @@ class TestFormatter(unittest.TestCase):
         self.assertEqual("15", Formatter("{{a+b}}").format({"a": 10, "b": 5}))
         self.assertEqual("1.2 MB", Formatter("{{a/1000000}} MB").format({"a": 1200000}))
 
-    def test_byte_conversion_filters(self) -> None:
+    def test_byte_conversion_filters_si_standard(self) -> None:
         tests = [
 
             {
@@ -51,6 +51,46 @@ class TestFormatter(unittest.TestCase):
                 "input_value": 1234567,
                 "input": "{{a|KB_fractional(3)}}",
                 "expected_output": "1234.567",
+            },
+        ]
+
+        for t in tests:
+            self.assertEqual(t["expected_output"],
+                                Formatter(t["input"]).format({"a": t["input_value"]}))
+
+    def test_byte_conversion_filters_iec_standard(self) -> None:
+        tests = [
+
+            {
+                "input_value": 1200000,
+                "input": "{{a|KiB}}",
+                "expected_output": "1171",
+            },
+            {
+                "input_value": 1200000,
+                "input": "{{a|MiB}}",
+                "expected_output": "1",
+            },
+            {
+                "input_value": 1200000,
+                "input": "{{a|GiB}}",
+                "expected_output": "0",
+            },
+
+            {
+                "input_value": 1234000,
+                "input": "{{a|MiB_fractional}}",
+                "expected_output": "1.18",
+            },
+            {
+                "input_value": 1234567,
+                "input": "{{a|MiB_fractional(4)}}",
+                "expected_output": "1.1774",
+            },
+            {
+                "input_value": 1234567,
+                "input": "{{a|KiB_fractional(3)}}",
+                "expected_output": "1205.632",
             },
         ]
 

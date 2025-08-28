@@ -17,7 +17,7 @@ from .handlers_base import Payload, TupleCommandHandler, ValueCommandHandler, In
 from .handlers_psutil_processes import ProcessesCommandHandler
 from .handlers_psutil import DiskIOCountersCommandHandler, DiskIOCountersRateHandler, DiskUsageCommandHandler, NetIOCountersCommandHandler, NetIOCountersRateHandler, SensorsFansCommandHandler, SensorsTemperaturesCommandHandler, GetLoadAvgCommandHandler
 from .handlers_pysmart import SmartCommandHandler
-from .handlers_custom import DirectoryUsageCommandHandler
+from .handlers_embedded import DirectoryUsageCommandHandler
 
 class Task:
     '''
