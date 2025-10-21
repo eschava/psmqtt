@@ -255,7 +255,7 @@ class Config:
             # optional parameters with defaults:
 
             if "platform" not in h:
-                # most of psutil/pySMART tasks are sensors, so "sensor" is a good deafult:
+                # most of psutil/pySMART tasks are sensors, so "sensor" is a good default:
                 h["platform"] = "sensor"
             elif h["platform"] not in Config.HA_SUPPORTED_PLATFORMS:
                 raise ValueError(f"{t['task']}: Invalid 'ha_discovery.platform' attribute in configuration file: {h['platform']}. Expected one of {Config.HA_SUPPORTED_PLATFORMS}")

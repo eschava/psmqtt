@@ -458,17 +458,19 @@ Examples:
     formatter: "{{x|MB_fractional(3)}}"
 
   - task: boot_time
-    # format a fixed point in time (the boot timestamp) as difference between now and that point in time,
-    # e.g. "30 days, 5:18"
+    # format a fixed point in time (the boot timestamp) as difference between now and that point in time;
+    # the result might look like "30 days, 5:18"
     formatter: "{{x|uptime_str}}"
 
   - task: boot_time
-    # format a fixed point in time (the boot timestamp) using ISO8601 format, e.g. "20250312T094946Z"
+    # format a fixed point in time (the boot timestamp) using ISO8601 format; 
+    # the result might look like e.g. "20250312T094946Z"
     formatter: "{{x|iso8601_str}}"
 
   - task: cpu_times_percent
+    # configure the cpu_times_percent as multi-valued task, producing numbered outputs x[0], x[1], etc.
     params: [ "user", "*" ]
-    # emit total CPU time spend in user mode for the first and second logical cores only
+    # emit total CPU time spent in user mode for the first and second logical cores only
     formatter: "{{x[0]+x[1]}}"
 ```
 
@@ -541,33 +543,29 @@ mqtt:
     enabled: true
 ```
 
-2. For each task specify as bare minimum the `ha_discovery.name` and `ha_discovery.platform` properties:
+2. For each task specify as bare minimum the `ha_discovery.name` property, which will be the human-friendly name of the HA entity:
 
 ```yaml
 - task: cpu_percent
   params: [ total ]
   ha_discovery:
     name: "CPU Percentage"
-    platform: sensor
 ```
 
 Please note that **PSMQTT** will error-out if the `ha_discovery` section is populated for a multi-valued
-task.
-
-Consider that the `ha_discovery.name` will be the human-friendly name of the HA entity;
-`ha_discovery.platform` can be either `sensor` or `binary_sensor`.
-Most of PSMQTT tasks produce `sensor`s but there are a few exceptions:
-
-* the `power_plugged` field of the `sensors_battery` task (which is either "true" or "false") produces a `binary_sensor`
-* the `smart_status` field of the `smart` task (which is either "PASS" or "FAIL") produces a `binary_sensor`
+task. The task **must** be a **single-valued** task.
 
 Additional HA discovery properties that you might want to set to improve the look&feel of
 the HA entities are:
 
 ```yaml
   ha_discovery:
+    # mandatory:
     name: <some friendly name>
+    # optionals; if missing PSMQTT will use a sensible default (see below docs)
     platform: sensor|binary_sensor
+    state_class: measurement|total|total_increasing
+    # optionals without defaults; if missing they will not be sent to HA
     device_class: temperature|duration|timestamp|problem|...
     icon: mdi:<whatever>
     unit_of_measurement: bytes|seconds|...
@@ -576,26 +574,33 @@ the HA entities are:
     payload_off: <useful only for binary_sensor>
     value_template: <tell HA how to render the number>
 ```
+    
+Please note that `ha_discovery.platform` property can be either `sensor` or `binary_sensor`.
+Most of PSMQTT tasks produce `sensor`s but there are a few exceptions:
 
-https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics
+* the `power_plugged` field of the `sensors_battery` task (which is either "true" or "false") produces a `binary_sensor`
+* the `smart_status` field of the `smart` task (which is either "PASS" or "FAIL") produces a `binary_sensor`
 
-See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
-[MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
+The `ha_discovery.state_class` property can be either `measurement`, `total` or `total_increasing`.
+Please see [HomeAssistant Long Term Statistics docs](https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics) for more information about this property.
 
-See [HomeAssistant constant list](https://github.com/home-assistant/core/blob/dev/homeassistant/const.py) as reference for the supported values for the `unit_of_measurement` field.
+The `ha_discovery.unit_of_measurement` property can be one of the constants referenced in the [HomeAssistant constant list](https://github.com/home-assistant/core/blob/dev/homeassistant/const.py).
 
-For the `icon` field, you can use online resources for [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
+The `ha_discovery.icon` property is typically set as `mdi:xyz`, where `xyz` can be found [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
+
+See [HomeAssistant MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
+[HomeAssistant MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
 
 Check also the [default psmqtt.yaml](../psmqtt.yaml) for some examples
-or the PSMQTT configuration examples later in this document.
+or the **PSMQTT** configuration examples later in this document.
 
-Note that PSMQTT will publish MQTT discovery messages in 2 cases:
+Note that **PSMQTT** will publish MQTT discovery messages in 2 cases:
 
 1. when an HomeAssistant restart is detected;
-2. at PSMQTT startup
+2. at **PSMQTT** startup
 
 This policy optimizes network traffic (reducing it to the minimal) but ensures that HomeAssistant
-is always instantly updated on any PSMQTT sensor that is enriched with the `ha_discovery` metadata.
+is always instantly updated on any **PSMQTT** sensor that is enriched with the `ha_discovery` metadata.
 
 
 ## <a name='SendingMQTTrequests'></a>Sending MQTT requests
@@ -608,10 +613,10 @@ mqtt:
 ```
 
 This configuration allows you to specify an MQTT topic that will be **subscribed** 
-by PSMQTT and used as **input** trigger for emitting measurements.
-This is an alternative way to use PSMQTT compared to the use of cron expressions.
+by **PSMQTT** and used as **input** trigger for emitting measurements.
+This is an alternative way to use **PSMQTT** compared to the use of cron expressions.
 
-E.g. to force PSMQTT to run the task:
+E.g. to force **PSMQTT** to run the task:
 
 ```yaml
 - task: cpu_times_percent
@@ -626,7 +631,7 @@ other task in the configuration file.
 
 ## <a name='MonitoringPSMQTT'></a>Monitoring PSMQTT
 
-PSMQTT provides some observability feature about itself in 2 forms:
+**PSMQTT** provides some observability feature about itself in 2 forms:
 * logs: each disconnection from MQTT broker, network issue or any failure in executing a configured task is obviously reported in the logs;
 * in the **psmqtt/COMPUTER_NAME/psmqtt_status** topic, where 3 metrics are published: `num_tasks_errors`, `num_tasks_success` and `num_mqtt_disconnects`; this feature is enabled by the configuration key `report_status_period_sec`:
 
@@ -635,18 +640,18 @@ logging:
   report_status_period_sec: 10
 ```
 
-Of course another way to monitor whether PSMQTT is working correctly is to check whether the output MQTT topics
+Of course another way to monitor whether **PSMQTT** is working correctly is to check whether the output MQTT topics
 are updated on the expected frequency.
 
-If the HomeAssistant integration MQTT discovery messages are used, also note that PSMQTT will automatically configure
-the `expire_after` property of the sensors; that means that in case PSMQTT stops updating the sensor main topic for
+If the HomeAssistant integration MQTT discovery messages are used, also note that **PSMQTT** will automatically configure
+the `expire_after` property of the sensors; that means that in case **PSMQTT** stops updating the sensor main topic for
 a time longer than the expected frequency, then the sensor’s state becomes `unavailable`. This offers another way
-to monitor whether PSMQTT is working as intended from HomeAssistant.
+to monitor whether **PSMQTT** is working as intended from HomeAssistant.
 
-Finally, PSMQTT is also configuring the [MQTT Last Will](https://www.hivemq.com/blog/mqtt-essentials-part-9-last-will-and-testament/) message on the (fixed) topic **psmqtt/COMPUTER_NAME/psmqtt_status**.
-Whenever PSMQTT goes online the payload `online` is published on that topic, with a retained message.
-Whenever PSMQTT goes offline the payload `offline` is published on that topic, with a retained message.
-This allows any other MQTT client to always immediately retrieve the actual status of a PSMQTT client: online/connected or offline/disconnected.
+Finally, **PSMQTT** is also configuring the [MQTT Last Will](https://www.hivemq.com/blog/mqtt-essentials-part-9-last-will-and-testament/) message on the (fixed) topic **psmqtt/COMPUTER_NAME/psmqtt_status**.
+Whenever **PSMQTT** goes online the payload `online` is published on that topic, with a retained message.
+Whenever **PSMQTT** goes offline the payload `offline` is published on that topic, with a retained message.
+This allows any other MQTT client to always immediately retrieve the actual status of a **PSMQTT** client: online/connected or offline/disconnected.
 
 ## <a name='Exampleconfigs'></a>Example configs
 
