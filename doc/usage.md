@@ -566,9 +566,9 @@ the HA entities are:
     platform: sensor|binary_sensor
     state_class: measurement|total|total_increasing
     # optionals without defaults; if missing they will not be sent to HA
-    device_class: temperature|duration|timestamp|problem|...
-    icon: mdi:<whatever>
     unit_of_measurement: bytes|seconds|...
+    icon: mdi:<whatever>
+    device_class: temperature|duration|timestamp|problem|...
     expire_after: <an integer number of seconds>
     payload_on: <useful only for binary_sensor>
     payload_off: <useful only for binary_sensor>
@@ -588,8 +588,16 @@ The `ha_discovery.unit_of_measurement` property can be one of the constants refe
 
 The `ha_discovery.icon` property is typically set as `mdi:xyz`, where `xyz` can be found [searching Material Design Icons](https://pictogrammers.com/library/mdi/).
 
-See [HomeAssistant MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
-[HomeAssistant MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
+For more information about
+
+* `ha_discovery.device_class`
+* `ha_discovery.expire_after`
+* `ha_discovery.payload_on`
+* `ha_discovery.payload_off`
+* `ha_discovery.value_template`
+
+please refer to [HomeAssistant MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
+[HomeAssistant MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs.
 
 Check also the [default psmqtt.yaml](../psmqtt.yaml) for some examples
 or the **PSMQTT** configuration examples later in this document.
