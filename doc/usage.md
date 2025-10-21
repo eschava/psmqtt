@@ -88,7 +88,7 @@ documentation for most of the entries.
 Typically you will need to edit are those associated
 with the MQTT broker:
 
-```
+```yaml
 mqtt:
   broker:
     host: <put here the IP address of your MQTT broker>
@@ -98,7 +98,7 @@ mqtt:
 The rest of this document will focus on the format of each "scheduling expression",
 whose general format is:
 
-```
+```yaml
 schedule:
   - cron: <human-friendly CRON expression>
     tasks:
@@ -141,12 +141,12 @@ A "task" is the combination of
   square brackets); such parameters act as additional selectors/filters for the sensor;
 
 The meaning for `<param1>`, `<param2>` is task-dependent.
-Also the number of required paraterms is task-dependent.
+Also the number of required parameters is task-dependent.
 
 The result of each task are pushed to an MQTT topic.
 As an example:
 
-```
+```yaml
 schedule:
   - cron: every 10sec
     tasks:
@@ -164,7 +164,7 @@ an MQTT topic _prefix_ so that each task output will be published on a different
 
 As an example:
 
-```
+```yaml
 schedule:
   - cron: every 10sec
     tasks:
@@ -186,7 +186,7 @@ Most tasks support also the join wildcard `+` parameter to get all possible fiel
 on a single MQTT topic with a message payload containing a JSON string.
 As an example:
 
-```
+```yaml
 schedule:
   - cron: every 10sec
     tasks:
@@ -400,7 +400,7 @@ The output of each task can be formatted using
 
 E.g.:   
 
-```
+```yaml
 schedule:
   - cron: every 10sec
     tasks:
@@ -418,28 +418,41 @@ For multi-valued tasks (that use a wildcard `*`) all outputs are available:
 
 PSMQTT provides the following Jinja2 filters:
 
-* `KB`,`MB`,`GB` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit. Please note that these formatters will divide their input values by a power of ten (1000) and not by a power of two (1024); see e.g. [Mebibyte Wikipedia page](https://simple.wikipedia.org/wiki/Mebibyte) as explanation.
+* `KB`,`MB`,`GB` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit. Please note that these formatters will divide their input values by a power of ten (1000) and not by a power of two (1024); see e.g. [Mebibyte Wikipedia page](https://simple.wikipedia.org/wiki/Mebibyte) as explanation. 
+E.g., the expression `{{ x | KB }}` will render as `3` when `x` is `3156`.
 * `KB_fractional(n)`,`MB_fractional(n)`,`GB_fractional(n)` to format the input value in bytes as KBytes, MBytes or GBytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
+E.g., the expression `{{ x | KB_fractional(2) }}` will render as `3.16` when `x` is `3156` (note the rounding happening).
 * `KiB`,`MiB`,`GiB` to format the input value in bytes as Kibibytes, Mebibytes or Gibibytes. These filters produce an integer result (performing a rounding to the bottom) and do not explicitly append any measurement unit. Check e.g. [Mebibyte Wikipedia page](https://simple.wikipedia.org/wiki/Mebibyte) to understand how a Mebibyte differs from a Megabyte.
+E.g., the expression `{{ x | KiB }}` will render as `4` when `x` is `4096`.
 * `KiB_fractional(n)`,`MiB_fractional(n)`,`GiB_fractional(n)` to format the input value in bytes as Kibibytes, Mebibytes or Gibibytes. These filters produce a floating point result with `n` decimal digits and do not explicitly append any measurement unit.
-* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation (e.g., the output string might look like "30 days, 5:18").
+E.g., the expression `{{ x | KiB_fractional(2) }}` will render as `4.00` when `x` is `4096`.
+* `uptime_str` to format Linux epochs (mostly the output of the `boot_time` task) as a human friendly uptime string representation.
+E.g., the expression `{{ x | uptime_str }}` will render as `30 days, 5:18` when the difference between current Linux epoch (in seconds) and `x` is equal to 30 days, 5 minutes and 18 seconds.
 * `uptime_sec` to format Linux epochs (mostly the output of the `boot_time` task) as a number of seconds elapsed since last boot.
+E.g., the expression `{{ x | uptime_sec }}` will render as `1200` when the difference between current Linux epoch (in seconds) and `x` is equal to 1200 seconds.
 * `iso8601_str`  to format Linux epochs (mostly the output of the `boot_time` task) as an [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp; this is particularly useful to create HomeAssistant sensors with a `timestamp` device class.
+E.g., the expression `{{ x | iso8601_str }}` will render as `2024-02-03T18:40:00+00:00` when `x` is equal to 1706985600 seconds.
+
+Additionally all [Jinja2 builtin filters](https://jinja.palletsprojects.com/en/stable/templates/#list-of-builtin-filters) are also available.
+[Jinja2 math operations](https://jinja.palletsprojects.com/en/stable/templates/#math) are typically very useful as well.
 
 Examples:
 
-```
+```yaml
   - task: virtual_memory
+    # configure virtual_memory to be a multi-valued task, producing several named fields e.g. 'free' and 'total'
     params: [ "*" ]
-    # emit free virtual memory in %
+    # computer free virtual memory in percentage by using Jinja2 math operators and the builtin 'int' filter
     formatter: "{{(100*free/total)|int}}%"
 
   - task: virtual_memory
+  # configure virtual_memory to be a single-valued task, extracting only 'free' memory:
     params: [ "free" ]
-    # emit free virtual memory in MB instead of bytes
+    # emit free virtual memory in MB instead of bytes, using PSMQTT 'MB' filter
     formatter: "{{x|MB}}"
 
   - task: disk_io_counters_rate
+    # configure disk_io_counters_rate as single-valued task, emitting written bytes for a specific disk:
     params: [ "write_bytes", "/dev/sda" ]
     # emit number of written bytes/sec on /dev/sda as MB/sec with 3 decimal digits:
     formatter: "{{x|MB_fractional(3)}}"
@@ -467,9 +480,9 @@ If it is not specified, PSMQTT will generate automatically an output MQTT topic
 in the form **psmqtt/COMPUTER_NAME/<task-name>**.
 
 To customize the prefix **psmqtt/COMPUTER_NAME** you can use the `mqtt.publish_topic_prefix`
-key in the configuraton file. E.g.:
+key in the configuration file. E.g.:
 
-```
+```yaml
 mqtt:
   publish_topic_prefix: my-prefix
 ```
@@ -481,7 +494,7 @@ wildcard `*` character then the MQTT topic _must_ be specified and _must_ includ
 wildcard `*` character itself.
 As an example the task
 
-```
+```yaml
 schedule:
   - cron: every 10sec
     tasks:
@@ -514,14 +527,15 @@ or does not contain the wildcard `*` character itself, then an error will be emi
 The `<HomeAssistant discovery options>` specification in each [task definition](#Configurationfile) is optional.
 If it is specified, PSMQTT will generate MQTT messages that follow the [Home Assistant MQTT discovery message specs](https://www.home-assistant.io/integrations/mqtt/#discovery-messages).
 
-These messages are extremehely useful to quickly setup connect **PSMQTT** and **Home Assistant** (HA) together,
-since HA will automatically detect the presence of PSMQTT "sensors".
+These messages are extremehely useful to quickly setup connect **PSMQTT** and **Home Assistant** (HA) together;
+if these messages are generated HA will automatically detect the presence of your PSMQTT "sensors" and make them
+available for dashboards, automations, etc.
 
 If you want to configure MQTT discovery messages for HA, you should:
 
-1. Ensure to enable the feature 
+1. Ensure to enable the MQTT discovery feature in the **PSMQTT** configuration file:
 
-```
+```yaml
 mqtt:
   ha_discovery:
     enabled: true
@@ -529,7 +543,7 @@ mqtt:
 
 2. For each task specify as bare minimum the `ha_discovery.name` and `ha_discovery.platform` properties:
 
-```
+```yaml
 - task: cpu_percent
   params: [ total ]
   ha_discovery:
@@ -550,18 +564,20 @@ Most of PSMQTT tasks produce `sensor`s but there are a few exceptions:
 Additional HA discovery properties that you might want to set to improve the look&feel of
 the HA entities are:
 
-```
+```yaml
   ha_discovery:
     name: <some friendly name>
     platform: sensor|binary_sensor
     device_class: temperature|duration|timestamp|problem|...
     icon: mdi:<whatever>
-    unit_of_measurement: %|bytes|...
+    unit_of_measurement: bytes|seconds|...
     expire_after: <an integer number of seconds>
     payload_on: <useful only for binary_sensor>
     payload_off: <useful only for binary_sensor>
     value_template: <tell HA how to render the number>
 ```
+
+https://developers.home-assistant.io/docs/core/entity/sensor/#long-term-statistics
 
 See [MQTT Binary sensors](https://www.home-assistant.io/integrations/binary_sensor.mqtt/) and
 [MQTT sensors](https://www.home-assistant.io/integrations/sensor.mqtt/) docs by HomeAssistant for more details.
@@ -586,7 +602,7 @@ is always instantly updated on any PSMQTT sensor that is enriched with the `ha_d
 
 The [psmqtt.yaml](../psmqtt.yaml) file supports a configuration named "request_topic":
 
-```
+```yaml
 mqtt:
   request_topic: request
 ```
@@ -596,7 +612,8 @@ by PSMQTT and used as **input** trigger for emitting measurements.
 This is an alternative way to use PSMQTT compared to the use of cron expressions.
 
 E.g. to force PSMQTT to run the task:
-```
+
+```yaml
 - task: cpu_times_percent
   params: [ "*" ]
   topic: "cpu/*"
@@ -613,7 +630,7 @@ PSMQTT provides some observability feature about itself in 2 forms:
 * logs: each disconnection from MQTT broker, network issue or any failure in executing a configured task is obviously reported in the logs;
 * in the **psmqtt/COMPUTER_NAME/psmqtt_status** topic, where 3 metrics are published: `num_tasks_errors`, `num_tasks_success` and `num_mqtt_disconnects`; this feature is enabled by the configuration key `report_status_period_sec`:
 
-```
+```yaml
 logging:
   report_status_period_sec: 10
 ```
@@ -636,7 +653,7 @@ This allows any other MQTT client to always immediately retrieve the actual stat
 The following `psmqtt.yaml` is an example intended to be used as reference for some
 syntax rules explained in this document:
 
-```
+```yaml
 logging:
   level: WARNING
   report_status_period_sec: 10
