@@ -2,7 +2,7 @@
 # Builder docker
 #
 
-FROM public.ecr.aws/docker/library/python:3.13-alpine AS builder
+FROM public.ecr.aws/docker/library/python:3.14-alpine AS builder
 
 # NOTE1: build-base and linux-headers are required to build psutil dependency
 # NOTE2: git is required to get the "hatch-vcs" plugin to work and produce the _psmqtt_version.py file
@@ -23,7 +23,7 @@ RUN python -m build --wheel --outdir /build/wheel
 # Production docker
 #
 
-FROM public.ecr.aws/docker/library/python:3.13-alpine
+FROM public.ecr.aws/docker/library/python:3.14-alpine
 
 # when USERNAME=root is provided, the application runs as root within the container, this is useful in case 'pySMART' or any SMART attribute
 # has been configured (smartctl requires root permissions)
