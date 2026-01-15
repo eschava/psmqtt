@@ -9,5 +9,5 @@ pySMART==1.4.2
 # testcontainers>=4.6.0 is required, since 4.6.0 introduced MosquittoContainer
 testcontainers==4.14.0
 pyyaml==6.0.3
-yamale==6.0.0
+yamale==6.1.0
 platformdirs==4.5.1
