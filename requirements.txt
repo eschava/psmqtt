@@ -10,4 +10,4 @@ pySMART==1.4.1
 testcontainers==4.9.2
 pyyaml==6.0.2
 yamale==6.0.0
-platformdirs==4.3.7
+platformdirs==4.5.1
