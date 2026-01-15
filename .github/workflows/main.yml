@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13' 
+          python-version: '3.14' 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13' 
+          python-version: '3.14' 
       - name: Lint code with flake8
         run: |
           pip install flake8
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13' 
+          python-version: '3.14' 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13' 
+          python-version: '3.14' 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
