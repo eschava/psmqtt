@@ -23,7 +23,7 @@ class MosquittoContainerEnhanced(MosquittoContainer):
     # the version used by HomeAssistant plugin:
     #   https://github.com/home-assistant/addons/blob/master/mosquitto/build.yaml
     # (HomeAssistant being a primary use case for psmqtt)
-    # Moreover there are issues with testcontainers+Mosquitto 2.1.0, tracked in 
+    # Moreover there are issues with testcontainers+Mosquitto 2.1.0, tracked in
 
     def __init__(
         self,
