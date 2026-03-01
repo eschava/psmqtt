@@ -24,7 +24,7 @@ class MosquittoContainerEnhanced(MosquittoContainer):
     #   https://github.com/home-assistant/addons/blob/master/mosquitto/build.yaml
     # (HomeAssistant being a primary use case for psmqtt)
     # Moreover there are issues with testcontainers+Mosquitto 2.1.0, tracked in
-
+    # https://github.com/eschava/psmqtt/issues/116
     def __init__(
         self,
         image: str = "eclipse-mosquitto:2.0.22",
