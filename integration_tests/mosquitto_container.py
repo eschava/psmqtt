@@ -18,9 +18,16 @@ class MosquittoContainerEnhanced(MosquittoContainer):
     Specialization of MosquittoContainer adding the ability to watch topics
     """
 
+    #
+    # IMPORTANT: we have pinned the Mosquitto image to version 2.0.22 because it's
+    # the version used by HomeAssistant plugin:
+    #   https://github.com/home-assistant/addons/blob/master/mosquitto/build.yaml
+    # (HomeAssistant being a primary use case for psmqtt)
+    # Moreover there are issues with testcontainers+Mosquitto 2.1.0, tracked in 
+
     def __init__(
         self,
-        image: str = "eclipse-mosquitto:latest",
+        image: str = "eclipse-mosquitto:2.0.22",
         **kwargs,
     ) -> None:
         super().__init__(image, **kwargs)
