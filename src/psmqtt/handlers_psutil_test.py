@@ -85,9 +85,9 @@ class TestHandlers(unittest.TestCase):
     @staticmethod
     def _temperature_sensors_get_value() -> Dict[str, Any]:
         ret = collections.defaultdict(list)
-        ret['coretemp'].append(psutil._common.shwtemp('Core 0', 45.0, 100.0, 100.0))
-        ret['coretemp'].append(psutil._common.shwtemp('Core 1', 52.0, 100.0, 100.0))
-        ret['asus'].append(psutil._common.shwtemp('', 30.0, None, None))
+        ret['coretemp'].append(psutil._ntuples.shwtemp('Core 0', 45.0, 100.0, 100.0))
+        ret['coretemp'].append(psutil._ntuples.shwtemp('Core 1', 52.0, 100.0, 100.0))
+        ret['asus'].append(psutil._ntuples.shwtemp('', 30.0, None, None))
         return dict(ret)
 
     def test_SensorsFansCommandHandler(self) -> None:
