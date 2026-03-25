@@ -19,22 +19,29 @@ to test how the project will work in a real installation (via Pypi in this case)
 
 ## Python Testing
 
+Install test-only dependencies with:
+
+```sh
+pip install '.[test]'
+```
+
 Just do:
 
 ```sh
-make unit-tests
+make unit-test
 ```
 
 or 
 
 ```sh
-make integration-tests
+make integration-test
 ```
 
 
 ## Dependencies
 
-See the [requirements.txt](requirements.txt) file
+Runtime dependencies live in [requirements.txt](../requirements.txt).
+Test-only dependencies are exposed as the `test` extra in [pyproject.toml](../pyproject.toml).
 
 ## Creating a new release
 

@@ -27,7 +27,7 @@ class MosquittoContainerEnhanced(MosquittoContainer):
     # https://github.com/eschava/psmqtt/issues/116
     def __init__(
         self,
-        image: str = "eclipse-mosquitto:2.0.22",
+        image: str = "eclipse-mosquitto:2.1.2-alpine",
         **kwargs,
     ) -> None:
         super().__init__(image, **kwargs)
