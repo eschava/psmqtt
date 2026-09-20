@@ -79,8 +79,11 @@ class ProcessesCommandHandler(BaseHandler):
             reverse:bool) -> int:
         procs:List[psutil.Process] = []
         for p in psutil.process_iter():
-            # do we just set a new attribute on a built-in object?
-            p._sort_value = cmp_func(p)
+            try:
+                # do we just set a new attribute on a built-in object?
+                p._sort_value = cmp_func(p)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
             procs.append(p)
 
         procs = sorted(procs, key=lambda p: p._sort_value, reverse=reverse)

@@ -2,7 +2,10 @@
 # Licensed under the MIT License.  See LICENSE file in the project root for full license information.
 
 import unittest
+from unittest.mock import Mock, patch
+
 import pytest
+import psutil
 
 from .handlers_psutil_processes import (
     ProcessesCommandHandler
@@ -42,3 +45,20 @@ class TestHandlers(unittest.TestCase):
         pid = handler.handle([f'name[{last_name}]','pid'], fake_task_id)
         self.assertEqual(pid, last_pid)
         return
+
+    def test_find_process_skips_disappeared_processes(self) -> None:
+        disappeared_process = Mock(pid=1)
+        disappeared_process.memory_percent.side_effect = psutil.NoSuchProcess(1)
+        active_process = Mock(pid=2)
+        active_process.memory_percent.return_value = 10.0
+
+        handler = ProcessesCommandHandler()
+        with patch(
+            'psmqtt.handlers_psutil_processes.psutil.process_iter',
+            return_value=[disappeared_process, active_process],
+        ):
+            pid = handler.find_process(
+                'top_memory', lambda process: process.memory_percent(), True
+            )
+
+        self.assertEqual(pid, 2)
