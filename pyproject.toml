@@ -14,6 +14,14 @@ classifiers = [
 ]
 dynamic = ["dependencies", "version"]
 
+[project.optional-dependencies]
+# testcontainers 4.6.0 has introduced the MosquittoContainer
+# testcontainers 4.15.0 contains a fix for Mosquitto >= 2.1.2
+test = [
+  "pytest",
+  "testcontainers>=4.15.0",
+]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 

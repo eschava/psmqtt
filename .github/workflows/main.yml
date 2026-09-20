@@ -14,6 +14,7 @@ on:
   # and there are no commits for a long time on the project
   schedule:
     - cron: '0 0 1 * *'
+  workflow_dispatch:
 
 jobs:
 
@@ -58,8 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install '.[test]'
       - name: Run tests
         run: |
           pytest -vvv --log-level=INFO -m unit
@@ -74,8 +74,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install '.[test]'
 
       - name: Build docker image for integration tests
         run: docker build -t psmqtt:latest .
