@@ -48,7 +48,14 @@ class ProcessesCommandHandler(BaseHandler):
         if TaskParam.is_wildcard(process_id):
             if TaskParam.is_regular_wildcard(property):
                 raise Exception(f"The process property in '{self.name}' should be specified")
-            result = {p.pid: self.get_process_value(p, property, remaining_params) for p in psutil.process_iter()}
+            result = {}
+            for process in psutil.process_iter():
+                try:
+                    result[process.pid] = self.get_process_value(
+                        process, property, remaining_params
+                    )
+                except (psutil.NoSuchProcess, psutil.AccessDenied, PermissionError):
+                    continue
             return string_from_dict_optionally(result, process_id.endswith(';'))
         elif isinstance(process_id, int):
             pid = process_id
@@ -82,7 +89,7 @@ class ProcessesCommandHandler(BaseHandler):
             try:
                 # do we just set a new attribute on a built-in object?
                 p._sort_value = cmp_func(p)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+            except (psutil.NoSuchProcess, psutil.AccessDenied, PermissionError):
                 continue
             procs.append(p)
 
@@ -99,8 +106,11 @@ class ProcessesCommandHandler(BaseHandler):
     @staticmethod
     def get_find_process(pattern:str) -> int:
         for p in psutil.process_iter():
-            if fnmatch.fnmatch(p.name(), pattern):
-                return p.pid
+            try:
+                if fnmatch.fnmatch(p.name(), pattern):
+                    return p.pid
+            except (psutil.NoSuchProcess, psutil.AccessDenied, PermissionError):
+                continue
         raise Exception("Process matching '" + pattern + "' not found")
 
     @staticmethod

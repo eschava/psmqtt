@@ -66,6 +66,26 @@ class TestHandlers(unittest.TestCase):
 
         self.assertEqual(pid, 2)
 
+    def test_wildcard_skips_inaccessible_processes(self) -> None:
+        inaccessible_process = Mock(pid=1)
+        active_process = Mock(pid=2)
+
+        handler = ProcessesCommandHandler()
+        with (
+            patch(
+                'psmqtt.handlers_psutil_processes.psutil.process_iter',
+                return_value=[inaccessible_process, active_process],
+            ),
+            patch.object(
+                ProcessesCommandHandler,
+                'get_process_value',
+                side_effect=[psutil.AccessDenied(pid=1), 'active'],
+            ),
+        ):
+            processes = handler.handle(['*', 'name'], fake_task_id)
+
+        self.assertEqual(processes, {2: 'active'})
+
     def test_process_properties_skips_permission_errors(self) -> None:
         property_handler = Mock(spec=ProcessMethodCommandHandler)
         property_handler.method = Mock()
