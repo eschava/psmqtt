@@ -62,9 +62,21 @@ class ProcessesCommandHandler(BaseHandler):
         elif process_id.isdigit():
             pid = int(process_id)
         elif self.top_cpu_regexp.match(process_id):
-            pid = self.find_process(process_id, lambda p: p.cpu_percent(), True)
+            return self.get_top_process_value(
+                process_id,
+                lambda process: process.cpu_percent(),
+                True,
+                property,
+                remaining_params,
+            )
         elif self.top_memory_regexp.match(process_id):
-            pid = self.find_process(process_id, lambda p: p.memory_percent(), True)
+            return self.get_top_process_value(
+                process_id,
+                lambda process: process.memory_percent(),
+                True,
+                property,
+                remaining_params,
+            )
         elif self.pid_file_regexp.match(process_id):
             m = self.pid_file_regexp.match(process_id)
             assert m is not None
@@ -81,6 +93,30 @@ class ProcessesCommandHandler(BaseHandler):
 
         # we have a PID and property to fetch:
         return self.get_process_value(psutil.Process(pid), property, remaining_params)
+
+    def get_top_process_value(
+            self, request: str, cmp_func: Callable[..., float], reverse: bool,
+            property: str, remaining_params: list[str]) -> Payload:
+        processes: List[psutil.Process] = []
+        for process in psutil.process_iter():
+            try:
+                process._sort_value = cmp_func(process)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, PermissionError):
+                continue
+            processes.append(process)
+
+        ranked_processes = sorted(
+            processes, key=lambda process: process._sort_value, reverse=reverse
+        )
+        match = self.top_number_regexp.match(request)
+        index = 0 if match is None else int(match.group(1))
+        for process in ranked_processes[index:]:
+            try:
+                return self.get_process_value(process, property, remaining_params)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, PermissionError):
+                continue
+
+        raise Exception(f"No accessible process found for {request}")
 
     def find_process(self, request:str, cmp_func:Callable[..., float],
             reverse:bool) -> int:
