@@ -8,7 +8,10 @@ import pytest
 import psutil
 
 from .handlers_psutil_processes import (
-    ProcessesCommandHandler
+    ProcessMethodCommandHandler,
+    ProcessPropertiesCommandHandler,
+    ProcessesCommandHandler,
+    process_handlers,
 )
 
 fake_task_id = "0.0"
@@ -62,3 +65,14 @@ class TestHandlers(unittest.TestCase):
             )
 
         self.assertEqual(pid, 2)
+
+    def test_process_properties_skips_permission_errors(self) -> None:
+        property_handler = Mock(spec=ProcessMethodCommandHandler)
+        property_handler.method = Mock()
+        property_handler.handle.side_effect = PermissionError
+        properties_handler = ProcessPropertiesCommandHandler('*;', True, False)
+
+        with patch.dict(process_handlers, {'exe': property_handler}, clear=True):
+            properties = properties_handler.handle([], Mock())
+
+        self.assertEqual(properties, '{}')

@@ -186,8 +186,8 @@ class ProcessPropertiesCommandHandler(ProcessCommandHandler):
                                 or isinstance(handler, ProcessMethodTupleCommandHandler):
                             v = handler.handle('*', process)
                             self.add_to_dict(result, k, v)
-                except psutil.AccessDenied:  # just skip with property
-                    logging.warning(f"AccessDenied when calling {handler}.handle()")
+                except (psutil.AccessDenied, PermissionError):  # just skip property
+                    logging.warning(f"Access denied when calling {handler}.handle()")
 
         return string_from_dict_optionally(result, self.join)
 
